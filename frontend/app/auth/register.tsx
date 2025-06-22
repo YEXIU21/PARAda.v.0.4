@@ -246,6 +246,7 @@ export default function RegisterScreen() {
               autoCapitalize="none"
               onFocus={() => setFocusedInput('username')}
               onBlur={() => setFocusedInput(null)}
+              selectionColor={theme.primary}
             />
           </View>
 
@@ -273,6 +274,7 @@ export default function RegisterScreen() {
               keyboardType="email-address"
               onFocus={() => setFocusedInput('email')}
               onBlur={() => setFocusedInput(null)}
+              selectionColor={theme.primary}
             />
           </View>
 
@@ -299,6 +301,7 @@ export default function RegisterScreen() {
               secureTextEntry={!showPassword}
               onFocus={() => setFocusedInput('password')}
               onBlur={() => setFocusedInput(null)}
+              selectionColor={theme.primary}
             />
             <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
               <FontAwesome5 
@@ -332,6 +335,7 @@ export default function RegisterScreen() {
               secureTextEntry={!showConfirmPassword}
               onFocus={() => setFocusedInput('confirmPassword')}
               onBlur={() => setFocusedInput(null)}
+              selectionColor={theme.primary}
             />
             <TouchableOpacity onPress={toggleConfirmPasswordVisibility} style={styles.eyeIcon}>
               <FontAwesome5 
@@ -373,6 +377,7 @@ export default function RegisterScreen() {
                 autoCapitalize="characters"
                 onFocus={() => setFocusedInput('licensePlate')}
                 onBlur={() => setFocusedInput(null)}
+                selectionColor={theme.primary}
               />
             </View>
           )}
@@ -410,6 +415,7 @@ export default function RegisterScreen() {
                 onChangeText={setStudentId}
                 onFocus={() => setFocusedInput('studentId')}
                 onBlur={() => setFocusedInput(null)}
+                selectionColor={theme.primary}
               />
             </View>
           )}

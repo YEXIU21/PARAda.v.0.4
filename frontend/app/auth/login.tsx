@@ -136,6 +136,7 @@ export default function LoginScreen() {
               keyboardType="email-address"
               onFocus={() => setFocusedInput('email')}
               onBlur={() => setFocusedInput(null)}
+              selectionColor={theme.primary}
             />
           </View>
 
@@ -162,6 +163,7 @@ export default function LoginScreen() {
               secureTextEntry={!showPassword}
               onFocus={() => setFocusedInput('password')}
               onBlur={() => setFocusedInput(null)}
+              selectionColor={theme.primary}
             />
             <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
               <FontAwesome5 
