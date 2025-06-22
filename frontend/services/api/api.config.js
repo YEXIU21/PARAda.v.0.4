@@ -7,7 +7,7 @@
 export const BASE_URL = (() => {
   // Only use NEXT_PUBLIC_API_URL if it's explicitly set
   const isProduction = process.env.NEXT_PUBLIC_ENV === 'production';
-  const defaultUrl = isProduction ? 'https://parada-api.vercel.app' : 'http://localhost:5000';
+  const defaultUrl = isProduction ? 'https://parada-backendv1.vercel.app' : 'http://localhost:5000';
   
   const url = process.env.NEXT_PUBLIC_API_URL || defaultUrl;
   console.log('Using API URL:', url);
