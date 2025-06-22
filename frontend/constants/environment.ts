@@ -16,12 +16,12 @@ const ENV = {
     googleMapsId: '989855c5ea84a0d7', // For AdvancedMarkerElement
   },
   staging: {
-    apiUrl: 'https://parada-staging.herokuapp.com/api',
+    apiUrl: 'https://parada-api-staging.vercel.app',
     googleMapsApiKey: 'AIzaSyA6DKdUg8JHPsMrDTC3waxqHkOT8GvKtIk',
     googleMapsId: '989855c5ea84a0d7', // For AdvancedMarkerElement
   },
   prod: {
-    apiUrl: 'https://parada-api.herokuapp.com/api',
+    apiUrl: 'https://parada-api.vercel.app',
     googleMapsApiKey: 'AIzaSyA6DKdUg8JHPsMrDTC3waxqHkOT8GvKtIk',
     googleMapsId: '989855c5ea84a0d7', // For AdvancedMarkerElement
   },
