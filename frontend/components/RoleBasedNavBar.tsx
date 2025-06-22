@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
-import { useAuth } from '@/context/AuthContext';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { useTheme, getThemeColors } from '../context/ThemeContext';
 
 interface NavItem {
   name: string;

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Modal } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { RideStatus } from '@/models/RideTypes';
+import { RideStatus } from '../models/RideTypes';
 import RideMap from './RideMap';
 
 interface RideStatusCardProps {

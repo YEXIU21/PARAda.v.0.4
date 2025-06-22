@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, ScrollView, TextInput } from 'react-native';
-import { createSubscription, verifySubscription, getSubscriptionPlans } from '@/services/api/subscription.api';
-import { BASE_URL } from '@/services/api/api.config';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Button, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { createSubscription, verifySubscription, getSubscriptionPlans } from '../services/api/subscription.api';
+import { BASE_URL } from '../services/api/api.config';
 
 export default function SubscriptionTest() {
   const [loading, setLoading] = useState(false);

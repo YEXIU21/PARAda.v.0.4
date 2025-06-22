@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Destination } from '@/models/RideTypes';
+import { Destination } from '../models/RideTypes';
 
 interface VehicleType {
   id: string;

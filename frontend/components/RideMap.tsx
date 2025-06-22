@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Platform, Text, TouchableOpacity } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import MapView from './MapView';
-import { getDriverLocation, getPassengerLocation } from '@/services/socket/location.socket';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
-import { lightMapStyle, darkMapStyle } from '@/constants/MapStyles';
+import { getDriverLocation, getPassengerLocation } from '../services/socket/location.socket';
+import { useTheme, getThemeColors } from '../context/ThemeContext';
+import { lightMapStyle, darkMapStyle } from '../constants/MapStyles';
 
 interface Location {
   latitude: number;
