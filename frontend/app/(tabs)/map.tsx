@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
-import MapView from '@/components/MapView';
+import { useTheme, getThemeColors } from '../../context/ThemeContext';
+import MapView from '../../components/MapView';
 import { router } from 'expo-router';
 
 interface Location {
