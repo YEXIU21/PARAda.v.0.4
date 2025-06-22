@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
+import { useTheme, getThemeColors } from '../context/ThemeContext';
 
 interface FeedbackFormProps {
   isVisible: boolean;

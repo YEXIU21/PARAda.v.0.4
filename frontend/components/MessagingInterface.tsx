@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,18 @@ import {
   TextInput,
   ActivityIndicator,
   Modal,
-  Alert
+  Alert,
+  Animated,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
-import { useAuth } from '@/context/AuthContext';
-import { getUserNotifications, markAsRead, deleteNotification } from '@/services/api/notification.api';
-import { format } from 'date-fns';
-import { getSocket } from '@/services/socket/socket.service';
+import { useTheme, getThemeColors } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { getUserNotifications, markAsRead, deleteNotification } from '../services/api/notification.api';
+import { formatDistanceToNow } from 'date-fns';
+import { getSocket } from '../services/socket/socket.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Message {
@@ -508,7 +512,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return format(date, 'MMM d, yyyy h:mm a');
+      return formatDistanceToNow(date, { addSuffix: true });
     } catch (err) {
       return dateString;
     }
@@ -572,23 +576,23 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
             console.log('Reply sent successfully via socket');
             
             // Show success message
-    Alert.alert(
-      'Reply Sent',
-      'Your reply has been sent to the administrator.',
+            Alert.alert(
+              'Reply Sent',
+              'Your reply has been sent to the administrator.',
               [{ text: 'OK' }]
             );
             
             // Reset state
-        setReplyText('');
-        setShowReplyModal(false);
-        setSelectedMessage(null);
+            setReplyText('');
+            setShowReplyModal(false);
+            setSelectedMessage(null);
           } else {
             console.error('Socket error:', response);
             Alert.alert(
               'Error',
               'Failed to send reply. Please try again later.',
               [{ text: 'OK' }]
-    );
+            );
           }
           
           setIsLoading(false);
