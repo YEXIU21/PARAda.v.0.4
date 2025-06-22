@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import RoleBasedNavBar from '@/components/RoleBasedNavBar';
+import RoleBasedNavBar from '../../components/RoleBasedNavBar';
 
 export default function TabLayout() {
   const { user, isLoading } = useAuth();
