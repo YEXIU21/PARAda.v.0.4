@@ -63,7 +63,9 @@ app.use(cors({
       'https://parada.app',
       'https://parada.vercel.app',
       'https://parada-web.vercel.app',
-      'https://parada-v-0-1.vercel.app'
+      'https://parada-v-0-1.vercel.app',
+      'https://paradav1.vercel.app',
+      'https://parada-frontend.vercel.app'
     ];
     
     // Check if origin is allowed or if we're in development mode
@@ -71,16 +73,23 @@ app.use(cors({
       callback(null, true);
     } else {
       // Check for Vercel preview deployments which have dynamic URLs
-      if (origin && (origin.endsWith('.vercel.app') || origin.includes('vercel-preview'))) {
+      if (origin && (
+          origin.endsWith('.vercel.app') || 
+          origin.includes('vercel-preview') || 
+          origin.includes('parada')
+        )
+      ) {
+        console.log('Allowing CORS for Vercel deployment:', origin);
         callback(null, true);
       } else {
+        console.log('CORS blocked for origin:', origin);
         callback(new Error('Not allowed by CORS'));
       }
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-access-token']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-access-token', 'Origin', 'Accept']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

@@ -15,6 +15,7 @@ export const BASE_URL = (() => {
   const url = isVercel ? 'https://parada-backendv1.vercel.app' : ENV.apiUrl;
   
   console.log('Using API URL:', url);
+  console.log('Environment:', isVercel ? 'production (Vercel)' : 'development');
   
   // Remove any trailing slash
   return url.replace(/\/$/, '');
@@ -23,7 +24,15 @@ export const BASE_URL = (() => {
 // Default headers for API calls
 export const DEFAULT_HEADERS = {
   'Content-Type': 'application/json',
-  'Accept': 'application/json'
+  'Accept': 'application/json',
+  'Origin': typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+};
+
+// Axios configuration options
+export const AXIOS_CONFIG = {
+  timeout: 10000, // 10 seconds timeout
+  withCredentials: false, // Don't send cookies with cross-origin requests
+  headers: DEFAULT_HEADERS
 };
 
 // API endpoints - ensure all paths start with a slash

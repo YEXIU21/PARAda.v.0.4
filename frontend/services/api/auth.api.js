@@ -4,7 +4,7 @@
  */
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL, ENDPOINTS } from './api.config';
+import { BASE_URL, ENDPOINTS, AXIOS_CONFIG } from './api.config';
 
 /**
  * Get authentication token from AsyncStorage
@@ -51,7 +51,11 @@ export const getAuthToken = async () => {
 export const login = async (email, password) => {
   try {
     console.log(`Logging in to ${BASE_URL}${ENDPOINTS.AUTH.LOGIN}`);
-    const response = await axios.post(`${BASE_URL}${ENDPOINTS.AUTH.LOGIN}`, { email, password });
+    const response = await axios.post(
+      `${BASE_URL}${ENDPOINTS.AUTH.LOGIN}`, 
+      { email, password },
+      AXIOS_CONFIG
+    );
     
     if (response.data && response.data.accessToken) {
       // Save token
@@ -66,6 +70,14 @@ export const login = async (email, password) => {
     throw new Error('Login failed');
   } catch (error) {
     console.error('Login error:', error);
+    if (error.response) {
+      console.error('Status:', error.response.status);
+      console.error('Data:', error.response.data);
+    } else if (error.request) {
+      console.error('Request was made but no response received');
+    } else {
+      console.error('Error setting up request:', error.message);
+    }
     throw error;
   }
 };
@@ -77,15 +89,32 @@ export const login = async (email, password) => {
  */
 export const register = async (userData) => {
   try {
-    const response = await axios.post(`${BASE_URL}${ENDPOINTS.AUTH.REGISTER}`, userData);
+    console.log(`Registering user at ${BASE_URL}${ENDPOINTS.AUTH.REGISTER}`);
+    console.log('Registration data:', { ...userData, password: '[REDACTED]' });
+    
+    const response = await axios.post(
+      `${BASE_URL}${ENDPOINTS.AUTH.REGISTER}`, 
+      userData,
+      AXIOS_CONFIG
+    );
     
     if (response.status === 201 && response.data.user) {
+      console.log('Registration successful:', response.data);
       return response.data.user;
     }
     
     throw new Error('Registration failed');
   } catch (error) {
     console.error('Registration error:', error);
+    if (error.response) {
+      console.error('Status:', error.response.status);
+      console.error('Data:', error.response.data);
+    } else if (error.request) {
+      console.error('Request was made but no response received');
+      console.error('Request details:', error.request);
+    } else {
+      console.error('Error setting up request:', error.message);
+    }
     throw error;
   }
 };
