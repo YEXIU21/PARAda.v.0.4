@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
-import { getUserNotifications, markAsRead, markAllAsRead, deleteNotification } from '@/services/api/notification.api';
+import { useTheme, getThemeColors } from '../../context/ThemeContext';
+import { getUserNotifications, markAsRead, markAllAsRead, deleteNotification } from '../../services/api/notification.api';
 import { useFocusEffect } from '@react-navigation/native';
 
 interface Notification {

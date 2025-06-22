@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
-import { getReportsData } from '@/services/api/admin.api';
+import { useTheme, getThemeColors } from '../../context/ThemeContext';
+import { getReportsData } from '../../services/api/admin.api';
 
 const { width } = Dimensions.get('window');
 

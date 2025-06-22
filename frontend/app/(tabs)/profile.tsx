@@ -14,13 +14,13 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useAuth, User } from '@/context/AuthContext';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
-import { ThemeColors } from '@/types/ThemeTypes';
-import { router } from 'expo-router';
-import FeedbackForm from '@/components/FeedbackForm';
-import MessagingInterface from '@/components/MessagingInterface';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+import { useAuth, User } from '../../context/AuthContext';
+import { useTheme, getThemeColors } from '../../context/ThemeContext';
+import { ThemeColors } from '../../types/ThemeTypes';
+import FeedbackForm from '../../components/FeedbackForm';
+import MessagingInterface from '../../components/MessagingInterface';
 
 // Define types for modal props
 interface ModalProps {
@@ -415,7 +415,7 @@ export default function ProfileScreen() {
       await AsyncStorage.removeItem('userSubscription');
       
       // Import API functions dynamically to avoid circular dependencies
-      const { getUserSubscription } = require('@/services/api/subscription.api');
+      const { getUserSubscription } = require('../../services/api/subscription.api');
       
       // Fetch subscription directly from the API
       const subscription = await getUserSubscription();
