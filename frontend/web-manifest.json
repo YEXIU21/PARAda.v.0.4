@@ -1,0 +1,43 @@
+{
+  "name": "PARAda Transport",
+  "short_name": "PARAda",
+  "theme_color": "#4B6BFE",
+  "background_color": "#FFFFFF",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "description": "Real-Time Transportation Tracking for Smarter Travel",
+  "icons": [
+    {
+      "src": "assets/images/PARAdalogo.jpg",
+      "sizes": "96x96",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "assets/images/PARAdalogo.jpg",
+      "sizes": "128x128",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "assets/images/PARAdalogo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "assets/images/PARAdalogo.jpg",
+      "sizes": "256x256",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "assets/images/PARAdalogo.jpg",
+      "sizes": "384x384",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "assets/images/PARAdalogo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+} 

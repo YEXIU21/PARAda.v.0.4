@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/service-worker.js",
+      "dest": "/frontend/service-worker.js",
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "Service-Worker-Allowed": "/"
+      }
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/frontend/web-manifest.json"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+} 

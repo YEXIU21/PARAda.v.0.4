@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "PARAda",
+    "slug": "parada",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/PARAdalogo.jpg",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/images/PARAdalogo.jpg",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.parada"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/PARAdalogo.jpg",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.yourcompany.parada"
+    },
+    "web": {
+      "favicon": "./assets/images/PARAdalogo.jpg",
+      "bundler": "metro",
+      "output": "static",
+      "name": "PARAda Transport",
+      "shortName": "PARAda",
+      "description": "Real-Time Transportation Tracking for Smarter Travel",
+      "lang": "en",
+      "scope": "/",
+      "themeColor": "#4B6BFE",
+      "backgroundColor": "#FFFFFF",
+      "startUrl": "/",
+      "display": "standalone",
+      "orientation": "portrait",
+      "relatedApplications": [],
+      "preferRelatedApplications": false,
+      "icons": [
+        {
+          "src": "assets/images/PARAdalogo.jpg",
+          "sizes": [96, 128, 192, 256, 384, 512]
+        }
+      ]
+    },
+    "plugins": [
+      "expo-location",
+      "expo-notifications"
+    ],
+    "primaryColor": "#4B6BFE",
+    "description": "Real-Time Transportation Tracking for Smarter Travel",
+    "newArchEnabled": true,
+    "scheme": "parada"
+  }
+}

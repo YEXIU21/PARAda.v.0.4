@@ -1,0 +1,126 @@
+.map-iframe {
+  border: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f8f9fa;
+}
+
+/* Make sure map container is full width and height */
+#map {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Fix Google Maps controls and info windows */
+.gm-style {
+  font: inherit;
+}
+
+.gm-style-iw {
+  padding: 10px;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.gm-ui-hover-effect {
+  top: 0 !important;
+  right: 0 !important;
+}
+
+/* Fix z-index for map controls */
+.gm-control-active {
+  z-index: 2 !important;
+}
+
+/* Ensure map markers are visible */
+.gm-style img {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Custom location button styling with Material Design look */
+.custom-map-location-button {
+  background-color: #fff !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
+  border: none !important;
+  border-radius: 50% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 40px !important;
+  height: 40px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+  position: absolute !important;
+  bottom: 200px !important; /* Position it higher up */
+  right: 10px !important;
+  z-index: 1 !important; /* Same z-index as map controls */
+  outline: none !important;
+}
+
+/* Hover effect */
+.custom-map-location-button:hover {
+  background-color: #f0f0f0 !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Active state */
+.custom-map-location-button:active {
+  background-color: #e0e0e0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  transform: translateY(1px) scale(0.95) !important;
+}
+
+/* Custom marker styles */
+.user-location-marker {
+  background-color: #007AFF;
+  border-radius: 50%;
+  border: 2px solid white;
+  width: 16px;
+  height: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  animation: pulse 2s infinite;
+}
+
+.passenger-location-marker {
+  background-color: #FF3B30;
+  border-radius: 50%;
+  border: 2px solid white;
+  width: 18px;
+  height: 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.driver-location-marker {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+/* User location marker animation */
+.user-location-marker {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.7);
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 10px rgba(0, 122, 255, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 122, 255, 0);
+  }
+} 
