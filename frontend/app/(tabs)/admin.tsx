@@ -126,6 +126,13 @@ const adminFunctions: AdminFunction[] = [
   { id: 'map', title: 'View Map', icon: 'map-marked-alt', color: '#5AC8FA', screen: 'index' },
 ];
 
+// Ensure images are available
+const paymentImages = {
+  gcash: require('../../assets/images/gcash.jpg'),
+  logo: require('../../assets/images/PARAdalogo.jpg'),
+  instapay: require('../../assets/images/gcash.jpg') // Using gcash.jpg as a placeholder for the InstaPay QR code
+};
+
 export default function AdminScreen() {
   const { isDarkMode, colors } = useTheme();
   const theme = getThemeColors(isDarkMode);
@@ -577,7 +584,7 @@ export default function AdminScreen() {
         <View style={styles.headerContent}>
           <View style={styles.logoContainer}>
             <Image 
-              source={require('@/assets/images/PARAdalogo.jpg')} 
+              source={require('../../assets/images/PARAdalogo.jpg')} 
               style={styles.logo} 
               resizeMode="contain"
             />
