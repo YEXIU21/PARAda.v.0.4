@@ -199,7 +199,7 @@ export default function RegisterScreen() {
           <View style={styles.headerContent}>
             <View style={styles.logoContainer}>
               <Image 
-                source={require('@/assets/images/PARAdalogo.jpg')} 
+                source={require('../../assets/images/PARAdalogo.jpg')} 
                 style={styles.logo} 
                 resizeMode="contain"
               />

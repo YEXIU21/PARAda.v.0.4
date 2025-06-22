@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useTheme } from '@/context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 
 // PWA installation detection
 interface BeforeInstallPromptEvent extends Event {
@@ -137,7 +137,7 @@ export default function LandingPage() {
         <View style={styles.headerContent}>
           <View style={styles.logoContainer}>
             <Image 
-              source={require('@/assets/images/PARAdalogo.jpg')} 
+              source={require('../assets/images/PARAdalogo.jpg')} 
               style={styles.logo} 
               resizeMode="contain"
             />
