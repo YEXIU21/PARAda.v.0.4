@@ -16,8 +16,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
-import { getDrivers, sendMessageToDriver, verifyDriver, removeDriver } from '@/services/api/admin.api';
+import { useTheme, getThemeColors } from '../../context/ThemeContext';
+import { getDrivers, sendMessageToDriver, verifyDriver, removeDriver } from '../../services/api/admin.api';
 import { formatDistanceToNow } from 'date-fns';
 
 // Define driver interface
