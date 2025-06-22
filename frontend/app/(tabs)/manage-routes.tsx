@@ -16,11 +16,11 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
-import { RouteStop, Route as BaseRoute } from '@/constants/RouteData';
-import { VehicleTypeId, vehicleTypes } from '@/constants/VehicleTypes';
-import { useAuth } from '@/context/AuthContext';
-import * as routeApi from '@/services/api/route.api';
+import { useTheme, getThemeColors } from '../../context/ThemeContext';
+import { RouteStop, Route as BaseRoute } from '../../constants/RouteData';
+import { VehicleTypeId, vehicleTypes } from '../../constants/VehicleTypes';
+import { useAuth } from '../../context/AuthContext';
+import * as routeApi from '../../services/api/route.api';
 
 // Extended Route interface to include schedule
 interface Route extends BaseRoute {
