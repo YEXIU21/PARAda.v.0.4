@@ -1,10 +1,10 @@
 /**
- * Authentication API Service
+ * Auth API Service
  * Handles all authentication-related API calls
  */
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL, ENDPOINTS } from '@/services/api/api.config';
+import { BASE_URL, ENDPOINTS } from './api.config';
 
 /**
  * Get authentication token from AsyncStorage

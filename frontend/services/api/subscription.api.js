@@ -3,8 +3,8 @@
  * Handles all subscription-related API calls
  */
 import axios from 'axios';
-import { BASE_URL, ENDPOINTS } from '@/services/api/api.config';
-import { getAuthToken } from '@/services/api/auth.api';
+import { BASE_URL, ENDPOINTS } from './api.config';
+import { getAuthToken } from './auth.api';
 
 /**
  * Get all subscription plans

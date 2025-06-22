@@ -3,8 +3,8 @@
  * Handles all notification-related API calls
  */
 import axios from 'axios';
-import { BASE_URL, ENDPOINTS } from '@/services/api/endpoints';
-import { getAuthToken } from '@/services/api/auth.api';
+import { BASE_URL, ENDPOINTS } from './endpoints';
+import { getAuthToken } from './auth.api';
 
 /**
  * Get all notifications for the current user
