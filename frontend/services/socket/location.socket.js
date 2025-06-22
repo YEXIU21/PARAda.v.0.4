@@ -3,7 +3,7 @@
  * Handles real-time location tracking
  */
 import { io } from 'socket.io-client';
-import { API_URL } from '@/constants/environment.js';
+import { API_URL } from '../../constants/environment.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Store socket connection

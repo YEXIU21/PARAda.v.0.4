@@ -1,10 +1,10 @@
 /**
- * Socket.io Service
- * Handles real-time communication with the server
+ * Socket Service
+ * Handles WebSocket connections
  */
 import { io } from 'socket.io-client';
-import { BASE_URL } from '@/services/api/api.config';
-import { getAuthToken } from '@/services/api/auth.api';
+import { BASE_URL } from '../api/api.config';
+import { getAuthToken } from '../api/auth.api';
 
 // Create a singleton socket instance
 let socket = null;
