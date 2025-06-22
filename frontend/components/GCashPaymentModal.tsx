@@ -15,15 +15,15 @@ import {
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SubscriptionId } from '@/constants/SubscriptionPlans';
+import { SubscriptionId } from '../constants/SubscriptionPlans';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
-// Import payment images
-const paymentImages = {
-  gcash: require('@/assets/images/gcash.jpg'),
-  logo: require('@/assets/images/PARAdalogo.jpg'),
-  instapay: require('@/assets/images/gcash.jpg') // Using gcash.jpg as a placeholder for the InstaPay QR code
+// Images
+const images = {
+  gcash: require('../assets/images/gcash.jpg'),
+  logo: require('../assets/images/PARAdalogo.jpg'),
+  instapay: require('../assets/images/gcash.jpg') // Using gcash.jpg as a placeholder for the InstaPay QR code
 };
 
 interface GCashPaymentModalProps {
@@ -157,7 +157,7 @@ export default function GCashPaymentModal({
           <View style={[styles.qrContainer, { backgroundColor: '#0055FF' }]}>
             <View style={styles.qrBackground}>
               <Image 
-                source={paymentImages.gcash} 
+                source={images.gcash} 
                 style={styles.qrCode}
                 resizeMode="contain"
               />

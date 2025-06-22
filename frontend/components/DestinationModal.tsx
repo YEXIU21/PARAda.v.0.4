@@ -12,9 +12,9 @@ import {
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Destination } from '@/models/RideTypes';
+import { Destination } from '../models/RideTypes';
 import * as Location from 'expo-location';
-import MapView, { Marker } from '@/components/MapView';
+import MapView, { Marker } from './MapView';
 
 interface DestinationModalProps {
   isVisible: boolean;

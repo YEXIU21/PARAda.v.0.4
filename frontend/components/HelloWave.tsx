@@ -6,9 +6,10 @@ import Animated, {
   withTiming,
   withRepeat,
   withSequence,
+  Easing,
 } from 'react-native-reanimated';
-
-import { ThemedText } from '@/components/ThemedText';
+import { useFocusEffect } from '@react-navigation/native';
+import { ThemedText } from './ThemedText';
 
 export function HelloWave() {
   const rotationAnimation = useSharedValue(0);

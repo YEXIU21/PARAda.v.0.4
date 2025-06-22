@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, SafeAreaView, ActivityIndicator, Animated } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getDashboardData, getReportsData } from '@/services/api/admin.api';
+import { getDashboardData, getReportsData } from '../services/api/admin.api';
 
 const { width, height } = Dimensions.get('window');
 

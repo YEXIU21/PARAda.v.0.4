@@ -13,9 +13,9 @@ import {
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SubscriptionId } from '@/constants/SubscriptionPlans';
-import { getPendingSubscriptions, approveSubscriptionByReference, verifySubscription } from '@/services/api/subscription.api';
-import { BASE_URL } from '@/services/api/api.config';
+import { SubscriptionId } from '../constants/SubscriptionPlans';
+import { getPendingSubscriptions, approveSubscriptionByReference, verifySubscription } from '../services/api/subscription.api';
+import { BASE_URL } from '../services/api/api.config';
 
 interface PendingPayment {
   id: string;
