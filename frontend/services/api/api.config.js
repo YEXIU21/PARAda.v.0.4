@@ -2,14 +2,18 @@
  * API Configuration
  * Central configuration for API calls
  */
+import ENV from '../../constants/environment';
 
 // The base URL for all API calls - ensure it's a valid URL without trailing slash
 export const BASE_URL = (() => {
-  // Only use NEXT_PUBLIC_API_URL if it's explicitly set
-  const isProduction = process.env.NEXT_PUBLIC_ENV === 'production';
-  const defaultUrl = isProduction ? 'https://parada-backendv1.vercel.app' : 'http://localhost:5000';
+  // Check if we're running on Vercel (production)
+  const isVercel = typeof window !== 'undefined' && 
+                  window.location && 
+                  window.location.hostname.includes('vercel.app');
   
-  const url = process.env.NEXT_PUBLIC_API_URL || defaultUrl;
+  // Use environment-specific URL
+  const url = isVercel ? 'https://parada-backendv1.vercel.app' : ENV.apiUrl;
+  
   console.log('Using API URL:', url);
   
   // Remove any trailing slash

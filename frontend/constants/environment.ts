@@ -21,13 +21,18 @@ const ENV = {
     googleMapsId: '989855c5ea84a0d7', // For AdvancedMarkerElement
   },
   prod: {
-    apiUrl: 'https://parada-api.vercel.app',
+    apiUrl: 'https://parada-backendv1.vercel.app',
     googleMapsApiKey: 'AIzaSyA6DKdUg8JHPsMrDTC3waxqHkOT8GvKtIk',
     googleMapsId: '989855c5ea84a0d7', // For AdvancedMarkerElement
   },
 };
 
 const getEnvVars = () => {
+  // For web deployed on Vercel, always use production environment
+  if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('vercel.app')) {
+    return ENV.prod;
+  }
+
   // Use manifest instead of deprecated releaseChannel
   const environment = Constants.manifest?.extra?.expoClient?.releaseChannel || 
                      process.env.APP_ENVIRONMENT || 
