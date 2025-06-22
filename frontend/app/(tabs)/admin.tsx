@@ -17,9 +17,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
+import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { router } from 'expo-router';
-import { getDashboardData, getReportsData } from '@/services/api/admin.api';
+import { getDashboardData, getReportsData } from '../../services/api/admin.api';
 
 // Define interfaces for API data
 interface DashboardData {
