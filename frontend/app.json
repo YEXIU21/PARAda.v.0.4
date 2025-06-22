@@ -45,6 +45,18 @@
         {
           "src": "assets/images/PARAdalogo.jpg",
           "sizes": [96, 128, 192, 256, 384, 512]
+        },
+        {
+          "src": "assets/images/PARAdalogo.jpg",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any maskable"
+        },
+        {
+          "src": "assets/images/PARAdalogo.jpg",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "any maskable"
         }
       ]
     },

@@ -10,6 +10,7 @@ import { ThemeProvider } from '../context/ThemeContext';
 import ThemedStatusBar from '../components/ThemedStatusBar';
 import PWAInstallPrompt from '../components/PWAInstallPrompt';
 import { initializeSocket } from '../services/socket/socket.service';
+import * as WebBrowser from 'expo-web-browser';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -45,18 +46,46 @@ export default function RootLayout() {
 
     checkAuthStatus();
 
-    // Register service worker for PWA support (web only)
-    if (Platform.OS === 'web' && 'serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker
-          .register('/service-worker.js')
-          .then(registration => {
-            console.log('Service Worker registered with scope:', registration.scope);
-          })
-          .catch(error => {
-            console.error('Service Worker registration failed:', error);
-          });
-      });
+    // Add PWA meta tags and script for web platform
+    if (Platform.OS === 'web') {
+      // Add meta tags
+      const metaViewport = document.createElement('meta');
+      metaViewport.name = 'viewport';
+      metaViewport.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
+      document.head.appendChild(metaViewport);
+      
+      const metaThemeColor = document.createElement('meta');
+      metaThemeColor.name = 'theme-color';
+      metaThemeColor.content = '#4B6BFE';
+      document.head.appendChild(metaThemeColor);
+      
+      const metaAppleMobileWebAppCapable = document.createElement('meta');
+      metaAppleMobileWebAppCapable.name = 'apple-mobile-web-app-capable';
+      metaAppleMobileWebAppCapable.content = 'yes';
+      document.head.appendChild(metaAppleMobileWebAppCapable);
+      
+      const metaAppleMobileWebAppStatusBarStyle = document.createElement('meta');
+      metaAppleMobileWebAppStatusBarStyle.name = 'apple-mobile-web-app-status-bar-style';
+      metaAppleMobileWebAppStatusBarStyle.content = 'black-translucent';
+      document.head.appendChild(metaAppleMobileWebAppStatusBarStyle);
+      
+      // Add manifest link
+      const linkManifest = document.createElement('link');
+      linkManifest.rel = 'manifest';
+      linkManifest.href = '/manifest.json';
+      document.head.appendChild(linkManifest);
+      
+      // Add apple touch icon
+      const linkAppleTouchIcon = document.createElement('link');
+      linkAppleTouchIcon.rel = 'apple-touch-icon';
+      linkAppleTouchIcon.href = '/assets/images/PARAdalogo.jpg';
+      document.head.appendChild(linkAppleTouchIcon);
+      
+      // Add service worker registration script
+      const script = document.createElement('script');
+      script.src = '/register-service-worker.js';
+      script.defer = true;
+      document.body.appendChild(script);
     }
   }, []);
 

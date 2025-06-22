@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -8,7 +8,8 @@ import {
   Image, 
   Platform,
   Dimensions,
-  Linking
+  Linking,
+  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,10 +27,11 @@ export default function LandingPage() {
   const router = useRouter();
   const { isDarkMode, colors } = useTheme();
   const [isInstallable, setIsInstallable] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const windowWidth = Dimensions.get('window').width;
   const isMobile = windowWidth < 768;
+  const [installAttempted, setInstallAttempted] = useState(false);
 
   // Check if PWA can be installed
   useEffect(() => {
@@ -44,8 +46,9 @@ export default function LandingPage() {
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      deferredPromptRef.current = e as BeforeInstallPromptEvent;
       setIsInstallable(true);
+      console.log('PWA is installable, prompt captured');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -54,6 +57,7 @@ export default function LandingPage() {
     window.addEventListener('appinstalled', () => {
       setIsInstalled(true);
       setIsInstallable(false);
+      console.log('PWA was installed successfully');
     });
 
     return () => {
@@ -70,21 +74,62 @@ export default function LandingPage() {
       return;
     }
 
-    if (deferredPrompt) {
-      // Show the PWA install prompt
-      deferredPrompt.prompt();
-      const choiceResult = await deferredPrompt.userChoice;
-      
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-      } else {
-        console.log('User dismissed the install prompt');
+    // If already installed, just navigate to the app
+    if (isInstalled) {
+      router.push('/auth/login');
+      return;
+    }
+
+    if (deferredPromptRef.current) {
+      try {
+        // Show the PWA install prompt
+        console.log('Triggering PWA installation prompt');
+        deferredPromptRef.current.prompt();
+        const choiceResult = await deferredPromptRef.current.userChoice;
+        
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+          // The app is being installed, we'll wait for the appinstalled event
+          setInstallAttempted(true);
+        } else {
+          console.log('User dismissed the install prompt');
+          // If user dismisses, navigate to login anyway
+          router.push('/auth/login');
+        }
+        
+        deferredPromptRef.current = null;
+        setIsInstallable(false);
+      } catch (error) {
+        console.error('Error prompting for installation:', error);
+        // If there's an error with the prompt, navigate to login
+        router.push('/auth/login');
+      }
+    } else {
+      // If PWA prompt not available, show installation instructions on mobile browsers
+      if (isMobile && !installAttempted && Platform.OS === 'web') {
+        const userAgent = navigator.userAgent || '';
+        if (/iPhone|iPad|iPod/.test(userAgent)) {
+          // iOS Safari
+          Alert.alert(
+            "Install PARAda",
+            "To install our app: tap the Share button, then 'Add to Home Screen'",
+            [{ text: "OK", onPress: () => router.push('/auth/login') }]
+          );
+          setInstallAttempted(true);
+          return;
+        } else if (/Android/.test(userAgent) && /Chrome/.test(userAgent)) {
+          // Android Chrome
+          Alert.alert(
+            "Install PARAda",
+            "To install our app: tap the menu button, then 'Add to Home Screen'",
+            [{ text: "OK", onPress: () => router.push('/auth/login') }]
+          );
+          setInstallAttempted(true);
+          return;
+        }
       }
       
-      setDeferredPrompt(null);
-      setIsInstallable(false);
-    } else {
-      // If PWA prompt not available, go to login
+      // If no installation prompt is available, go to login
       router.push('/auth/login');
     }
   };
@@ -165,7 +210,7 @@ export default function LandingPage() {
             end={{ x: 1, y: 0 }}
             style={styles.downloadButtonGradient}
           >
-            <FontAwesome5 name="download" size={20} color="#FFFFFF" style={styles.downloadIcon} />
+            <FontAwesome5 name={isInstallable ? "download" : "arrow-right"} size={20} color="#FFFFFF" style={styles.downloadIcon} />
             <Text style={styles.downloadButtonText}>
               {isInstallable ? 'Install App' : isInstalled ? 'Open App' : 'Get Started'}
             </Text>
@@ -226,7 +271,7 @@ export default function LandingPage() {
             <Text style={styles.ctaButtonText}>
               {isInstallable ? 'Install App' : isInstalled ? 'Open App' : 'Get Started'}
             </Text>
-            <FontAwesome5 name="arrow-right" size={16} color="#4B6BFE" style={styles.ctaButtonIcon} />
+            <FontAwesome5 name={isInstallable ? "download" : "arrow-right"} size={16} color="#4B6BFE" style={styles.ctaButtonIcon} />
           </TouchableOpacity>
         </LinearGradient>
       </View>
