@@ -49,6 +49,7 @@ const API_URL = ENV.apiUrl;
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userSubscription, setUserSubscription] = useState(null);
 
   // Check for stored user data on app start
   useEffect(() => {
@@ -94,6 +95,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadUser();
   }, []);
 
+  // Load subscription data
+  const loadSubscription = async () => {
+    try {
+      if (!user || !user.id) return;
+      
+      // Import API functions dynamically to avoid circular dependencies
+      const subscriptionApi = require('../services/api/subscription.api');
+      
+      // Fetch subscription directly from the API
+      const subscription = await subscriptionApi.getUserSubscription();
+      setUserSubscription(subscription);
+    } catch (error) {
+      console.error('Error loading subscription:', error);
+    }
+  };
+
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
@@ -138,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log('Checking subscription status from backend API for existing user');
             
             // Import the subscription API dynamically to avoid circular dependencies
-            const subscriptionApi = require('@/services/api/subscription.api');
+            const subscriptionApi = require('../services/api/subscription.api');
             const subscription = await subscriptionApi.getUserSubscription();
             
             console.log('Subscription from API:', subscription);

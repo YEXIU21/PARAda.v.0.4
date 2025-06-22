@@ -2,8 +2,8 @@
  * Vehicle Access Service
  * Provides utilities for managing vehicle type access based on subscription
  */
-import { VehicleTypeId } from '@/constants/VehicleTypes';
-import { User } from '@/context/AuthContext';
+import { VehicleTypeId } from '../constants/VehicleTypes';
+import { User } from '../context/AuthContext';
 
 /**
  * Check if a user has access to a specific vehicle type
