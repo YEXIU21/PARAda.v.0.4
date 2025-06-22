@@ -37,6 +37,7 @@ export default function RegisterScreen() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
   
   const { register, isLoading } = useAuth();
   const { isDarkMode } = useTheme();
@@ -222,8 +223,20 @@ export default function RegisterScreen() {
             </View>
           ) : null}
 
-          <View style={[styles.inputContainer, { borderColor: theme.border, backgroundColor: theme.card }]}>
-            <FontAwesome5 name="user" size={20} color={theme.textSecondary} style={styles.inputIcon} />
+          <View style={[
+            styles.inputContainer, 
+            { 
+              borderColor: focusedInput === 'username' ? theme.primary : theme.border, 
+              backgroundColor: theme.card,
+              borderWidth: focusedInput === 'username' ? 2 : 1
+            }
+          ]}>
+            <FontAwesome5 
+              name="user" 
+              size={20} 
+              color={focusedInput === 'username' ? theme.primary : theme.textSecondary} 
+              style={styles.inputIcon} 
+            />
             <TextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Username"
@@ -231,11 +244,25 @@ export default function RegisterScreen() {
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
+              onFocus={() => setFocusedInput('username')}
+              onBlur={() => setFocusedInput(null)}
             />
           </View>
 
-          <View style={[styles.inputContainer, { borderColor: theme.border, backgroundColor: theme.card }]}>
-            <FontAwesome5 name="envelope" size={20} color={theme.textSecondary} style={styles.inputIcon} />
+          <View style={[
+            styles.inputContainer, 
+            { 
+              borderColor: focusedInput === 'email' ? theme.primary : theme.border, 
+              backgroundColor: theme.card,
+              borderWidth: focusedInput === 'email' ? 2 : 1
+            }
+          ]}>
+            <FontAwesome5 
+              name="envelope" 
+              size={20} 
+              color={focusedInput === 'email' ? theme.primary : theme.textSecondary} 
+              style={styles.inputIcon} 
+            />
             <TextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Email"
@@ -244,11 +271,25 @@ export default function RegisterScreen() {
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
+              onFocus={() => setFocusedInput('email')}
+              onBlur={() => setFocusedInput(null)}
             />
           </View>
 
-          <View style={[styles.inputContainer, { borderColor: theme.border, backgroundColor: theme.card }]}>
-            <FontAwesome5 name="lock" size={20} color={theme.textSecondary} style={styles.inputIcon} />
+          <View style={[
+            styles.inputContainer, 
+            { 
+              borderColor: focusedInput === 'password' ? theme.primary : theme.border, 
+              backgroundColor: theme.card,
+              borderWidth: focusedInput === 'password' ? 2 : 1
+            }
+          ]}>
+            <FontAwesome5 
+              name="lock" 
+              size={20} 
+              color={focusedInput === 'password' ? theme.primary : theme.textSecondary} 
+              style={styles.inputIcon} 
+            />
             <TextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Password"
@@ -256,18 +297,32 @@ export default function RegisterScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
+              onFocus={() => setFocusedInput('password')}
+              onBlur={() => setFocusedInput(null)}
             />
             <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
               <FontAwesome5 
                 name={showPassword ? "eye" : "eye-slash"} 
                 size={18} 
-                color={theme.textSecondary} 
-            />
+                color={focusedInput === 'password' ? theme.primary : theme.textSecondary} 
+              />
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.inputContainer, { borderColor: theme.border, backgroundColor: theme.card }]}>
-            <FontAwesome5 name="lock" size={20} color={theme.textSecondary} style={styles.inputIcon} />
+          <View style={[
+            styles.inputContainer, 
+            { 
+              borderColor: focusedInput === 'confirmPassword' ? theme.primary : theme.border, 
+              backgroundColor: theme.card,
+              borderWidth: focusedInput === 'confirmPassword' ? 2 : 1
+            }
+          ]}>
+            <FontAwesome5 
+              name="lock" 
+              size={20} 
+              color={focusedInput === 'confirmPassword' ? theme.primary : theme.textSecondary} 
+              style={styles.inputIcon} 
+            />
             <TextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Confirm Password"
@@ -275,76 +330,87 @@ export default function RegisterScreen() {
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry={!showConfirmPassword}
+              onFocus={() => setFocusedInput('confirmPassword')}
+              onBlur={() => setFocusedInput(null)}
             />
             <TouchableOpacity onPress={toggleConfirmPasswordVisibility} style={styles.eyeIcon}>
               <FontAwesome5 
                 name={showConfirmPassword ? "eye" : "eye-slash"} 
                 size={18} 
-                color={theme.textSecondary} 
-            />
+                color={focusedInput === 'confirmPassword' ? theme.primary : theme.textSecondary} 
+              />
             </TouchableOpacity>
           </View>
 
-          <Text style={[styles.roleTitle, { color: theme.text }]}>I am a:</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>I am a:</Text>
           <View style={styles.roleContainer}>
             <RoleButton role="passenger" title="Passenger" />
             <RoleButton role="driver" title="Driver" />
-            {selectedRole === 'admin' && (
-              <RoleButton role="admin" title="Admin" />
-            )}
           </View>
 
-          {/* Driver-specific fields */}
           {selectedRole === 'driver' && (
-            <View style={[styles.driverContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <Text style={[styles.driverText, { color: theme.text }]}>Driver Information</Text>
-              <View style={[styles.inputContainer, { borderColor: theme.border, backgroundColor: theme.background, marginBottom: 0 }]}>
-                <FontAwesome5 name="car" size={20} color={theme.textSecondary} style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.input, { color: theme.text }]}
-                  placeholder="License Plate Number"
-                  placeholderTextColor={theme.textSecondary}
-                  value={licensePlate}
-                  onChangeText={setLicensePlate}
-                  autoCapitalize="characters"
-                />
-              </View>
-              <Text style={[styles.driverInfo, { color: theme.textSecondary }]}>
-                Your license plate number is required for verification purposes.
-              </Text>
+            <View style={[
+              styles.inputContainer, 
+              { 
+                borderColor: focusedInput === 'licensePlate' ? theme.primary : theme.border, 
+                backgroundColor: theme.card,
+                borderWidth: focusedInput === 'licensePlate' ? 2 : 1,
+                marginTop: 16
+              }
+            ]}>
+              <FontAwesome5 
+                name="car" 
+                size={20} 
+                color={focusedInput === 'licensePlate' ? theme.primary : theme.textSecondary} 
+                style={styles.inputIcon} 
+              />
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                placeholder="License Plate Number"
+                placeholderTextColor={theme.textSecondary}
+                value={licensePlate}
+                onChangeText={setLicensePlate}
+                autoCapitalize="characters"
+                onFocus={() => setFocusedInput('licensePlate')}
+                onBlur={() => setFocusedInput(null)}
+              />
             </View>
           )}
 
-          {/* Student account option - only show for passengers */}
-          {selectedRole === 'passenger' && (
-            <View style={[styles.studentContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <View style={styles.studentToggle}>
-                <Text style={[styles.studentText, { color: theme.text }]}>Student Discount (20% off)</Text>
-                <Switch
-                  value={isStudent}
-                  onValueChange={setIsStudent}
-                  trackColor={{ false: "#767577", true: "#4B6BFE33" }}
-                  thumbColor={isStudent ? theme.primary : "#f4f3f4"}
-                  ios_backgroundColor="#3e3e3e"
-                />
-              </View>
-              
-              {isStudent && (
-                <View style={[styles.inputContainer, { borderColor: theme.border, backgroundColor: theme.background, marginBottom: 0 }]}>
-                  <FontAwesome5 name="id-card" size={20} color={theme.textSecondary} style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.input, { color: theme.text }]}
-                    placeholder="Student ID"
-                    placeholderTextColor={theme.textSecondary}
-                    value={studentId}
-                    onChangeText={setStudentId}
-                  />
-                </View>
-              )}
-              
-              <Text style={[styles.discountInfo, { color: theme.textSecondary }]}>
-                {isStudent ? 'Valid student ID required. Discount applies to all subscription plans.' : 'Enable to get student discount on subscriptions'}
-              </Text>
+          <View style={styles.switchContainer}>
+            <Text style={[styles.switchLabel, { color: theme.text }]}>I am a student</Text>
+            <Switch
+              value={isStudent}
+              onValueChange={setIsStudent}
+              trackColor={{ false: theme.border, true: theme.primary }}
+              thumbColor={Platform.OS === 'ios' ? '#FFFFFF' : isStudent ? theme.primary : '#f4f3f4'}
+            />
+          </View>
+
+          {isStudent && (
+            <View style={[
+              styles.inputContainer, 
+              { 
+                borderColor: focusedInput === 'studentId' ? theme.primary : theme.border, 
+                backgroundColor: theme.card,
+                borderWidth: focusedInput === 'studentId' ? 2 : 1
+              }
+            ]}>
+              <FontAwesome5 
+                name="id-card" 
+                size={20} 
+                color={focusedInput === 'studentId' ? theme.primary : theme.textSecondary} 
+                style={styles.inputIcon} 
+              />
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                placeholder="Student ID"
+                placeholderTextColor={theme.textSecondary}
+                value={studentId}
+                onChangeText={setStudentId}
+                onFocus={() => setFocusedInput('studentId')}
+                onBlur={() => setFocusedInput(null)}
+              />
             </View>
           )}
 
@@ -435,128 +501,107 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    marginBottom: 30,
+    marginBottom: 24,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 16,
-    paddingHorizontal: 12,
-    height: 50,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: 50,
-  },
-  eyeIcon: {
-    padding: 8,
-  },
-  registerButton: {
-    borderRadius: 8,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 24,
-  },
-  registerButtonText: {
-    color: '#fff',
+  sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 12,
   },
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFE5E5',
-    padding: 10,
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
     borderRadius: 8,
+    padding: 12,
     marginBottom: 16,
   },
   errorText: {
     color: '#FF3B30',
-    marginLeft: 10,
+    fontSize: 14,
+    marginLeft: 8,
     flex: 1,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: Platform.OS === 'web' ? 12 : 4,
+    borderWidth: 1,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 12,
+  },
+  eyeIcon: {
+    padding: 8,
+  },
+  roleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  roleButton: {
+    flex: 1,
+    borderWidth: 2,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginHorizontal: 6,
+  },
+  roleButtonText: {
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  switchLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  registerButton: {
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  registerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: 24,
   },
   footerText: {
     fontSize: 14,
-    marginRight: 5,
   },
   loginLink: {
     fontSize: 14,
     fontWeight: 'bold',
-  },
-  roleTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  roleContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  roleButton: {
-    flex: 1,
-    height: 45,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 4,
-    borderRadius: 8,
-  },
-  roleButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  studentContainer: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  studentToggle: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  studentText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  discountInfo: {
-    marginTop: 10,
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-  driverContainer: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  driverText: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 10,
-  },
-  driverInfo: {
-    marginTop: 10,
-    fontSize: 12,
-    fontStyle: 'italic',
+    marginLeft: 8,
   },
 }); 

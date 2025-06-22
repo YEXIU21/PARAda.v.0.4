@@ -23,6 +23,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const { login, isLoading } = useAuth();
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
@@ -111,8 +112,20 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
-          <View style={[styles.inputContainer, { borderColor: theme.border, backgroundColor: theme.card }]}>
-            <FontAwesome5 name="envelope" size={20} color={theme.textSecondary} style={styles.inputIcon} />
+          <View style={[
+            styles.inputContainer, 
+            { 
+              borderColor: focusedInput === 'email' ? theme.primary : theme.border, 
+              backgroundColor: theme.card,
+              borderWidth: focusedInput === 'email' ? 2 : 1
+            }
+          ]}>
+            <FontAwesome5 
+              name="envelope" 
+              size={20} 
+              color={focusedInput === 'email' ? theme.primary : theme.textSecondary} 
+              style={styles.inputIcon} 
+            />
             <TextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Email"
@@ -121,11 +134,25 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
+              onFocus={() => setFocusedInput('email')}
+              onBlur={() => setFocusedInput(null)}
             />
           </View>
 
-          <View style={[styles.inputContainer, { borderColor: theme.border, backgroundColor: theme.card }]}>
-            <FontAwesome5 name="lock" size={20} color={theme.textSecondary} style={styles.inputIcon} />
+          <View style={[
+            styles.inputContainer, 
+            { 
+              borderColor: focusedInput === 'password' ? theme.primary : theme.border, 
+              backgroundColor: theme.card,
+              borderWidth: focusedInput === 'password' ? 2 : 1
+            }
+          ]}>
+            <FontAwesome5 
+              name="lock" 
+              size={20} 
+              color={focusedInput === 'password' ? theme.primary : theme.textSecondary} 
+              style={styles.inputIcon} 
+            />
             <TextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Password"
@@ -133,12 +160,14 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
+              onFocus={() => setFocusedInput('password')}
+              onBlur={() => setFocusedInput(null)}
             />
             <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
               <FontAwesome5 
                 name={showPassword ? "eye" : "eye-slash"} 
                 size={18} 
-                color={theme.textSecondary} 
+                color={focusedInput === 'password' ? theme.primary : theme.textSecondary} 
             />
             </TouchableOpacity>
           </View>
@@ -230,40 +259,59 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    marginBottom: 30,
+    marginBottom: 24,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    marginLeft: 8,
+    flex: 1,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 16,
-    paddingHorizontal: 12,
-    height: 50,
+    paddingHorizontal: 16,
+    paddingVertical: Platform.OS === 'web' ? 12 : 4,
+    borderWidth: 1,
   },
   inputIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   input: {
     flex: 1,
-    height: 50,
+    fontSize: 16,
+    paddingVertical: 12,
   },
   eyeIcon: {
     padding: 8,
   },
   loginButton: {
-    borderRadius: 8,
-    height: 50,
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   loginButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -271,27 +319,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 24,
   },
   footerText: {
     fontSize: 14,
-    marginRight: 5,
   },
   registerLink: {
     fontSize: 14,
     fontWeight: 'bold',
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFE5E5',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  errorText: {
-    color: '#FF3B30',
     marginLeft: 8,
   },
 }); 
