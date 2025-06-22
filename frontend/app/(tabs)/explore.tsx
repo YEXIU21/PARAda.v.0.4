@@ -19,19 +19,19 @@ import {
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
+import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Route as RouteTypeBase, defaultRoutes, RouteStop as RouteStopBase, RoutePoint } from '@/constants/RouteData';
-import { VehicleTypeId, vehicleTypes } from '@/constants/VehicleTypes';
-import * as routeApi from '@/services/api/route.api';
+import { Route as RouteTypeBase, defaultRoutes, RouteStop as RouteStopBase, RoutePoint } from '../../constants/RouteData';
+import { VehicleTypeId, vehicleTypes } from '../../constants/VehicleTypes';
+import * as routeApi from '../../services/api/route.api';
 
 // Import socket service for real-time updates
-import * as locationSocket from '@/services/socket/location.socket';
-import { useAuth } from '@/context/AuthContext';
+import * as locationSocket from '../../services/socket/location.socket';
+import { useAuth } from '../../context/AuthContext';
 
 // Import the VehicleAccess service
-import { hasAccessToVehicleType, getAccessibleVehicleTypes } from '@/services/VehicleAccess';
+import { hasAccessToVehicleType, getAccessibleVehicleTypes } from '../../services/VehicleAccess';
 
 // Extended interfaces for the explore screen
 interface RouteStop extends Partial<RouteStopBase> {

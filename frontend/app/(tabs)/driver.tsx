@@ -15,17 +15,17 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
+import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Route, defaultRoutes } from '@/constants/RouteData';
-import { vehicleTypes } from '@/constants/VehicleTypes';
-import { Notification, Location, Destination } from '@/models/RideTypes';
-import { acceptRide, updateRideStatus } from '@/services/api/ride.api';
-import * as driverApi from '@/services/api/driver.api';
-import * as routeApi from '@/services/api/route.api';
-import { useAuth } from '@/context/AuthContext';
-import MessagingInterface from '@/components/MessagingInterface';
-import { BASE_URL } from '@/services/api/endpoints';
+import { Route, defaultRoutes } from '../../constants/RouteData';
+import { vehicleTypes } from '../../constants/VehicleTypes';
+import { Notification, Location, Destination } from '../../models/RideTypes';
+import { acceptRide, updateRideStatus } from '../../services/api/ride.api';
+import * as driverApi from '../../services/api/driver.api';
+import * as routeApi from '../../services/api/route.api';
+import { useAuth } from '../../context/AuthContext';
+import MessagingInterface from '../../components/MessagingInterface';
+import { BASE_URL } from '../../services/api/endpoints';
 
 // Helper functions for vehicle icons and colors
 const getVehicleIcon = (vehicleType: string) => {
@@ -219,7 +219,7 @@ export default function DriverScreen() {
           
           // Send location update if we're on duty
           if (isOnDuty && driverId) {
-            import('@/services/socket/location.socket').then(socket => {
+            import('../../services/socket/location.socket').then(socket => {
               socket.sendDriverLocation(driverId, location, activeRideId || undefined);
             });
             
@@ -266,7 +266,7 @@ export default function DriverScreen() {
           // Store token to ensure it's available for future API calls
           await AsyncStorage.setItem('token', token);
           
-          const locationSocket = await import('@/services/socket/location.socket');
+          const locationSocket = await import('../../services/socket/location.socket');
           
           // Initialize socket with current driver ID and token
           await locationSocket.initializeLocationSocket(driverId, token);
@@ -397,7 +397,7 @@ export default function DriverScreen() {
       
       // Cleanup function
       return () => {
-        import('@/services/socket/location.socket').then(socket => {
+        import('../../services/socket/location.socket').then(socket => {
           socket.disconnectLocationSocket();
         });
       };
@@ -512,7 +512,7 @@ export default function DriverScreen() {
           
           // Initialize socket for route updates if driver ID is available
           if (driverId) {
-            const locationSocket = await import('@/services/socket/location.socket');
+            const locationSocket = await import('../../services/socket/location.socket');
             
             // Check if socket is already initialized
             if (locationSocket.getLocationSocket()) {
@@ -1018,7 +1018,7 @@ export default function DriverScreen() {
   // Start listening for ride status updates
   const startRideStatusListener = async (rideId: string) => {
     try {
-      const socket = await import('@/services/socket/location.socket');
+      const socket = await import('../../services/socket/location.socket');
       
       // Use a simplified approach for now
       console.log(`Setting up ride status listener for ride ${rideId}`);
@@ -1629,7 +1629,7 @@ export default function DriverScreen() {
                                   console.log('Driver routes saved to AsyncStorage:', updatedRoutes.length);
                                   
                                   // If we have a socket connection, notify about trip start
-                                  const locationSocketModule = await import('@/services/socket/location.socket');
+                                  const locationSocketModule = await import('../../services/socket/location.socket');
                                   if (driverId) {
                                     locationSocketModule.sendDriverLocation(driverId, userLocation || { latitude: 0, longitude: 0 }, route.routeNumber);
                                     
