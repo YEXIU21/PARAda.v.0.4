@@ -163,25 +163,6 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </Link>
           </View>
-
-          <View style={[styles.loginInfoContainer, { backgroundColor: isDarkMode ? theme.card : '#f9f9f9' }]}>
-            <Text style={[styles.loginInfoTitle, { color: theme.text }]}>Test Accounts (MongoDB)</Text>
-            <View style={[styles.credentialBox, { backgroundColor: isDarkMode ? '#272727' : '#fff', borderColor: theme.border }]}>
-              <Text style={[styles.credentialTitle, { color: theme.text }]}>Admin</Text>
-              <Text style={[styles.credentialText, { color: theme.textSecondary }]}>Email: admin@parada.com</Text>
-              <Text style={[styles.credentialText, { color: theme.textSecondary }]}>Password: admin123</Text>
-            </View>
-            <View style={[styles.credentialBox, { backgroundColor: isDarkMode ? '#272727' : '#fff', borderColor: theme.border }]}>
-              <Text style={[styles.credentialTitle, { color: theme.text }]}>Driver</Text>
-              <Text style={[styles.credentialText, { color: theme.textSecondary }]}>Email: driver@parada.com</Text>
-              <Text style={[styles.credentialText, { color: theme.textSecondary }]}>Password: driver123</Text>
-            </View>
-            <View style={[styles.credentialBox, { backgroundColor: isDarkMode ? '#272727' : '#fff', borderColor: theme.border }]}>
-              <Text style={[styles.credentialTitle, { color: theme.text }]}>Passenger</Text>
-              <Text style={[styles.credentialText, { color: theme.textSecondary }]}>Email: passenger@example.com</Text>
-              <Text style={[styles.credentialText, { color: theme.textSecondary }]}>Password: passenger123</Text>
-            </View>
-          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -312,31 +293,5 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#FF3B30',
     marginLeft: 8,
-  },
-  loginInfoContainer: {
-    marginTop: 40,
-    padding: 16,
-    borderRadius: 8,
-  },
-  loginInfoTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  credentialBox: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 10,
-    borderWidth: 1,
-  },
-  credentialTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  credentialText: {
-    fontSize: 14,
-    marginBottom: 4,
   },
 }); 
