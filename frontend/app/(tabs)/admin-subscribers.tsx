@@ -12,10 +12,10 @@ import {
   RefreshControl
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useTheme, getThemeColors } from '@/context/ThemeContext';
-import { getSubscriptions, verifySubscription, cancelSubscription } from '@/services/api/admin.api';
+import { useTheme, getThemeColors } from '../../context/ThemeContext';
+import { getSubscriptions, verifySubscription, cancelSubscription } from '../../services/api/admin.api';
 import { LinearGradient } from 'expo-linear-gradient';
-import ConfirmationModal from '@/components/ConfirmationModal';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 // Define interfaces for API data
 interface Subscription {
