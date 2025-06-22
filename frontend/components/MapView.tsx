@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import WebMapView from './WebMapView';
 import { usePathname } from 'expo-router';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 // Only import react-native-maps on non-web platforms
 let NativeMapView: any = null;
