@@ -14,7 +14,7 @@ import {
   Platform,
   TouchableWithoutFeedback
 } from 'react-native';
-import MapView, { Marker, Polyline } from '@/components/MapView';
+import MapView, { Marker, Polyline } from '../../components/MapView';
 import * as Location from 'expo-location';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -22,14 +22,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Import API services
-import { getSubscriptionPlans, getUserSubscription, createSubscription } from '@/services/api/subscription.api';
-import { BASE_URL } from '@/services/api/api.config';
-import * as routeApi from '@/services/api/route.api';
-import * as locationSocket from '@/services/socket/location.socket';
-import { initializeSocket, disconnectSocket } from '@/services/socket/socket.service';
+import { getSubscriptionPlans, getUserSubscription, createSubscription } from '../../services/api/subscription.api';
+import { BASE_URL } from '../../services/api/api.config';
+import * as routeApi from '../../services/api/route.api';
+import * as locationSocket from '../../services/socket/location.socket';
+import { initializeSocket, disconnectSocket } from '../../services/socket/socket.service';
 
 // Import the VehicleAccess service
-import { hasAccessToVehicleType, getAccessibleVehicleTypes } from '@/services/VehicleAccess';
+import { hasAccessToVehicleType, getAccessibleVehicleTypes } from '../../services/VehicleAccess';
 
 // Add type definition for subscription
 interface SubscriptionResponse {
@@ -51,43 +51,43 @@ interface SubscriptionResponse {
 }
 
 // Components
-import FeedbackForm from '@/components/FeedbackForm';
-import { scheduleVehicleArrivalNotification } from '@/components/NotificationService';
-import VehicleTypeModal from '@/components/VehicleTypeModal';
-import SubscriptionView from '@/components/SubscriptionView';
-import DestinationModal from '@/components/DestinationModal';
-import NoSubscriptionOverlay from '@/components/NoSubscriptionOverlay';
-import RequestRideModal from '@/components/RequestRideModal';
-import RideStatusCard from '@/components/RideStatusCard';
-import AdminDashboard from '@/components/AdminDashboard';
-import GCashPaymentModal from '@/components/GCashPaymentModal';
+import FeedbackForm from '../../components/FeedbackForm';
+import { scheduleVehicleArrivalNotification } from '../../components/NotificationService';
+import VehicleTypeModal from '../../components/VehicleTypeModal';
+import SubscriptionView from '../../components/SubscriptionView';
+import DestinationModal from '../../components/DestinationModal';
+import NoSubscriptionOverlay from '../../components/NoSubscriptionOverlay';
+import RequestRideModal from '../../components/RequestRideModal';
+import RideStatusCard from '../../components/RideStatusCard';
+import AdminDashboard from '../../components/AdminDashboard';
+import GCashPaymentModal from '../../components/GCashPaymentModal';
 
 // Context
-import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 // Constants and Types
-import { lightMapStyle, darkMapStyle } from '@/constants/MapStyles';
-import { Subscription, defaultSubscriptionPlans, SubscriptionId } from '@/constants/SubscriptionPlans';
-import { vehicleTypes, VehicleTypeId } from '@/constants/VehicleTypes';
-import { Vehicle, defaultVehicles } from '@/constants/VehicleData';
-import { Route, defaultRoutes } from '@/constants/RouteData';
-import { defaultPassengers } from '@/constants/PassengerData';
+import { lightMapStyle, darkMapStyle } from '../../constants/MapStyles';
+import { Subscription, defaultSubscriptionPlans, SubscriptionId } from '../../constants/SubscriptionPlans';
+import { vehicleTypes, VehicleTypeId } from '../../constants/VehicleTypes';
+import { Vehicle, defaultVehicles } from '../../constants/VehicleData';
+import { Route, defaultRoutes } from '../../constants/RouteData';
+import { defaultPassengers } from '../../constants/PassengerData';
 import { 
   Passenger, 
   RideStatus, 
   PassengerStatus,
   Destination
-} from '@/models/RideTypes';
+} from '../../models/RideTypes';
 
 // Styles
-import { homeScreenStyles } from '@/styles/HomeScreenStyles';
+import { homeScreenStyles } from '../../styles/HomeScreenStyles';
 
 // Ensure images are available
 const paymentImages = {
-  gcash: require('@/assets/images/gcash.jpg'),
-  logo: require('@/assets/images/PARAdalogo.jpg'),
-  instapay: require('@/assets/images/gcash.jpg') // Using gcash.jpg as a placeholder for the InstaPay QR code
+  gcash: require('../../assets/images/gcash.jpg'),
+  logo: require('../../assets/images/PARAdalogo.jpg'),
+  instapay: require('../../assets/images/gcash.jpg') // Using gcash.jpg as a placeholder for the InstaPay QR code
 };
 
 
@@ -1057,7 +1057,7 @@ export default function HomeScreen() {
           <View style={homeScreenStyles.headerContent}>
             <View style={homeScreenStyles.logoContainer}>
               <Image 
-                source={require('@/assets/images/PARAdalogo.jpg')} 
+                source={require('../../assets/images/PARAdalogo.jpg')} 
                 style={homeScreenStyles.logo} 
                 resizeMode="contain"
               />
@@ -1316,7 +1316,7 @@ export default function HomeScreen() {
             setIsRequestingRide(true);
             
             // Use the ride API service
-            import('@/services/api/ride.api').then(rideApi => {
+            import('../../services/api/ride.api').then(rideApi => {
               const rideData = {
                 pickupLocation: {
                   latitude: location.coords.latitude,
