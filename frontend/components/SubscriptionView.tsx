@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Subscription, SubscriptionId } from '@/constants/SubscriptionPlans';
+import { Subscription, SubscriptionId } from '../constants/SubscriptionPlans';
 
 interface SubscriptionViewProps {
   subscriptionPlans: Subscription[];

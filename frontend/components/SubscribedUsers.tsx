@@ -12,9 +12,9 @@ import {
 import { FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getAllSubscriptions, approveSubscriptionByReference, verifySubscription, cancelSubscription, getPendingSubscriptions, adminPendingSubscriptions, getVerifiedSubscriptions } from '@/services/api/subscription.api';
-import { initializeSocket } from '@/services/socket/socket.service';
-import { subscribeToSubscriptionEvents, unsubscribeFromSubscriptionEvents, subscribeToAdminEvents, unsubscribeFromAdminEvents } from '@/services/socket/subscription.socket';
+import { getAllSubscriptions, approveSubscriptionByReference, verifySubscription, cancelSubscription, getPendingSubscriptions, adminPendingSubscriptions, getVerifiedSubscriptions } from '../services/api/subscription.api';
+import { initializeSocket } from '../services/socket/socket.service';
+import { subscribeToSubscriptionEvents, unsubscribeFromSubscriptionEvents, subscribeToAdminEvents, unsubscribeFromAdminEvents } from '../services/socket/subscription.socket';
 
 const { width } = Dimensions.get('window');
 
