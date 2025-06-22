@@ -34,6 +34,9 @@ const PORT = process.env.PORT || 5000;
 // Create HTTP server
 const server = http.createServer(app);
 
+// Check if we're in a serverless environment
+const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSION;
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -59,7 +62,8 @@ app.use(cors({
       'https://parada-web.netlify.app',
       'https://parada.app',
       'https://parada.vercel.app',
-      'https://parada-web.vercel.app'
+      'https://parada-web.vercel.app',
+      'https://parada-v-0-1.vercel.app'
     ];
     
     // Check if origin is allowed or if we're in development mode
@@ -122,21 +126,28 @@ app.use((err, req, res, next) => {
 // Connect to MongoDB
 connectDB()
   .then(() => {
-    // Start the server
-    server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-    
-    // Initialize Socket.io server
-    const io = socketService.initializeSocketServer(server);
-    console.log('Socket.io server initialized');
-    
-    // Make socket.io instance available globally
-    global.io = io;
+    // Only start the server if not in a serverless environment
+    if (!isServerless) {
+      // Start the server
+      server.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+      
+      // Initialize Socket.io server
+      const io = socketService.initializeSocketServer(server);
+      console.log('Socket.io server initialized');
+      
+      // Make socket.io instance available globally
+      global.io = io;
+    } else {
+      console.log('Running in serverless environment, skipping server.listen()');
+    }
   })
   .catch(err => {
     console.error('Failed to connect to MongoDB:', err);
-    process.exit(1);
+    if (!isServerless) {
+      process.exit(1);
+    }
   });
 
 module.exports = server; // Export for testing purposes 

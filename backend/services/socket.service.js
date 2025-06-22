@@ -21,8 +21,17 @@ const activeRides = new Map();
 // Store driver connections by driver ID
 const driverConnections = new Map();
 
+// Check if we're in a serverless environment
+const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSION;
+
 // Initialize socket.io server
 const initializeSocketServer = (server) => {
+  // Skip socket initialization in serverless environments
+  if (isServerless) {
+    console.log('Running in serverless environment, skipping socket.io initialization');
+    return null;
+  }
+  
   const io = socketIO(server, {
     cors: {
       origin: process.env.FRONTEND_URL || '*',
