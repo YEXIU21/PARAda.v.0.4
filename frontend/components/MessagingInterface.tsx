@@ -175,21 +175,25 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
       let successCount = 0;
       for (const reply of replies) {
         try {
+          // Determine which event to emit based on stored eventName or user role
+          const eventName = reply.eventName || (user?.role === 'driver' ? 'driver_reply' : 'passenger_reply');
+          
           // Use a promise to handle the socket emit with callback
           await new Promise((resolve, reject) => {
-            socket.emit('driver_reply', reply, (response) => {
+            socket.emit(eventName, reply, (response) => {
               if (response && response.success) {
+                console.log(`Successfully sent pending ${eventName}`);
                 successCount++;
                 resolve(response);
               } else {
-                reject(new Error('Failed to send reply'));
+                reject(new Error(`Failed to send ${eventName}`));
               }
             });
             
             // Add timeout
             setTimeout(() => {
               reject(new Error('Socket reply timed out'));
-            }, 3000);
+            }, 5000);
           });
         } catch (replyError) {
           console.error('Error sending pending reply:', replyError);
@@ -553,16 +557,17 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
       
       // Create a reply message
       const replyData = {
-        title: `Reply from ${user?.username || 'Driver'}: ${selectedMessage.title.substring(0, 30)}`,
+        title: `Reply from ${user?.username || 'User'}: ${selectedMessage.title.substring(0, 30)}`,
         message: replyText,
         type: 'info',
         category: 'reply',
         userId: 'admin', // This will be replaced with actual admin ID on the server
         data: {
           inReplyTo: selectedMessage._id,
-          fromDriver: true,
-          driverId: user?.id,
-          driverName: user?.username,
+          fromDriver: user?.role === 'driver',
+          fromPassenger: user?.role === 'passenger',
+          userId: user?.id,
+          userName: user?.username,
           originalMessage: selectedMessage.message.substring(0, 100) + (selectedMessage.message.length > 100 ? '...' : '')
         }
       };
@@ -571,14 +576,60 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
       const socket = getSocket();
       if (socket && socket.connected) {
         // Emit the event with acknowledgment callback
-        socket.emit('driver_reply', replyData, (response) => {
-          if (response && response.success) {
-            console.log('Reply sent successfully via socket');
+        const eventName = user?.role === 'driver' ? 'driver_reply' : 'passenger_reply';
+        
+        try {
+          // Use a promise to handle the socket emit with callback
+          await new Promise((resolve, reject) => {
+            socket.emit(eventName, replyData, (response) => {
+              if (response && response.success) {
+                console.log(`Reply sent successfully via socket (${eventName})`);
+                resolve(response);
+              } else {
+                reject(new Error('Failed to send reply'));
+              }
+            });
             
-            // Show success message
+            // Add timeout
+            setTimeout(() => {
+              reject(new Error('Socket reply timed out'));
+            }, 5000);
+          });
+          
+          // Show success message
+          Alert.alert(
+            'Reply Sent',
+            'Your reply has been sent to the administrator.',
+            [{ text: 'OK' }]
+          );
+          
+          // Reset state
+          setReplyText('');
+          setShowReplyModal(false);
+          setSelectedMessage(null);
+          
+        } catch (socketError) {
+          console.error('Socket error when sending reply:', socketError);
+          
+          // Store the reply locally to be sent when socket reconnects
+          try {
+            const pendingReplies = await AsyncStorage.getItem('pendingReplies');
+            let replies = pendingReplies ? JSON.parse(pendingReplies) : [];
+            
+            // Add this reply to the pending list
+            replies.push({
+              ...replyData,
+              timestamp: new Date().toISOString(),
+              eventName
+            });
+            
+            // Save back to AsyncStorage
+            await AsyncStorage.setItem('pendingReplies', JSON.stringify(replies));
+            
+            // Show message to user
             Alert.alert(
-              'Reply Sent',
-              'Your reply has been sent to the administrator.',
+              'Reply Queued',
+              'You appear to be offline. Your reply will be sent when you reconnect.',
               [{ text: 'OK' }]
             );
             
@@ -586,37 +637,18 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
             setReplyText('');
             setShowReplyModal(false);
             setSelectedMessage(null);
-          } else {
-            console.error('Socket error:', response);
+          } catch (storageError) {
+            console.error('Error storing pending reply:', storageError);
+            
             Alert.alert(
               'Error',
-              'Failed to send reply. Please try again later.',
+              'Failed to send or store reply. Please try again later.',
               [{ text: 'OK' }]
             );
           }
-          
-          setIsLoading(false);
-        });
+        }
         
-        // Add a timeout in case the socket doesn't respond
-        setTimeout(() => {
-          if (isLoading) {
-            console.log('Socket reply timed out, but message might have been delivered');
-            
-            // Show success message anyway since the message might have been delivered
-            Alert.alert(
-              'Reply Sent',
-              'Your reply has been sent to the administrator.',
-              [{ text: 'OK' }]
-            );
-            
-            // Reset state
-            setReplyText('');
-            setShowReplyModal(false);
-            setSelectedMessage(null);
-            setIsLoading(false);
-          }
-        }, 3000);
+        setIsLoading(false);
       } else {
         // Socket not connected
         console.error('Socket not connected for sending reply');
@@ -626,10 +658,14 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
           const pendingReplies = await AsyncStorage.getItem('pendingReplies');
           let replies = pendingReplies ? JSON.parse(pendingReplies) : [];
           
+          // Determine event name based on user role
+          const eventName = user?.role === 'driver' ? 'driver_reply' : 'passenger_reply';
+          
           // Add this reply to the pending list
           replies.push({
             ...replyData,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            eventName
           });
           
           // Save back to AsyncStorage
