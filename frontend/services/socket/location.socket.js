@@ -215,7 +215,7 @@ export const initializeLocationSocket = async (clientId, token) => {
       socket = io(socketUrl, {
         query: { id: clientId },
         auth: { token },
-        transports: ['polling', 'websocket'], // Always use polling as primary transport for better compatibility
+        transports: ['polling'], // Use only HTTP polling for better compatibility with Vercel
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
