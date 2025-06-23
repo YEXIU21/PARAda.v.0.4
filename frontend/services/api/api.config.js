@@ -13,7 +13,7 @@ export const BASE_URL = (() => {
                    window.location.hostname.includes('parada'));
   
   // Use environment-specific URL
-  const url = isVercel ? 'https://paradacebubackendv1.vercel.app' : ENV.apiUrl;
+  const url = isVercel ? 'https://parada-backend.onrender.com' : ENV.apiUrl;
   
   console.log('Using API URL:', url);
   console.log('Environment:', isVercel ? 'production (Vercel)' : 'development');

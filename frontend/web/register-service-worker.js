@@ -1,14 +1,29 @@
 // Register service worker for PWA functionality
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
+    // Use a relative path that works in any deployment environment
+    const swPath = '/service-worker.js';
+    
+    // Check if the service worker file exists before trying to register it
+    fetch(swPath)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Service worker file not found: ${response.status}`);
+        }
+        
+        // File exists, proceed with registration
+        return navigator.serviceWorker.register(swPath);
+      })
       .then(registration => {
         console.log('Service Worker registered with scope:', registration.scope);
       })
       .catch(error => {
-        console.error('Service Worker registration failed:', error);
+        console.warn('Service Worker registration failed:', error.message);
+        // Don't throw an error that would break the app
       });
   });
+} else {
+  console.log('Service Worker is not supported in this browser');
 }
 
 // Add a custom event to trigger PWA installation

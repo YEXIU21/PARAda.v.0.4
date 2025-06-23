@@ -11,7 +11,7 @@ export const BASE_URL = (() => {
                    window.location.hostname.includes('parada'));
   
   // Use environment-specific URL
-  const url = isVercel ? 'https://paradacebubackendv1.vercel.app' : 'http://localhost:5000';
+  const url = isVercel ? 'https://parada-backend.onrender.com' : 'http://localhost:5000';
   
   console.log('Using endpoints API URL:', url);
   
