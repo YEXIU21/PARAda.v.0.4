@@ -37,6 +37,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<boolean>;
   updateProfile: (userData: Partial<User>) => Promise<boolean>;
   refreshUserSubscription: () => Promise<boolean>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
 }
 
 // Create the auth context
@@ -572,6 +573,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Change password function
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
+    try {
+      if (!user) return false;
+      
+      // Import changePassword function dynamically to avoid circular dependencies
+      const { changePassword: apiChangePassword } = require('../services/api/auth.api');
+      
+      // Call the API to change password
+      await apiChangePassword(user.id, currentPassword, newPassword);
+      return true;
+    } catch (error) {
+      console.error('Password change error:', error);
+      throw error; // Rethrow to handle in the component
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -581,7 +599,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       resetPassword,
       updateProfile,
-      refreshUserSubscription
+      refreshUserSubscription,
+      changePassword
     }}>
       {children}
     </AuthContext.Provider>

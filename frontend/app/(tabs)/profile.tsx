@@ -11,6 +11,7 @@ import {
   TextInput,
   Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -204,8 +205,10 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { changePassword } = useAuth();
   
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       Alert.alert('Error', 'All fields are required');
       return;
@@ -216,9 +219,23 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
       return;
     }
     
-    // Implement password change logic here
-    Alert.alert('Success', 'Password changed successfully');
-    onClose();
+    try {
+      setIsSubmitting(true);
+      await changePassword(currentPassword, newPassword);
+      Alert.alert('Success', 'Password changed successfully');
+      
+      // Reset form and close modal
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      onClose();
+    } catch (error: any) {
+      // Display error message from API or a generic message
+      const errorMessage = error.message || 'Failed to change password. Please try again.';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
@@ -283,10 +300,15 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
           </View>
           
           <TouchableOpacity 
-            style={[styles.saveButton, { backgroundColor: theme.primary }]}
+            style={[styles.saveButton, { backgroundColor: theme.primary, opacity: isSubmitting ? 0.7 : 1 }]}
             onPress={handleChangePassword}
+            disabled={isSubmitting}
           >
-            <Text style={styles.saveButtonText}>Update Password</Text>
+            {isSubmitting ? (
+              <ActivityIndicator color="white" size="small" />
+            ) : (
+              <Text style={styles.saveButtonText}>Update Password</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>

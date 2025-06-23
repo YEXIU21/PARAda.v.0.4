@@ -4,6 +4,7 @@
  */
 const { validationResult } = require('express-validator');
 const User = require('../models/user.model');
+const bcrypt = require('bcryptjs');
 
 /**
  * Get all users (admin only)
@@ -240,6 +241,71 @@ exports.registerPushToken = async (req, res) => {
     console.error('Error registering push token:', error);
     return res.status(500).json({
       message: 'Error registering push notification token',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Change user password
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} - Response with success message or error
+ */
+exports.changePassword = async (req, res) => {
+  try {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        message: 'Validation error', 
+        errors: errors.array() 
+      });
+    }
+    
+    const { userId } = req.params;
+    const { currentPassword, newPassword } = req.body;
+    
+    // Check if user is updating their own password or is admin
+    if (userId !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({
+        message: 'You are not authorized to change this user\'s password'
+      });
+    }
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+    
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        message: 'Current password is incorrect'
+      });
+    }
+    
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Update password
+    user.password = hashedPassword;
+    user.updatedAt = new Date();
+    
+    await user.save();
+    
+    return res.status(200).json({
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    return res.status(500).json({
+      message: 'Error changing password',
       error: error.message
     });
   }

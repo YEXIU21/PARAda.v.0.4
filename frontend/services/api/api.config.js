@@ -66,6 +66,7 @@ export const ENDPOINTS = {
   USER: {
     PROFILE: '/api/users/profile',
     UPDATE: '/api/users/profile',
+    CHANGE_PASSWORD: (id) => `/api/users/${id}/password`,
   },
   
   // Notification endpoints

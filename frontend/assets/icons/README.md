@@ -1,29 +1,25 @@
 # PWA Icons
 
-The PWA manifest is configured to use properly sized PNG icons, but they need to be created manually.
+This project uses a single high-resolution icon file for all PWA icon sizes.
 
-## Required Icon Sizes
+## Icon Source
 
-Please create the following PNG icons from the original-logo.jpg:
+The main icon file is located at:
+- `frontend/assets/images/adaptive-icon.png`
 
-- icon-72x72.png
-- icon-96x96.png
-- icon-128x128.png
-- icon-144x144.png
-- icon-152x152.png
-- icon-192x192.png
-- icon-384x384.png
-- icon-512x512.png
+This file is referenced directly in the PWA manifest (`frontend/web/manifest.json`) for all icon sizes.
 
-You can use an online tool like:
-- https://www.iloveimg.com/resize-image
-- https://squoosh.app/
-- https://imageresizer.com/
+## Why a Single Icon?
 
-## Important Tips for Sharp Icons
+Using a single high-resolution icon file (512x512px or larger) allows modern browsers to automatically resize the icon as needed for different contexts, which:
+- Simplifies icon management
+- Ensures consistent appearance across devices
+- Reduces the number of files to maintain
 
-1. Use PNG format (not JPEG) for better quality with transparency
-2. Make sure each icon is exactly the specified size (e.g., 72x72 pixels)
-3. Use high-quality resizing algorithms to avoid blurriness
-4. Ensure the icon has good contrast against both light and dark backgrounds
-5. Consider adding a small padding around the logo within the icon
+## Icon Requirements
+
+For optimal display, the icon should:
+- Be at least 512x512 pixels
+- Use PNG format with transparency
+- Have good contrast against both light and dark backgrounds
+- Include a small padding around the logo within the icon 

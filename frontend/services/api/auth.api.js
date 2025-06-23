@@ -274,4 +274,40 @@ export const refreshUserData = async () => {
     console.error('Error refreshing user data:', error);
     throw error;
   }
+};
+
+/**
+ * Change user password
+ * @param {string} userId - User ID
+ * @param {string} currentPassword - Current password
+ * @param {string} newPassword - New password
+ * @returns {Promise<Object>} - Response with success message
+ */
+export const changePassword = async (userId, currentPassword, newPassword) => {
+  try {
+    const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+
+    const response = await axios.put(
+      `${BASE_URL}${ENDPOINTS.USER.CHANGE_PASSWORD(userId)}`,
+      { currentPassword, newPassword },
+      {
+        headers: { 'x-access-token': token }
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error changing password:', error);
+    if (error.response) {
+      console.error('Status:', error.response.status);
+      console.error('Data:', error.response.data);
+      
+      // Throw specific error message from backend if available
+      if (error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      }
+    }
+    throw error;
+  }
 }; 

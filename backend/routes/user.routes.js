@@ -91,4 +91,23 @@ router.post(
   userController.registerPushToken
 );
 
+/**
+ * @route PUT /api/users/:userId/password
+ * @desc Change user password
+ * @access Private
+ */
+router.put(
+  '/:userId/password',
+  [
+    authMiddleware.verifyToken,
+    body('currentPassword')
+      .exists()
+      .withMessage('Current password is required'),
+    body('newPassword')
+      .isLength({ min: 6 })
+      .withMessage('New password must be at least 6 characters')
+  ],
+  userController.changePassword
+);
+
 module.exports = router; 
