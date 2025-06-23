@@ -70,6 +70,8 @@ app.use(cors({
       'https://paradav1.vercel.app',
       'https://parada1.vercel.app',
       'https://paradabackendv1.vercel.app',
+      'https://paradacebuv1.vercel.app',
+      'https://paradacebubackendv1.vercel.app',
       'https://parada-frontend.vercel.app'
     ];
     

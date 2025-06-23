@@ -12,7 +12,7 @@ export const BASE_URL = (() => {
                   window.location.hostname.includes('vercel.app');
   
   // Use environment-specific URL
-  const url = isVercel ? 'https://paradabackendv1.vercel.app' : ENV.apiUrl;
+  const url = isVercel ? 'https://paradacebubackendv1.vercel.app' : ENV.apiUrl;
   
   console.log('Using API URL:', url);
   console.log('Environment:', isVercel ? 'production (Vercel)' : 'development');
