@@ -28,15 +28,18 @@ export default function RootLayout() {
         const storedUser = await AsyncStorage.getItem('user');
         
         // If we have a user in storage and we're on the landing page, redirect to the app
-        if (storedUser && (window.location.pathname === '/' || window.location.pathname === '/auth/login')) {
-          router.replace('/(tabs)');
-          
-          // Initialize socket connection for logged-in users
-          try {
-            await initializeSocket();
-            console.log('Socket connection initialized');
-          } catch (socketError) {
-            console.error('Failed to initialize socket:', socketError);
+        if (storedUser && Platform.OS === 'web') {
+          const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+          if (pathname === '/' || pathname === '/auth/login') {
+            router.replace('/(tabs)');
+            
+            // Initialize socket connection for logged-in users
+            try {
+              await initializeSocket();
+              console.log('Socket connection initialized');
+            } catch (socketError) {
+              console.error('Failed to initialize socket:', socketError);
+            }
           }
         }
       } catch (error) {
@@ -47,45 +50,53 @@ export default function RootLayout() {
     checkAuthStatus();
 
     // Add PWA meta tags and script for web platform
-    if (Platform.OS === 'web') {
-      // Add meta tags
-      const metaViewport = document.createElement('meta');
-      metaViewport.name = 'viewport';
-      metaViewport.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
-      document.head.appendChild(metaViewport);
-      
-      const metaThemeColor = document.createElement('meta');
-      metaThemeColor.name = 'theme-color';
-      metaThemeColor.content = '#4B6BFE';
-      document.head.appendChild(metaThemeColor);
-      
-      const metaAppleMobileWebAppCapable = document.createElement('meta');
-      metaAppleMobileWebAppCapable.name = 'apple-mobile-web-app-capable';
-      metaAppleMobileWebAppCapable.content = 'yes';
-      document.head.appendChild(metaAppleMobileWebAppCapable);
-      
-      const metaAppleMobileWebAppStatusBarStyle = document.createElement('meta');
-      metaAppleMobileWebAppStatusBarStyle.name = 'apple-mobile-web-app-status-bar-style';
-      metaAppleMobileWebAppStatusBarStyle.content = 'black-translucent';
-      document.head.appendChild(metaAppleMobileWebAppStatusBarStyle);
-      
-      // Add manifest link
-      const linkManifest = document.createElement('link');
-      linkManifest.rel = 'manifest';
-      linkManifest.href = '/manifest.json';
-      document.head.appendChild(linkManifest);
-      
-      // Add apple touch icon
-      const linkAppleTouchIcon = document.createElement('link');
-      linkAppleTouchIcon.rel = 'apple-touch-icon';
-      linkAppleTouchIcon.href = '/assets/images/PARAdalogo.jpg';
-      document.head.appendChild(linkAppleTouchIcon);
-      
-      // Add service worker registration script
-      const script = document.createElement('script');
-      script.src = '/register-service-worker.js';
-      script.defer = true;
-      document.body.appendChild(script);
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      try {
+        // Add meta tags
+        const addMetaTag = (name: string, content: string) => {
+          // Check if meta tag already exists
+          let metaTag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
+          if (!metaTag) {
+            metaTag = document.createElement('meta');
+            metaTag.name = name;
+            metaTag.content = content;
+            document.head.appendChild(metaTag);
+          } else {
+            metaTag.content = content;
+          }
+        };
+        
+        addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+        addMetaTag('theme-color', '#4B6BFE');
+        addMetaTag('apple-mobile-web-app-capable', 'yes');
+        addMetaTag('apple-mobile-web-app-status-bar-style', 'black-translucent');
+        
+        // Add manifest link if it doesn't exist
+        if (!document.querySelector('link[rel="manifest"]')) {
+          const linkManifest = document.createElement('link');
+          linkManifest.rel = 'manifest';
+          linkManifest.href = '/manifest.json';
+          document.head.appendChild(linkManifest);
+        }
+        
+        // Add apple touch icon if it doesn't exist
+        if (!document.querySelector('link[rel="apple-touch-icon"]')) {
+          const linkAppleTouchIcon = document.createElement('link');
+          linkAppleTouchIcon.rel = 'apple-touch-icon';
+          linkAppleTouchIcon.href = '/assets/images/PARAdalogo.jpg';
+          document.head.appendChild(linkAppleTouchIcon);
+        }
+        
+        // Add service worker registration script if it doesn't exist
+        if (!document.querySelector('script[src="/register-service-worker.js"]')) {
+          const script = document.createElement('script');
+          script.src = '/register-service-worker.js';
+          script.defer = true;
+          document.body.appendChild(script);
+        }
+      } catch (error) {
+        console.error('Error setting up PWA elements:', error);
+      }
     }
   }, []);
 
@@ -102,7 +113,7 @@ export default function RootLayout() {
           </Stack>
           <ThemedStatusBar />
           {/* Only show PWA install prompt on pages other than landing page */}
-          {Platform.OS === 'web' && window.location.pathname !== '/' && <PWAInstallPrompt />}
+          {Platform.OS === 'web' && typeof window !== 'undefined' && window.location.pathname !== '/' && <PWAInstallPrompt />}
         </NotificationService>
       </ThemeProvider>
     </AuthProvider>

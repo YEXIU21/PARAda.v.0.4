@@ -41,7 +41,8 @@ function getSocketUrl() {
   // Check if we're running on Vercel (production)
   const isVercel = typeof window !== 'undefined' && 
                   window.location && 
-                  window.location.hostname.includes('vercel.app');
+                  (window.location.hostname.includes('vercel.app') || 
+                   window.location.hostname.includes('parada'));
   
   // Use environment-specific URL
   let url = isVercel ? 'https://paradacebubackendv1.vercel.app' : API_URL;
@@ -215,11 +216,13 @@ export const initializeLocationSocket = async (clientId, token) => {
       socket = io(socketUrl, {
         query: { id: clientId },
         auth: { token },
-        transports: ['polling'], // Use only HTTP polling for better compatibility with Vercel
+        transports: ['polling', 'websocket'], // Always start with polling for better compatibility
         reconnection: true,
-        reconnectionAttempts: 5,
+        reconnectionAttempts: 10,
         reconnectionDelay: 1000,
-        timeout: 20000
+        timeout: 20000,
+        path: '/socket.io/',
+        forceNew: true
       });
       
       // Set up event handlers
@@ -232,9 +235,9 @@ export const initializeLocationSocket = async (clientId, token) => {
           socketInitializing = false;
           console.error('Socket connection timeout after 10 seconds');
           
-          if (FALLBACK_HTTP_POLLING && socket.io?.opts?.transports?.[0] === 'websocket') {
-            console.log('Falling back to HTTP polling');
-            socket.io.opts.transports = ['polling', 'websocket'];
+          if (socket.io?.opts?.transports?.includes('websocket')) {
+            console.log('WebSocket connection failed, falling back to HTTP polling only');
+            socket.io.opts.transports = ['polling'];
             resolve(socket); // Resolve with the socket even though it's not connected yet
           } else {
             reject(new Error('Connection timeout'));
@@ -243,21 +246,41 @@ export const initializeLocationSocket = async (clientId, token) => {
       }, 10000);
       
       // Clear timeout when connected
-        socket.on('connect', () => {
-          clearTimeout(connectionTimeout);
-          socketInitializing = false;
-          resolve(socket);
-        });
-        
-      // Reject on connection error
-        socket.on('connect_error', (error) => {
+      socket.on('connect', () => {
         clearTimeout(connectionTimeout);
-          socketInitializing = false;
+        socketInitializing = false;
+        resolve(socket);
+      });
+      
+      // Handle connection errors
+      socket.on('connect_error', (error) => {
+        console.error('Socket connection error:', error);
+        
+        // If WebSocket fails, try polling only
+        if (socket.io?.opts?.transports?.includes('websocket')) {
+          console.log('Falling back to polling transport only');
+          socket.io.opts.transports = ['polling'];
+        }
+      });
+      
+      // Handle connection timeout
+      socket.on('connect_timeout', () => {
+        console.error('Socket connection timeout');
+        socketFailedAttempts++;
+        socketInitializing = false;
+        reject(new Error('Connection timeout'));
+      });
+      
+      // Handle errors
+      socket.on('error', (error) => {
+        console.error('Socket error:', error);
+        socketInitializing = false;
         reject(error);
-        });
+      });
     } catch (error) {
       console.error('Error initializing socket:', error);
       socketInitializing = false;
+      socketFailedAttempts++;
       reject(error);
     }
   });
