@@ -6,7 +6,8 @@
 // Check if we're running on Vercel (production)
 const isVercel = typeof window !== 'undefined' && 
                 window.location && 
-                window.location.hostname.includes('vercel.app');
+                (window.location.hostname.includes('vercel.app') || 
+                 window.location.hostname.includes('parada'));
 
 const isProduction = process.env.NEXT_PUBLIC_ENV === 'production' || isVercel;
 
@@ -20,7 +21,8 @@ const env = {
   apiUrl: API_URL,
   googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
   googleMapsId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID || '',
-  isProduction
+  isProduction,
+  isVercel
 };
 
 console.log('Environment configured:', {

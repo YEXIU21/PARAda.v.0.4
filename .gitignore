@@ -59,6 +59,7 @@ logs/
 # Ignore specific files
 infinity.py
 infinity copy.py
+rules.md
 
 # Ignore .cursor folder
 .cursor/

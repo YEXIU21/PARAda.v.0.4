@@ -34,10 +34,12 @@ const initializeSocketServer = (server) => {
       credentials: true
     },
     // Configure for serverless environments
-    transports: ['polling', 'websocket'], // Prioritize polling for better compatibility
+    transports: ['websocket', 'polling'], // Try WebSocket first, then polling
     allowEIO3: true, // Allow Engine.IO v3 clients
     pingTimeout: 60000, // Increase timeout for serverless environments
-    pingInterval: 25000 // Increase interval for serverless environments
+    pingInterval: 25000, // Increase interval for serverless environments
+    path: '/socket.io/',
+    serveClient: false // Don't serve the client library
   });
 
   // Authentication middleware
