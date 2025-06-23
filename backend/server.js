@@ -51,6 +51,9 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
+    // Get frontend URL from environment variable
+    const frontendUrl = process.env.FRONTEND_URL;
+    
     // List of allowed origins
     const allowedOrigins = [
       'http://localhost:3000',
@@ -69,6 +72,11 @@ app.use(cors({
       'https://paradabackendv1.vercel.app',
       'https://parada-frontend.vercel.app'
     ];
+    
+    // Add the frontend URL from environment variable if it exists
+    if (frontendUrl && !allowedOrigins.includes(frontendUrl)) {
+      allowedOrigins.push(frontendUrl);
+    }
     
     // Check if origin is allowed or if we're in development mode
     if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
