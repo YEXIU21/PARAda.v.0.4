@@ -38,20 +38,16 @@ const FALLBACK_HTTP_POLLING = true;
  * @returns {string} Socket.IO URL
  */
 function getSocketUrl() {
-  // Always use localhost:5000 in development
-  const defaultUrl = 'http://localhost:5000';
+  // Check if we're running on Vercel (production)
+  const isVercel = typeof window !== 'undefined' && 
+                  window.location && 
+                  window.location.hostname.includes('vercel.app');
   
-  // Only use environment variable if explicitly set
-  let url = process.env.NEXT_PUBLIC_API_URL || defaultUrl;
+  // Use environment-specific URL
+  let url = isVercel ? 'https://paradacebubackendv1.vercel.app' : API_URL;
   
   // Remove any trailing slashes
   url = url.replace(/\/$/, '');
-  
-  // Ensure we never use Vercel URL for WebSocket connections
-  if (url.includes('vercel.app')) {
-    console.warn('Detected Vercel URL in API_URL. Using localhost instead for socket connections.');
-    return defaultUrl;
-  }
   
   console.log('Using socket connection URL:', url);
   return url;

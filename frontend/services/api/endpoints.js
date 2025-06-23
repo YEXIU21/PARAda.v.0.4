@@ -3,7 +3,20 @@
  */
 
 // Base URL for API - ensure it's a valid URL without trailing slash
-export const BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+export const BASE_URL = (() => {
+  // Check if we're running on Vercel (production)
+  const isVercel = typeof window !== 'undefined' && 
+                  window.location && 
+                  window.location.hostname.includes('vercel.app');
+  
+  // Use environment-specific URL
+  const url = isVercel ? 'https://paradacebubackendv1.vercel.app' : 'http://localhost:5000';
+  
+  console.log('Using endpoints API URL:', url);
+  
+  // Remove any trailing slash
+  return url.replace(/\/$/, '');
+})();
 
 // API endpoints - ensure all paths start with a slash
 export const ENDPOINTS = {
