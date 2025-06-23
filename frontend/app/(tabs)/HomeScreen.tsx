@@ -86,7 +86,7 @@ import { homeScreenStyles } from '../../styles/HomeScreenStyles';
 // Ensure images are available
 const paymentImages = {
   gcash: require('../../assets/images/gcash.jpg'),
-  logo: require('../../assets/images/PARAdalogo.jpg'),
+  logo: require('../../assets/images/adaptive-icon.png'),
   instapay: require('../../assets/images/gcash.jpg') // Using gcash.jpg as a placeholder for the InstaPay QR code
 };
 

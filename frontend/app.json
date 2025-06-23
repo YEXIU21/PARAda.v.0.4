@@ -4,10 +4,10 @@
     "slug": "parada",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/PARAdalogo.jpg",
+    "icon": "./assets/images/adaptive-icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/images/PARAdalogo.jpg",
+      "image": "./assets/images/adaptive-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
@@ -20,13 +20,13 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/PARAdalogo.jpg",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.yourcompany.parada"
     },
     "web": {
-      "favicon": "./assets/images/PARAdalogo.jpg",
+      "favicon": "./assets/images/adaptive-icon.png",
       "bundler": "metro",
       "output": "static",
       "name": "PARAda Transport",
@@ -43,17 +43,17 @@
       "preferRelatedApplications": false,
       "icons": [
         {
-          "src": "assets/images/PARAdalogo.jpg",
+          "src": "assets/images/adaptive-icon.png",
           "sizes": [96, 128, 192, 256, 384, 512]
         },
         {
-          "src": "assets/images/PARAdalogo.jpg",
+          "src": "assets/images/adaptive-icon.png",
           "sizes": "192x192",
           "type": "image/png",
           "purpose": "any maskable"
         },
         {
-          "src": "assets/images/PARAdalogo.jpg",
+          "src": "assets/images/adaptive-icon.png",
           "sizes": "512x512",
           "type": "image/png",
           "purpose": "any maskable"
