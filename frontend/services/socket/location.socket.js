@@ -215,7 +215,7 @@ export const initializeLocationSocket = async (clientId, token) => {
       socket = io(socketUrl, {
         query: { id: clientId },
         auth: { token },
-        transports: FALLBACK_HTTP_POLLING ? ['websocket', 'polling'] : ['websocket'],
+        transports: ['polling', 'websocket'], // Always use polling as primary transport for better compatibility
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
