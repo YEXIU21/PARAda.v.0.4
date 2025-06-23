@@ -36,6 +36,7 @@ const server = http.createServer(app);
 
 // Check if we're in a serverless environment
 const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSION;
+// Render.com is not a serverless environment, so we should run the server normally
 
 // Rate limiting
 const limiter = rateLimit({
