@@ -12,10 +12,11 @@ export const BASE_URL = (() => {
                   window.location.hostname.includes('vercel.app');
   
   // Use environment-specific URL
-  const url = isVercel ? 'https://parada-backendv1.vercel.app' : ENV.apiUrl;
+  const url = isVercel ? 'https://paradabackendv1.vercel.app' : ENV.apiUrl;
   
   console.log('Using API URL:', url);
   console.log('Environment:', isVercel ? 'production (Vercel)' : 'development');
+  console.log('Origin:', typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
   
   // Remove any trailing slash
   return url.replace(/\/$/, '');
