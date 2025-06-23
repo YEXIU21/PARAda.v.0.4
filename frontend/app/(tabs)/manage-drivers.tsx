@@ -588,7 +588,7 @@ export default function ManageDriversScreen() {
             setShowMessageModal(true);
           }}
         >
-          <FontAwesome5 name="envelope" size={16} color="#4B6BFE" />
+          <FontAwesome5 name="envelope" size={14} color="#4B6BFE" />
           <Text style={[styles.actionText, { color: '#4B6BFE' }]}>Message</Text>
         </TouchableOpacity>
         
@@ -597,8 +597,18 @@ export default function ManageDriversScreen() {
             style={[styles.actionButton, styles.verifyButton]}
             onPress={() => handleVerifyDriver(item._id)}
           >
-            <FontAwesome5 name="check-circle" size={16} color="#4CAF50" />
+            <FontAwesome5 name="check-circle" size={14} color="#4CAF50" />
             <Text style={[styles.actionText, { color: '#4CAF50' }]}>Verify</Text>
+          </TouchableOpacity>
+        )}
+        
+        {item.verified && (
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.verifyButton, { opacity: 0.7 }]}
+            disabled={true}
+          >
+            <FontAwesome5 name="check-circle" size={14} color="#4CAF50" />
+            <Text style={[styles.actionText, { color: '#4CAF50' }]}>Verified</Text>
           </TouchableOpacity>
         )}
         
@@ -610,7 +620,7 @@ export default function ManageDriversScreen() {
             setShowConfirmModal(true);
           }}
         >
-          <FontAwesome5 name="trash" size={16} color="#FF3B30" />
+          <FontAwesome5 name="trash" size={14} color="#FF3B30" />
           <Text style={[styles.actionText, { color: '#FF3B30' }]}>Remove</Text>
         </TouchableOpacity>
       </View>
@@ -1026,7 +1036,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   addButton: {
@@ -1249,25 +1259,40 @@ const styles = StyleSheet.create({
   messageButton: {
     backgroundColor: '#E6EFFF',
     paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
     marginRight: 8,
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: '#D0E0FF',
   },
   verifyButton: {
     backgroundColor: '#E6FFE6',
     paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
     marginRight: 8,
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: '#D0FFD0',
   },
   removeButton: {
     backgroundColor: '#FFE6E6',
     paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: '#FFD0D0',
   },
   loadingContainer: {
     flex: 1,
