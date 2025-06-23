@@ -137,6 +137,7 @@ export default function LoginScreen() {
               onFocus={() => setFocusedInput('email')}
               onBlur={() => setFocusedInput(null)}
               selectionColor={theme.primary}
+              cursorColor={theme.primary}
             />
           </View>
 
@@ -164,6 +165,7 @@ export default function LoginScreen() {
               onFocus={() => setFocusedInput('password')}
               onBlur={() => setFocusedInput(null)}
               selectionColor={theme.primary}
+              cursorColor={theme.primary}
             />
             <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
               <FontAwesome5 

@@ -247,6 +247,7 @@ export default function RegisterScreen() {
               onFocus={() => setFocusedInput('username')}
               onBlur={() => setFocusedInput(null)}
               selectionColor={theme.primary}
+              cursorColor={theme.primary}
             />
           </View>
 
@@ -275,6 +276,7 @@ export default function RegisterScreen() {
               onFocus={() => setFocusedInput('email')}
               onBlur={() => setFocusedInput(null)}
               selectionColor={theme.primary}
+              cursorColor={theme.primary}
             />
           </View>
 
@@ -302,6 +304,7 @@ export default function RegisterScreen() {
               onFocus={() => setFocusedInput('password')}
               onBlur={() => setFocusedInput(null)}
               selectionColor={theme.primary}
+              cursorColor={theme.primary}
             />
             <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
               <FontAwesome5 
@@ -336,6 +339,7 @@ export default function RegisterScreen() {
               onFocus={() => setFocusedInput('confirmPassword')}
               onBlur={() => setFocusedInput(null)}
               selectionColor={theme.primary}
+              cursorColor={theme.primary}
             />
             <TouchableOpacity onPress={toggleConfirmPasswordVisibility} style={styles.eyeIcon}>
               <FontAwesome5 
@@ -378,6 +382,7 @@ export default function RegisterScreen() {
                 onFocus={() => setFocusedInput('licensePlate')}
                 onBlur={() => setFocusedInput(null)}
                 selectionColor={theme.primary}
+                cursorColor={theme.primary}
               />
             </View>
           )}
@@ -416,6 +421,7 @@ export default function RegisterScreen() {
                 onFocus={() => setFocusedInput('studentId')}
                 onBlur={() => setFocusedInput(null)}
                 selectionColor={theme.primary}
+                cursorColor={theme.primary}
               />
             </View>
           )}
