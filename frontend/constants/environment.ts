@@ -16,7 +16,7 @@ const ENV = {
     googleMapsId: '989855c5ea84a0d7', // For AdvancedMarkerElement
   },
   staging: {
-    apiUrl: 'https://parada-api-staging.vercel.app',
+    apiUrl: 'https://paradacebubackendv1.vercel.app',
     googleMapsApiKey: 'AIzaSyA6DKdUg8JHPsMrDTC3waxqHkOT8GvKtIk',
     googleMapsId: '989855c5ea84a0d7', // For AdvancedMarkerElement
   },
