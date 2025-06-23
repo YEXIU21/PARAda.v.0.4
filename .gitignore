@@ -60,7 +60,8 @@ logs/
 infinity.py
 infinity copy.py
 rules.md
-
+limitless.py
+blackhole.md
 # Ignore .cursor folder
 .cursor/
 

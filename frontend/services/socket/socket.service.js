@@ -33,13 +33,10 @@ export const initializeSocket = async () => {
       auth: {
         token
       },
-      transports: ['polling', 'websocket'], // Always start with polling for better compatibility
+      transports: isVercel ? ['polling', 'websocket'] : ['websocket', 'polling'], // Use polling first on Vercel
       reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-      timeout: 20000,
-      path: '/socket.io/',
-      forceNew: true
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
     
     // Set up event listeners
@@ -49,19 +46,6 @@ export const initializeSocket = async () => {
     
     socket.on('disconnect', (reason) => {
       console.log('Socket disconnected:', reason);
-      // If the server disconnected us, try to reconnect
-      if (reason === 'io server disconnect') {
-        socket.connect();
-      }
-    });
-    
-    socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
-      // If WebSocket fails, try polling only
-      if (socket.io.opts.transports.includes('websocket')) {
-        console.log('Falling back to polling transport only');
-        socket.io.opts.transports = ['polling'];
-      }
     });
     
     socket.on('error', (error) => {
