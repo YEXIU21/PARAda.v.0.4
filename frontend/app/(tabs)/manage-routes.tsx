@@ -63,6 +63,18 @@ export default function ManageRoutesScreen() {
   const { user } = useAuth();
   const theme = getThemeColors(isDarkMode);
 
+  // Add a function to reset form fields
+  const resetFormFields = () => {
+    setNewRouteName('');
+    setNewRouteDescription('');
+    setSelectedVehicleType('latransco');
+    setStartTime('08:00 AM');
+    setEndTime('06:00 PM');
+    setFare('');
+    setStops(['Terminal', 'City Center']);
+    setNewStop('');
+  };
+
   // Load routes from API on component mount and when showActiveOnly changes
   useEffect(() => {
     fetchRoutes();
@@ -238,13 +250,7 @@ export default function ManageRoutesScreen() {
       setRoutes([...routes, newRoute]);
       
       // Reset form
-      setNewRouteName('');
-      setNewRouteDescription('');
-      setSelectedVehicleType('latransco');
-      setStartTime('08:00 AM');
-      setEndTime('06:00 PM');
-      setFare('');
-      setStops(['Terminal', 'City Center']);
+      resetFormFields();
       setShowAddRouteModal(false);
       
       Alert.alert('Success', 'New route has been added successfully');
@@ -528,13 +534,19 @@ export default function ManageRoutesScreen() {
       visible={showAddRouteModal}
       animationType="slide"
       transparent={true}
-      onRequestClose={() => setShowAddRouteModal(false)}
+      onRequestClose={() => {
+        setShowAddRouteModal(false);
+        resetFormFields();
+      }}
     >
       <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
         <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>Add New Route</Text>
-            <TouchableOpacity onPress={() => setShowAddRouteModal(false)}>
+            <TouchableOpacity onPress={() => {
+              setShowAddRouteModal(false);
+              resetFormFields();
+            }}>
               <FontAwesome5 name="times" size={20} color={theme.text} />
             </TouchableOpacity>
           </View>
@@ -672,13 +684,19 @@ export default function ManageRoutesScreen() {
       visible={showEditRouteModal}
       animationType="slide"
       transparent={true}
-      onRequestClose={() => setShowEditRouteModal(false)}
+      onRequestClose={() => {
+        setShowEditRouteModal(false);
+        setEditingRoute(null);
+      }}
     >
       <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
         <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>Edit Route</Text>
-            <TouchableOpacity onPress={() => setShowEditRouteModal(false)}>
+            <TouchableOpacity onPress={() => {
+              setShowEditRouteModal(false);
+              setEditingRoute(null);
+            }}>
               <FontAwesome5 name="times" size={20} color={theme.text} />
             </TouchableOpacity>
           </View>
@@ -969,7 +987,10 @@ export default function ManageRoutesScreen() {
       
       <TouchableOpacity 
         style={[styles.fab, { backgroundColor: '#4B6BFE' }]}
-        onPress={() => setShowAddRouteModal(true)}
+        onPress={() => {
+          resetFormFields();
+          setShowAddRouteModal(true);
+        }}
       >
         <FontAwesome5 name="plus" size={24} color="white" />
       </TouchableOpacity>
