@@ -1,7 +1,12 @@
 /**
  * Main server entry point for PARAda backend
  */
-require('dotenv').config();
+// Check if we have an environment file path specified (for Render.com)
+if (process.env.ENV_FILE_PATH) {
+  require('dotenv').config({ path: process.env.ENV_FILE_PATH });
+} else {
+  require('dotenv').config();
+}
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');

@@ -19,6 +19,15 @@
    - Set the start command: `cd backend && npm start`
 
 2. **Set Environment Variables**
+   
+   **Option 1: Upload .env.render file**
+   - Go to the "Environment" section
+   - Click "Secret Files"
+   - Upload the `.env.render` file from the backend directory
+   - Set the mount path to `/etc/secrets/.env`
+   - Add an environment variable `ENV_FILE_PATH=/etc/secrets/.env`
+   
+   **Option 2: Set individual environment variables**
    - `NODE_ENV`: production
    - `PORT`: 5000
    - `MONGODB_URI`: Your MongoDB Atlas connection string
