@@ -1072,7 +1072,7 @@ export default function HomeScreen() {
           <View style={homeScreenStyles.headerContent}>
             <View style={homeScreenStyles.logoContainer}>
               <Image 
-                source={require('../../assets/images/PARAdalogo.jpg')} 
+                source={require('../../assets/images/adaptive-icon.png')} 
                 style={homeScreenStyles.logo} 
                 resizeMode="contain"
               />

@@ -5,7 +5,7 @@ const urlsToCache = [
   '/index.html',
   '/static/js/bundle.js',
   '/static/media/',
-  '/assets/images/PARAdalogo.jpg'
+  '/assets/images/adaptive-icon.png'
 ];
 
 // Install a service worker

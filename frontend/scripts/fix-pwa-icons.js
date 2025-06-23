@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Source logo path
-const SOURCE_LOGO = path.join(__dirname, '../assets/images/PARAdalogo.jpg');
+const SOURCE_LOGO = path.join(__dirname, '../assets/images/adaptive-icon.png');
 
 // Output directory for icons
 const ICONS_DIR = path.join(__dirname, '../assets/icons');

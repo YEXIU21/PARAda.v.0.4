@@ -21,7 +21,7 @@ module.exports = async function(env, argv) {
       start_url: '/',
       icons: [
         {
-          src: path.resolve('assets/images/PARAdalogo.jpg'),
+          src: path.resolve('assets/images/adaptive-icon.png'),
           sizes: [96, 128, 192, 256, 384, 512],
           destination: path.join('assets', 'icons'),
         },

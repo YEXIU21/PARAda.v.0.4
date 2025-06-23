@@ -5,7 +5,7 @@ const URLS_TO_CACHE = [
   '/index.html',
   '/static/js/main.bundle.js',
   '/static/css/main.css',
-  '/assets/images/PARAdalogo.jpg'
+  '/assets/images/adaptive-icon.png'
 ];
 
 // Install event - cache assets
@@ -79,8 +79,8 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: '/assets/images/PARAdalogo.jpg',
-      badge: '/assets/images/PARAdalogo.jpg',
+      icon: '/assets/images/adaptive-icon.png',
+      badge: '/assets/images/adaptive-icon.png',
       data: {
         url: data.url || '/'
       }

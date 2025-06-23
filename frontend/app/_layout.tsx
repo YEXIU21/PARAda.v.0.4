@@ -78,7 +78,7 @@ export default function RootLayout() {
       // Add apple touch icon
       const linkAppleTouchIcon = document.createElement('link');
       linkAppleTouchIcon.rel = 'apple-touch-icon';
-      linkAppleTouchIcon.href = '/assets/images/PARAdalogo.jpg';
+      linkAppleTouchIcon.href = '/assets/images/adaptive-icon.png';
       document.head.appendChild(linkAppleTouchIcon);
       
       // Add service worker registration script
