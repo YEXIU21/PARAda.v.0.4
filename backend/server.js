@@ -32,6 +32,9 @@ const mongodbRoutes = require('./routes/mongodb.routes');
 // Import socket service
 const socketService = require('./services/socket.service');
 
+// Import keep-alive utility
+const { setupKeepAlive } = require('./utils/keep-alive');
+
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -120,7 +123,21 @@ app.use('/api/mongodb', mongodbRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Server is running' });
+  const uptime = process.uptime();
+  const uptimeFormatted = {
+    days: Math.floor(uptime / 86400),
+    hours: Math.floor((uptime % 86400) / 3600),
+    minutes: Math.floor((uptime % 3600) / 60),
+    seconds: Math.floor(uptime % 60)
+  };
+  
+  res.status(200).json({ 
+    status: 'ok', 
+    message: 'Server is running',
+    environment: process.env.NODE_ENV,
+    uptime: uptimeFormatted,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Root route
@@ -158,6 +175,12 @@ connectDB()
       
       // Make socket.io instance available globally
       global.io = io;
+      
+      // Set up keep-alive mechanism for Render.com free tier
+      if (process.env.ENABLE_KEEP_ALIVE === 'true' || process.env.NODE_ENV === 'production') {
+        setupKeepAlive();
+        console.log('Keep-alive mechanism activated to prevent server from spinning down');
+      }
     } else {
       console.log('Running in serverless environment, skipping server.listen()');
     }

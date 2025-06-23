@@ -50,6 +50,26 @@
 - The service will automatically restart if it crashes
 - Render.com provides automatic HTTPS
 
+### Preventing Service Spin Down (Free Tier)
+The free tier of Render.com will spin down your service after 15 minutes of inactivity, which can cause delays of 50+ seconds when a new request comes in. We've implemented two solutions to prevent this:
+
+1. **Internal Keep-Alive Mechanism**:
+   - The server automatically pings itself every 14 minutes
+   - This is enabled by default in production mode
+   - You can control this with the `ENABLE_KEEP_ALIVE` environment variable
+
+2. **External Ping Script**:
+   - Use the script at `backend/scripts/external-ping.js` to ping the server from an external source
+   - Run it with: `node scripts/external-ping.js https://your-service-url.onrender.com/health`
+   - You can schedule this to run every 10-14 minutes using a cron job or a service like UptimeRobot
+
+3. **UptimeRobot Setup**:
+   - Create a free account at https://uptimerobot.com
+   - Add a new monitor of type "HTTP(s)"
+   - Set the URL to your health endpoint: `https://paradabackend.onrender.com/health`
+   - Set the monitoring interval to 5 minutes
+   - This will ping your service regularly, keeping it active
+
 ## Local Development
 1. Clone the repository
 2. Run `npm install` in the backend directory
