@@ -5,7 +5,7 @@
 const https = require('https');
 
 // The URL of your Render.com service
-const serviceUrl = process.argv[2] || 'https://paradabackend.onrender.com/health';
+const serviceUrl = process.argv[2] || 'https://parada-backend.onrender.com/health';
 
 console.log(`Pinging ${serviceUrl}...`);
 

@@ -45,7 +45,7 @@ function getSocketUrl() {
                    window.location.hostname.includes('parada'));
   
   // Use environment-specific URL
-  let url = isVercel ? 'https://paradabackend.onrender.com' : API_URL;
+  let url = isVercel ? 'https://parada-backend.onrender.com' : API_URL;
   
   // Remove any trailing slashes
   url = url.replace(/\/$/, '');

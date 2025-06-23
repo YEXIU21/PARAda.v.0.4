@@ -17,7 +17,7 @@ module.exports = {
     'https://paradacebubackendv1.vercel.app',
     
     // Render.com deployment
-    'https://paradabackend.onrender.com'
+    'https://parada-backend.onrender.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: [

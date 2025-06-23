@@ -13,7 +13,7 @@ const isProduction = process.env.NEXT_PUBLIC_ENV === 'production' || isVercel;
 
 // Export the API URL with the correct port
 export const API_URL = isProduction
-  ? 'https://paradabackend.onrender.com'  // Use Render.com backend URL in production
+  ? 'https://parada-backend.onrender.com'  // Use Render.com backend URL in production
   : 'http://localhost:5000';  // Use port 5000 to match backend configuration
 
 // Create a proper env object with all environment variables

@@ -66,7 +66,7 @@ The free tier of Render.com will spin down your service after 15 minutes of inac
 3. **UptimeRobot Setup**:
    - Create a free account at https://uptimerobot.com
    - Add a new monitor of type "HTTP(s)"
-   - Set the URL to your health endpoint: `https://paradabackend.onrender.com/health`
+   - Set the URL to your health endpoint: `https://parada-backend.onrender.com/health`
    - Set the monitoring interval to 5 minutes
    - This will ping your service regularly, keeping it active
 
