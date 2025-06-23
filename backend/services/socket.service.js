@@ -26,18 +26,18 @@ const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSI
 
 // Initialize socket.io server
 const initializeSocketServer = (server) => {
-  // Skip socket initialization in serverless environments
-  if (isServerless) {
-    console.log('Running in serverless environment, skipping socket.io initialization');
-    return null;
-  }
-  
+  // Configure Socket.IO even in serverless environments
   const io = socketIO(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || '*',
+      origin: '*', // Allow all origins for now
       methods: ['GET', 'POST'],
       credentials: true
-    }
+    },
+    // Configure for serverless environments
+    transports: ['polling', 'websocket'], // Prioritize polling for better compatibility
+    allowEIO3: true, // Allow Engine.IO v3 clients
+    pingTimeout: 60000, // Increase timeout for serverless environments
+    pingInterval: 25000 // Increase interval for serverless environments
   });
 
   // Authentication middleware
