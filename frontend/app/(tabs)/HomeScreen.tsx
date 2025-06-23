@@ -597,7 +597,21 @@ export default function HomeScreen() {
         let location = await Location.getCurrentPositionAsync({});
         setLocation(location);
       } catch (error) {
-        setErrorMsg('Could not get your location. Please try again.');
+        // Use a more user-friendly error message that indicates limited functionality
+        setErrorMsg('Location unavailable. Some features may be limited.');
+        // Set a default location for the map (use a central location in your service area)
+        setLocation({
+          coords: {
+            latitude: 10.3157, // Default to Cebu City, Philippines
+            longitude: 123.8854,
+            altitude: null,
+            accuracy: null,
+            altitudeAccuracy: null,
+            heading: null,
+            speed: null
+          },
+          timestamp: Date.now()
+        });
       } finally {
         setIsLoading(false);
       }
@@ -878,38 +892,39 @@ export default function HomeScreen() {
     );
   }
   
-  // Render error state
-  if (errorMsg) {
-    return (
-      <View style={[homeScreenStyles.errorContainer, { backgroundColor: theme.background }]}>
-        <FontAwesome5 name="exclamation-circle" size={50} color="#FF3B30" />
-        <Text style={[homeScreenStyles.errorText, { color: theme.text }]}>{errorMsg}</Text>
-        <TouchableOpacity 
-          style={homeScreenStyles.retryButton}
-          onPress={() => {
-            setErrorMsg(null);
-            setIsLoading(true);
-            Location.getCurrentPositionAsync({})
-              .then(location => {
-                setLocation(location);
-                setIsLoading(false);
-              })
-              .catch(() => {
-                setErrorMsg('Could not get your location. Please try again.');
-                setIsLoading(false);
-              });
-          }}
-        >
-          <Text style={homeScreenStyles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  // Modified error handling - show warning banner instead of full error screen
+  const locationErrorBanner = errorMsg && (
+    <View style={homeScreenStyles.errorBanner}>
+      <FontAwesome5 name="exclamation-triangle" size={16} color="#FF3B30" />
+      <Text style={homeScreenStyles.errorBannerText}>{errorMsg}</Text>
+      <TouchableOpacity 
+        style={homeScreenStyles.errorBannerButton}
+        onPress={() => {
+          setErrorMsg(null);
+          setIsLoading(true);
+          Location.getCurrentPositionAsync({})
+            .then(location => {
+              setLocation(location);
+              setIsLoading(false);
+            })
+            .catch(() => {
+              setErrorMsg('Location unavailable. Some features may be limited.');
+              setIsLoading(false);
+            });
+        }}
+      >
+        <Text style={homeScreenStyles.errorBannerButtonText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  );
   
   // Render main screen
   return (
     <View style={[homeScreenStyles.container, { backgroundColor: theme.background }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      
+      {/* Show location error banner if there's an error */}
+      {locationErrorBanner}
       
       <MapView
         ref={mapRef}
