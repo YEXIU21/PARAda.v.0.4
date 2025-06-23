@@ -54,25 +54,17 @@ app.use(cors({
     // Get frontend URL from environment variable
     const frontendUrl = process.env.FRONTEND_URL;
     
-    // List of allowed origins
+    // List of allowed origins - cleaned up to only include necessary URLs
     const allowedOrigins = [
+      // Development URLs
       'http://localhost:3000',
       'http://localhost:5173',
       'http://localhost:8080',
       'http://localhost:19006', // Expo web development server
-      'https://parada-transport.vercel.app',
-      'https://parada-app.netlify.app',
-      'https://parada-web.netlify.app',
-      'https://parada.app',
-      'https://parada.vercel.app',
-      'https://parada-web.vercel.app',
-      'https://parada-v-0-1.vercel.app',
-      'https://paradav1.vercel.app',
-      'https://parada1.vercel.app',
-      'https://paradabackendv1.vercel.app',
+      
+      // Current production URLs
       'https://paradacebuv1.vercel.app',
-      'https://paradacebubackendv1.vercel.app',
-      'https://parada-frontend.vercel.app'
+      'https://paradacebubackendv1.vercel.app'
     ];
     
     // Add the frontend URL from environment variable if it exists
