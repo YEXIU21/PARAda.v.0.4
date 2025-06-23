@@ -3,13 +3,16 @@
  * Exports API_URL and other environment variables
  */
 
-// Instead of checking NODE_ENV, we'll explicitly use development mode always
-// unless overridden by an environment variable.
-const isProduction = process.env.NEXT_PUBLIC_ENV === 'production';
+// Check if we're running on Vercel (production)
+const isVercel = typeof window !== 'undefined' && 
+                window.location && 
+                window.location.hostname.includes('vercel.app');
+
+const isProduction = process.env.NEXT_PUBLIC_ENV === 'production' || isVercel;
 
 // Export the API URL with the correct port
 export const API_URL = isProduction
-  ? process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'  // Default to localhost even in prod for now
+  ? 'https://paradacebubackendv1.vercel.app'  // Use the correct backend URL in production
   : 'http://localhost:5000';  // Use port 5000 to match backend configuration
 
 // Create a proper env object with all environment variables
@@ -23,7 +26,8 @@ const env = {
 console.log('Environment configured:', {
   apiUrl: env.apiUrl,
   isProduction: env.isProduction,
-  hasGoogleMapsKey: !!env.googleMapsApiKey
+  hasGoogleMapsKey: !!env.googleMapsApiKey,
+  isVercel
 });
 
 export default env; 

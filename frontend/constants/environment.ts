@@ -29,8 +29,12 @@ const ENV = {
 
 const getEnvVars = () => {
   // For web deployed on Vercel, always use production environment
-  if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('vercel.app')) {
-    return ENV.prod;
+  if (typeof window !== 'undefined' && window.location) {
+    // Check if we're on Vercel
+    if (window.location.hostname.includes('vercel.app')) {
+      console.log('Vercel deployment detected, using production environment');
+      return ENV.prod;
+    }
   }
 
   // Use manifest instead of deprecated releaseChannel
