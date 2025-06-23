@@ -2,10 +2,49 @@
  * Environment Configuration
  * Contains environment-specific settings for the app
  */
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
 
-const ENV = {
+// Define interfaces for environment variables
+interface EnvConfig {
+  apiUrl: string;
+  googleMapsApiKey: string;
+  googleMapsId: string;
+}
+
+// Define a safe way to access process.env
+declare const process: {
+  env: {
+    NODE_ENV?: string;
+    APP_ENVIRONMENT?: string;
+    NEXT_PUBLIC_ENV?: string;
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?: string;
+    NEXT_PUBLIC_GOOGLE_MAPS_ID?: string;
+  }
+};
+
+// Try to import modules, but provide fallbacks if they're not available
+let Platform = { OS: 'web' };
+let Constants = { manifest: { extra: { expoClient: { releaseChannel: undefined } } } };
+
+try {
+  // Only import these if they're available
+  const ReactNative = require('react-native');
+  if (ReactNative && ReactNative.Platform) {
+    Platform = ReactNative.Platform;
+  }
+} catch (e) {
+  console.log('React Native Platform not available');
+}
+
+try {
+  const ExpoConstants = require('expo-constants');
+  if (ExpoConstants) {
+    Constants = ExpoConstants;
+  }
+} catch (e) {
+  console.log('Expo Constants not available');
+}
+
+const ENV: Record<string, EnvConfig> = {
   dev: {
     // For Android emulator, use 10.0.2.2 instead of localhost
     // For iOS simulator, localhost works fine
@@ -27,7 +66,7 @@ const ENV = {
   },
 };
 
-const getEnvVars = () => {
+const getEnvVars = (): EnvConfig => {
   // For web deployed on Vercel, always use production environment
   if (typeof window !== 'undefined' && window.location) {
     // Check if we're on Vercel
@@ -38,7 +77,7 @@ const getEnvVars = () => {
   }
 
   // Use manifest instead of deprecated releaseChannel
-  const environment = Constants.manifest?.extra?.expoClient?.releaseChannel || 
+  const environment = Constants?.manifest?.extra?.expoClient?.releaseChannel || 
                      process.env.APP_ENVIRONMENT || 
                      'development';
   
