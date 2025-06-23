@@ -17,10 +17,21 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useEffect(() => {
+    // Preload the adaptive icon image to ensure it's ready when needed
+    if (Platform.OS === 'web') {
+      const img = new window.Image();
+      img.src = '/assets/images/adaptive-icon.png';
+      img.onload = () => {
+        console.log('Splash screen image preloaded');
+      };
+    }
+    
     // Hide the splash screen when the app is ready
     setTimeout(() => {
-      SplashScreen.hideAsync();
-    }, 1000);
+      SplashScreen.hideAsync().catch(err => {
+        console.warn('Error hiding splash screen:', err);
+      });
+    }, 1500); // Increased timeout to ensure resources are loaded
 
     // Check if user is logged in and redirect if necessary
     const checkAuthStatus = async () => {
@@ -75,11 +86,15 @@ export default function RootLayout() {
       linkManifest.href = '/manifest.json';
       document.head.appendChild(linkManifest);
       
-      // Add apple touch icon
-      const linkAppleTouchIcon = document.createElement('link');
-      linkAppleTouchIcon.rel = 'apple-touch-icon';
-      linkAppleTouchIcon.href = '/assets/images/adaptive-icon.png';
-      document.head.appendChild(linkAppleTouchIcon);
+      // Add apple touch icon with proper sizes
+      const iconSizes = [180, 167, 152, 120];
+      iconSizes.forEach(size => {
+        const linkAppleTouchIcon = document.createElement('link');
+        linkAppleTouchIcon.rel = 'apple-touch-icon';
+        linkAppleTouchIcon.setAttribute('sizes', `${size}x${size}`);
+        linkAppleTouchIcon.href = `/assets/images/adaptive-icon.png`;
+        document.head.appendChild(linkAppleTouchIcon);
+      });
       
       // Add service worker registration script
       const script = document.createElement('script');

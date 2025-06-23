@@ -20,7 +20,10 @@
   <!-- PWA Links -->
   <link rel="manifest" href="/manifest.json" />
   <link rel="shortcut icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" href="/assets/images/adaptive-icon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/adaptive-icon.png" />
+  <link rel="apple-touch-icon" sizes="167x167" href="/assets/images/adaptive-icon.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/images/adaptive-icon.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="/assets/images/adaptive-icon.png" />
   
   <!-- Title -->
   <title>PARAda Transport</title>
@@ -58,6 +61,9 @@
       width: 120px;
       height: 120px;
       margin-bottom: 20px;
+      object-fit: contain;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
     }
     
     .initial-loader p {
@@ -94,6 +100,9 @@
       overflow: auto !important;
     }
   </style>
+  
+  <!-- Preload the icon image -->
+  <link rel="preload" href="/assets/images/adaptive-icon.png" as="image" type="image/png">
 </head>
 <body>
   <div id="root">
@@ -121,6 +130,10 @@
     window.initGoogleMap = function() {
       console.log('Google Maps initialization placeholder');
     };
+    
+    // Preload the icon image
+    const img = new Image();
+    img.src = '/assets/images/adaptive-icon.png';
   </script>
 </body>
 </html> 
