@@ -16,6 +16,7 @@ const rateLimit = require('express-rate-limit');
 
 // Import configuration
 const connectDB = require('./config/db.config');
+const corsConfig = require('./config/cors.config');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -63,18 +64,8 @@ app.use(cors({
     // Get frontend URL from environment variable
     const frontendUrl = process.env.FRONTEND_URL;
     
-    // List of allowed origins - cleaned up to only include necessary URLs
-    const allowedOrigins = [
-      // Development URLs
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:8080',
-      'http://localhost:19006', // Expo web development server
-      
-      // Current production URLs
-      'https://paradacebuv1.vercel.app',
-      'https://paradacebubackendv1.vercel.app'
-    ];
+    // Use our centralized CORS configuration
+    const allowedOrigins = corsConfig.origin;
     
     // Add the frontend URL from environment variable if it exists
     if (frontendUrl && !allowedOrigins.includes(frontendUrl)) {
@@ -89,10 +80,11 @@ app.use(cors({
       if (origin && (
           origin.endsWith('.vercel.app') || 
           origin.includes('vercel-preview') || 
-          origin.includes('parada')
+          origin.includes('parada') ||
+          origin.includes('render.com')
         )
       ) {
-        console.log('Allowing CORS for Vercel deployment:', origin);
+        console.log('Allowing CORS for deployment:', origin);
         callback(null, true);
       } else {
         console.log('CORS blocked for origin:', origin);
@@ -101,8 +93,8 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-access-token', 'Origin', 'Accept']
+  methods: corsConfig.methods,
+  allowedHeaders: corsConfig.allowedHeaders
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
