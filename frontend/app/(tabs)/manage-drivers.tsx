@@ -1251,13 +1251,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 6,
-    marginRight: 10,
+    marginRight: 8,
+    flex: 1,
+  },
+  verifyButton: {
+    backgroundColor: '#E6FFE6',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginRight: 8,
+    flex: 1,
   },
   removeButton: {
     backgroundColor: '#FFE6E6',
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 6,
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -1292,42 +1302,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  verifyButton: {
-    backgroundColor: '#E6EFFF',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  driverActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#EBEBEB',
-    paddingTop: 12,
-  },
-  disabledButton: {
-    backgroundColor: '#CCCCCC',
-  },
-  sendingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendingText: {
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  sendIcon: {
-    marginRight: 8,
-  },
-  successButton: {
-    backgroundColor: '#4CAF50',
-  },
-  errorButton: {
-    backgroundColor: '#F44336',
   },
   confirmModalContainer: {
     width: '80%',
@@ -1374,5 +1348,36 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  driverActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#EBEBEB',
+    paddingTop: 12,
+    paddingHorizontal: 5,
+  },
+  disabledButton: {
+    backgroundColor: '#CCCCCC',
+  },
+  sendingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendingText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  sendIcon: {
+    marginRight: 8,
+  },
+  successButton: {
+    backgroundColor: '#4CAF50',
+  },
+  errorButton: {
+    backgroundColor: '#F44336',
   },
 }); 
