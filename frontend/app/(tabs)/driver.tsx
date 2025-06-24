@@ -740,6 +740,15 @@ export default function DriverScreen() {
     AsyncStorage.setItem('driverRoutes', JSON.stringify(updatedRoutes))
       .then(() => {
         console.log('Route added and saved to AsyncStorage');
+      })
+      .catch(error => {
+        console.error('Error saving routes to AsyncStorage:', error);
+      });
+    
+    // Make the API call to assign the route for all users, not just admins
+    routeApi.assignDriverToRoute(routeId, currentDriverId)
+      .then(() => {
+        console.log('Route assigned via API successfully');
         setShowAvailableRoutesModal(false);
         
         Alert.alert(
@@ -749,29 +758,19 @@ export default function DriverScreen() {
         );
       })
       .catch(error => {
-        console.error('Error saving routes to AsyncStorage:', error);
+        console.error('Error assigning route via API:', error);
+        
+        // Show error but keep the route in local storage
         Alert.alert(
-          "Error",
-          "Failed to save route. Please try again.",
+          "Warning",
+          `${route.name} has been added locally, but could not be saved to the server. It may not be available on other devices.`,
           [{ text: "OK" }]
         );
+        setShowAvailableRoutesModal(false);
       })
       .finally(() => {
         setIsLoading(false);
       });
-    
-    // If user is admin, also make the API call to assign the route
-    const isAdmin = user?.role === 'admin';
-    if (isAdmin) {
-      routeApi.assignDriverToRoute(routeId, currentDriverId)
-        .then(() => {
-          console.log('Route assigned via API successfully');
-        })
-        .catch(error => {
-          console.error('Error assigning route via API:', error);
-          // API error doesn't affect local state since we've already updated it
-        });
-    }
   };
 
   const renderAvailableRouteItem = ({ item }: { item: Route }) => {

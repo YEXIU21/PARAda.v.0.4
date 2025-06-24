@@ -289,19 +289,19 @@ export const scheduleVehicleArrivalNotification = async (vehicleName: string, et
     }
     
     // For native platforms, use Expo Notifications
-    const seconds = estimateSecondsFromETA(eta);
-    
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Vehicle Approaching',
-        body: `${vehicleName} will arrive in ${eta}`,
-        data: { vehicleName, eta },
-      },
-      trigger: {
-        seconds: seconds,
-        channelId: 'default',
-      },
-    });
+  const seconds = estimateSecondsFromETA(eta);
+  
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'Vehicle Approaching',
+      body: `${vehicleName} will arrive in ${eta}`,
+      data: { vehicleName, eta },
+    },
+    trigger: {
+      seconds: seconds,
+      channelId: 'default',
+    },
+  });
     
     return true;
   } catch (error) {
@@ -341,7 +341,7 @@ const estimateSecondsFromETA = (eta: string): number => {
     return parseInt(match[1]) * 60; // Convert minutes to seconds
   }
   return 60; // Default to 1 minute if parsing fails
-};
+}; 
 
 // Component to request notification permissions with better UI
 export const NotificationPermissionRequest = () => {

@@ -6,6 +6,7 @@ const { validationResult } = require('express-validator');
 const Vehicle = require('../models/vehicle.model');
 const Driver = require('../models/driver.model');
 const mongoose = require('mongoose');
+const vehicleService = require('../services/vehicle.service');
 
 /**
  * Get all vehicles
@@ -398,4 +399,44 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
   return R * c; // Distance in meters
-} 
+}
+
+/**
+ * Get nearby vehicles (GET method)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} - Response with nearby vehicles or error
+ */
+exports.getNearbyVehiclesGet = async (req, res) => {
+  try {
+    const { latitude, longitude, radius = 10, type } = req.query;
+    
+    // Validate required parameters
+    if (!latitude || !longitude) {
+      return res.status(400).json({
+        message: 'Latitude and longitude are required'
+      });
+    }
+    
+    // Convert string parameters to numbers
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+    const rad = parseFloat(radius);
+    
+    // Get nearby vehicles
+    const vehicles = await vehicleService.getNearbyVehicles({
+      latitude: lat,
+      longitude: lng
+    }, type, rad * 1000); // Convert km to meters
+    
+    return res.status(200).json({
+      vehicles
+    });
+  } catch (error) {
+    console.error('Error getting nearby vehicles:', error);
+    return res.status(500).json({
+      message: 'Error retrieving nearby vehicles',
+      error: error.message
+    });
+  }
+}; 

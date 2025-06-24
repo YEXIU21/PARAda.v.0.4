@@ -190,37 +190,37 @@ export default function RequestRideModal({
           
           <View style={styles.modalBody}>
             <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-              <View style={[styles.rideLocationContainer, { borderBottomColor: theme.border, borderBottomWidth: 1, paddingBottom: 15 }]}>
-                <View style={styles.rideLocationRow}>
-                  <View style={styles.rideLocationDot} />
-                  <View style={styles.rideLocationTextContainer}>
-                    <Text style={[styles.rideLocationLabel, { color: theme.textSecondary }]}>Your location</Text>
-                    <Text style={[styles.rideLocationValue, { color: theme.text }]}>
-                      {hasLocation ? 'Current Location' : 'Loading...'}
-                    </Text>
-                  </View>
-                </View>
-                
-                <View style={[styles.rideLocationDashedLine, { backgroundColor: theme.border }]} />
-                
-                <View style={styles.rideLocationRow}>
-                  <View style={[styles.rideLocationDot, { backgroundColor: '#FF3B30' }]} />
-                  <View style={styles.rideLocationTextContainer}>
-                    <Text style={[styles.rideLocationLabel, { color: theme.textSecondary }]}>Destination</Text>
-                    <TouchableOpacity 
-                      style={[styles.selectDestinationButton, { borderBottomColor: theme.border }]}
-                      onPress={openDestinationModal}
-                    >
-                      <Text style={[styles.selectDestinationText, { 
-                        color: selectedDestination ? theme.text : '#999' 
-                      }]}>
-                        {selectedDestination ? selectedDestination.name : 'Select destination'}
-                      </Text>
-                      <FontAwesome5 name="chevron-right" size={14} color="#999" />
-                    </TouchableOpacity>
-                  </View>
+            <View style={[styles.rideLocationContainer, { borderBottomColor: theme.border, borderBottomWidth: 1, paddingBottom: 15 }]}>
+              <View style={styles.rideLocationRow}>
+                <View style={styles.rideLocationDot} />
+                <View style={styles.rideLocationTextContainer}>
+                  <Text style={[styles.rideLocationLabel, { color: theme.textSecondary }]}>Your location</Text>
+                  <Text style={[styles.rideLocationValue, { color: theme.text }]}>
+                    {hasLocation ? 'Current Location' : 'Loading...'}
+                  </Text>
                 </View>
               </View>
+              
+              <View style={[styles.rideLocationDashedLine, { backgroundColor: theme.border }]} />
+              
+              <View style={styles.rideLocationRow}>
+                <View style={[styles.rideLocationDot, { backgroundColor: '#FF3B30' }]} />
+                <View style={styles.rideLocationTextContainer}>
+                  <Text style={[styles.rideLocationLabel, { color: theme.textSecondary }]}>Destination</Text>
+                  <TouchableOpacity 
+                    style={[styles.selectDestinationButton, { borderBottomColor: theme.border }]}
+                    onPress={openDestinationModal}
+                  >
+                    <Text style={[styles.selectDestinationText, { 
+                      color: selectedDestination ? theme.text : '#999' 
+                    }]}>
+                      {selectedDestination ? selectedDestination.name : 'Select destination'}
+                    </Text>
+                    <FontAwesome5 name="chevron-right" size={14} color="#999" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
               
               {selectedDestination && (
                 <View style={[styles.estimatesContainer, { borderBottomColor: theme.border, borderBottomWidth: 1, paddingBottom: 15 }]}>
@@ -239,55 +239,55 @@ export default function RequestRideModal({
                   </View>
                 </View>
               )}
-              
-              <View style={styles.rideOptionContainer}>
-                <Text style={[styles.rideOptionTitle, { color: theme.text }]}>Available Vehicles</Text>
-                {vehicleTypes.map(type => (
-                  <TouchableOpacity 
-                    key={type.id}
-                    style={[
-                      styles.rideOptionItem,
-                      { borderColor: theme.border, backgroundColor: theme.card },
-                      selectedVehicleType === type.id && [
-                        styles.rideOptionItemSelected,
-                        { backgroundColor: theme.card === '#FFFFFF' ? '#F5F8FF' : '#2A3451' }
-                      ]
-                    ]}
-                    onPress={() => onSelectVehicleType(type.id)}
-                  >
-                    <View style={styles.rideOptionIcon}>
-                      <FontAwesome5 name={type.icon} size={20} color="#4B6BFE" />
-                    </View>
-                    <View style={styles.rideOptionInfo}>
-                      <Text style={[styles.rideOptionName, { color: theme.text }]}>{type.name}</Text>
-                      <Text style={[styles.rideOptionETA, { color: theme.textSecondary }]}>
-                        Available
-                      </Text>
-                    </View>
-                    {selectedVehicleType === type.id && (
-                      <FontAwesome5 name="check-circle" size={20} color="#4B6BFE" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
+            
+            <View style={styles.rideOptionContainer}>
+              <Text style={[styles.rideOptionTitle, { color: theme.text }]}>Available Vehicles</Text>
+              {vehicleTypes.map(type => (
+                <TouchableOpacity 
+                  key={type.id}
+                  style={[
+                    styles.rideOptionItem,
+                    { borderColor: theme.border, backgroundColor: theme.card },
+                    selectedVehicleType === type.id && [
+                      styles.rideOptionItemSelected,
+                      { backgroundColor: theme.card === '#FFFFFF' ? '#F5F8FF' : '#2A3451' }
+                    ]
+                  ]}
+                  onPress={() => onSelectVehicleType(type.id)}
+                >
+                  <View style={styles.rideOptionIcon}>
+                    <FontAwesome5 name={type.icon} size={20} color="#4B6BFE" />
+                  </View>
+                  <View style={styles.rideOptionInfo}>
+                    <Text style={[styles.rideOptionName, { color: theme.text }]}>{type.name}</Text>
+                    <Text style={[styles.rideOptionETA, { color: theme.textSecondary }]}>
+                      Available
+                    </Text>
+                  </View>
+                  {selectedVehicleType === type.id && (
+                    <FontAwesome5 name="check-circle" size={20} color="#4B6BFE" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
               <View style={styles.spacer} />
             </ScrollView>
             
             <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={[
-                  styles.requestRideButton,
-                  isButtonDisabled && styles.requestRideButtonDisabled
-                ]}
+            <TouchableOpacity 
+              style={[
+                styles.requestRideButton,
+                isButtonDisabled && styles.requestRideButtonDisabled
+              ]}
                 onPress={handleRequestRide}
-                disabled={isButtonDisabled}
-              >
+              disabled={isButtonDisabled}
+            >
                 {isRequesting ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text style={styles.requestRideButtonText}>Request Ride</Text>
-                )}
-              </TouchableOpacity>
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={styles.requestRideButtonText}>Request Ride</Text>
+              )}
+            </TouchableOpacity>
             </View>
           </View>
         </View>

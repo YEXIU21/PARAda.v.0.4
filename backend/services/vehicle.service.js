@@ -72,30 +72,67 @@ exports.getVehicleById = async (vehicleId) => {
  */
 exports.getNearbyVehicles = async (location, type, maxDistance = 5000) => {
   try {
-    // Build query
-    const query = {
-      status: 'available',
-      location: {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: [location.longitude, location.latitude]
-          },
-          $maxDistance: maxDistance
+    let vehicles = [];
+    
+    try {
+      // Try geospatial query first
+      const geoQuery = {
+        status: 'available',
+        location: {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: [location.longitude, location.latitude]
+            },
+            $maxDistance: maxDistance
+          }
         }
+      };
+      
+      // Add type filter if provided
+      if (type) {
+        geoQuery.type = type;
       }
-    };
-    
-    // Add type filter if provided
-    if (type) {
-      query.type = type;
+      
+      // Get vehicles from database using geospatial query
+      vehicles = await Vehicle.find(geoQuery)
+        .populate('driverId', 'userId status')
+        .populate('routeId', 'name stops')
+        .limit(50);
+    } catch (geoQueryError) {
+      console.error('Geospatial query failed:', geoQueryError);
+      console.log('Falling back to regular query');
+      
+      // Fallback to regular query with manual distance calculation
+      // This is less efficient but more reliable if geospatial indexes aren't set up
+      const basicQuery = { status: 'available' };
+      
+      // Add type filter if provided
+      if (type) {
+        basicQuery.type = type;
+      }
+      
+      // Get all available vehicles
+      vehicles = await Vehicle.find(basicQuery)
+        .populate('driverId', 'userId status')
+        .populate('routeId', 'name stops');
+      
+      // Filter by distance manually
+      vehicles = vehicles.filter(vehicle => {
+        // Skip vehicles without location
+        if (!vehicle.location || !vehicle.location.coordinates || 
+            vehicle.location.coordinates.length !== 2) {
+          return false;
+        }
+        
+        const distance = calculateDistance(
+          location.latitude, location.longitude,
+          vehicle.location.coordinates[1], vehicle.location.coordinates[0]
+        );
+        
+        return distance <= maxDistance;
+      }).slice(0, 50); // Limit to 50 results
     }
-    
-    // Get vehicles from database
-    const vehicles = await Vehicle.find(query)
-      .populate('driverId', 'userId status')
-      .populate('routeId', 'name stops')
-      .limit(50);
     
     // If no vehicles found in database, generate mock data for development/testing
     if (vehicles.length === 0) {
@@ -105,6 +142,12 @@ exports.getNearbyVehicles = async (location, type, maxDistance = 5000) => {
     
     // Format vehicle data
     return vehicles.map(vehicle => {
+      // Skip vehicles without valid coordinates
+      if (!vehicle.location || !vehicle.location.coordinates || 
+          vehicle.location.coordinates.length !== 2) {
+        return null;
+      }
+      
       const distance = calculateDistance(
         location.latitude, location.longitude,
         vehicle.location.coordinates[1], vehicle.location.coordinates[0]
@@ -132,7 +175,7 @@ exports.getNearbyVehicles = async (location, type, maxDistance = 5000) => {
         routeId: vehicle.routeId ? vehicle.routeId._id : null,
         routeName: vehicle.routeId ? vehicle.routeId.name : null
       };
-    });
+    }).filter(Boolean); // Remove null entries
   } catch (error) {
     console.error('Error getting nearby vehicles:', error);
     

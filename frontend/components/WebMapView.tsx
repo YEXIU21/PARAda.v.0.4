@@ -42,16 +42,16 @@ const WebMapView: React.FC<WebMapViewProps> = ({
   const mapMarkersRef = useRef<any[]>([]);
   const polylineRef = useRef<any>(null);
   
-  // Only use this component on web platform
-  if (Platform.OS !== 'web') {
-    return null;
-  }
-
   const latitude = initialRegion?.latitude || 14.6091;
   const longitude = initialRegion?.longitude || 121.0223;
   const zoom = 15;
   const apiKey = env.googleMapsApiKey;
   const mapId = env.googleMapsId;
+
+  // Only use this component on web platform
+  if (Platform.OS !== 'web') {
+    return null;
+  }
 
   // Parse children to find polyline components
   const findPolylines = () => {
@@ -75,6 +75,18 @@ const WebMapView: React.FC<WebMapViewProps> = ({
       return;
     }
     
+    // Define the callback function in the window scope
+    window.initGoogleMap = () => {
+      console.log('Google Maps API loaded');
+      setMapLoaded(true);
+    };
+    
+    // Add specific error handling for Google Maps API errors
+    window.gm_authFailure = () => {
+      setMapError(true);
+      console.error('Google Maps authentication error: The API key may not be valid or billing is not enabled');
+    };
+    
     // Check if the script is already loaded
     const existingScript = document.getElementById('google-maps-script');
     if (!existingScript) {
@@ -83,17 +95,6 @@ const WebMapView: React.FC<WebMapViewProps> = ({
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initGoogleMap&loading=async&libraries=marker&v=beta`;
       script.async = true;
       script.defer = true;
-      
-      // Define the callback function in the window scope
-      window.initGoogleMap = () => {
-        setMapLoaded(true);
-      };
-      
-      // Add specific error handling for Google Maps API errors
-      window.gm_authFailure = () => {
-        setMapError(true);
-        console.error('Google Maps authentication error: The API key may not be valid or billing is not enabled');
-      };
       
       script.onerror = () => {
         setMapError(true);
@@ -104,9 +105,13 @@ const WebMapView: React.FC<WebMapViewProps> = ({
       
       return () => {
         // Cleanup script when component unmounts
-        document.head.removeChild(script);
-        // Set to undefined instead of using delete
-        window.initGoogleMap = undefined as any;
+        if (document.getElementById('google-maps-script')) {
+          document.head.removeChild(script);
+        }
+        
+        // Clean up global functions
+        delete window.initGoogleMap;
+        delete window.gm_authFailure;
       };
     } else if (window.google && window.google.maps) {
       // If script exists and maps is loaded, set loaded state
