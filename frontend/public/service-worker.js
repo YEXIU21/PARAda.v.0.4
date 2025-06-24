@@ -1,0 +1,132 @@
+// Service worker for PARAda PWA
+const CACHE_NAME = 'parada-v1.1';
+const URLS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/register-service-worker.js',
+  '/assets/icons/icon-72x72.png',
+  '/assets/icons/icon-96x96.png',
+  '/assets/icons/icon-128x128.png',
+  '/assets/icons/icon-144x144.png',
+  '/assets/icons/icon-152x152.png',
+  '/assets/icons/icon-192x192.png',
+  '/assets/icons/icon-384x384.png',
+  '/assets/icons/icon-512x512.png',
+  '/assets/icons/maskable_icon.png'
+];
+
+// Install event - cache assets
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('Cache opened');
+        return cache.addAll(URLS_TO_CACHE.map(url => {
+          return new Request(url, { mode: 'no-cors' });
+        }));
+      })
+      .then(() => self.skipWaiting())
+      .catch(error => {
+        console.warn('Service worker cache failed:', error);
+        // Continue anyway to avoid breaking the service worker
+        return self.skipWaiting();
+      })
+  );
+});
+
+// Activate event - clean up old caches
+self.addEventListener('activate', (event) => {
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
+// Fetch event - serve from cache, fall back to network
+self.addEventListener('fetch', (event) => {
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // Skip requests to API endpoints
+  if (event.request.url.includes('/api/') || 
+      event.request.url.includes('maps.googleapis.com') ||
+      event.request.url.includes('socket.io')) {
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        // Cache hit - return the response from the cached version
+        if (response) {
+          return response;
+        }
+        
+        // Not in cache - return the result from the live server
+        return fetch(event.request).then(
+          (response) => {
+            // Check if we received a valid response
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+
+            // Clone the response since it's a stream and can only be consumed once
+            const responseToCache = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                // Don't cache API requests or other dynamic content
+                if (!event.request.url.includes('/api/')) {
+                  cache.put(event.request, responseToCache);
+                }
+              });
+
+            return response;
+          }
+        );
+      })
+      .catch(() => {
+        // If both cache and network fail, try to serve the offline page
+        return caches.match('/');
+      })
+  );
+});
+
+// Handle push notifications
+self.addEventListener('push', (event) => {
+  if (event.data) {
+    const data = event.data.json();
+    const options = {
+      body: data.body,
+      icon: '/assets/icons/icon-192x192.png',
+      badge: '/assets/icons/icon-96x96.png',
+      data: {
+        url: data.url || '/'
+      }
+    };
+    
+    event.waitUntil(
+      self.registration.showNotification('PARAda Transport', options)
+    );
+  }
+});
+
+// Handle notification click
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  event.waitUntil(
+    clients.openWindow(event.notification.data.url)
+  );
+}); 

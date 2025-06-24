@@ -67,61 +67,71 @@ export default function RootLayout() {
 
     // Add PWA meta tags and script for web platform
     if (Platform.OS === 'web') {
-      // Add meta tags
-      const metaViewport = document.createElement('meta');
-      metaViewport.name = 'viewport';
-      metaViewport.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
-      document.head.appendChild(metaViewport);
+      // Check if meta tags already exist
+      const existingViewport = document.querySelector('meta[name="viewport"]');
+      const existingThemeColor = document.querySelector('meta[name="theme-color"]');
+      const existingAppleMobile = document.querySelector('meta[name="apple-mobile-web-app-capable"]');
+      const existingStatusBar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+      const existingMobileWeb = document.querySelector('meta[name="mobile-web-app-capable"]');
       
-      const metaThemeColor = document.createElement('meta');
-      metaThemeColor.name = 'theme-color';
-      metaThemeColor.content = '#4B6BFE';
-      document.head.appendChild(metaThemeColor);
+      // Only add viewport meta if it doesn't exist
+      if (!existingViewport) {
+        const metaViewport = document.createElement('meta');
+        metaViewport.name = 'viewport';
+        metaViewport.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
+        document.head.appendChild(metaViewport);
+      }
       
-      const metaAppleMobileWebAppCapable = document.createElement('meta');
-      metaAppleMobileWebAppCapable.name = 'apple-mobile-web-app-capable';
-      metaAppleMobileWebAppCapable.content = 'yes';
-      document.head.appendChild(metaAppleMobileWebAppCapable);
+      // Only add theme-color meta if it doesn't exist
+      if (!existingThemeColor) {
+        const metaThemeColor = document.createElement('meta');
+        metaThemeColor.name = 'theme-color';
+        metaThemeColor.content = '#4B6BFE';
+        document.head.appendChild(metaThemeColor);
+      }
       
-      const metaAppleMobileWebAppStatusBarStyle = document.createElement('meta');
-      metaAppleMobileWebAppStatusBarStyle.name = 'apple-mobile-web-app-status-bar-style';
-      metaAppleMobileWebAppStatusBarStyle.content = 'black-translucent';
-      document.head.appendChild(metaAppleMobileWebAppStatusBarStyle);
+      // Only add apple-mobile-web-app-capable meta if it doesn't exist
+      if (!existingAppleMobile) {
+        const metaAppleMobileWebAppCapable = document.createElement('meta');
+        metaAppleMobileWebAppCapable.name = 'apple-mobile-web-app-capable';
+        metaAppleMobileWebAppCapable.content = 'yes';
+        document.head.appendChild(metaAppleMobileWebAppCapable);
+      }
       
-      // Add manifest link
-      const linkManifest = document.createElement('link');
-      linkManifest.rel = 'manifest';
-      linkManifest.href = '/manifest.json';
-      document.head.appendChild(linkManifest);
+      // Only add apple-mobile-web-app-status-bar-style meta if it doesn't exist
+      if (!existingStatusBar) {
+        const metaAppleMobileWebAppStatusBarStyle = document.createElement('meta');
+        metaAppleMobileWebAppStatusBarStyle.name = 'apple-mobile-web-app-status-bar-style';
+        metaAppleMobileWebAppStatusBarStyle.content = 'black-translucent';
+        document.head.appendChild(metaAppleMobileWebAppStatusBarStyle);
+      }
       
-      // Add apple touch icon with proper sizes
-      const appleTouchIconSizes = [180, 167, 152, 120];
-      appleTouchIconSizes.forEach(size => {
-        const linkAppleTouchIcon = document.createElement('link');
-        linkAppleTouchIcon.rel = 'apple-touch-icon';
-        linkAppleTouchIcon.setAttribute('sizes', `${size}x${size}`);
-        
-        // Use the nearest properly sized icon for each Apple touch icon size
-        let nearestSize = 512; // Default to largest
-        
-        // Find the closest icon size we have generated
-        const availableSizes = [72, 96, 128, 144, 152, 192, 384, 512];
-        for (const availableSize of availableSizes) {
-          if (availableSize >= size || availableSize >= nearestSize) {
-            nearestSize = availableSize;
-            break;
-          }
-        }
-        
-        linkAppleTouchIcon.href = `/assets/icons/icon-${nearestSize}x${nearestSize}.png`;
-        document.head.appendChild(linkAppleTouchIcon);
-      });
+      // Add mobile-web-app-capable meta if it doesn't exist (to fix the warning)
+      if (!existingMobileWeb) {
+        const metaMobileWebAppCapable = document.createElement('meta');
+        metaMobileWebAppCapable.name = 'mobile-web-app-capable';
+        metaMobileWebAppCapable.content = 'yes';
+        document.head.appendChild(metaMobileWebAppCapable);
+      }
       
-      // Add service worker registration script
-      const script = document.createElement('script');
-      script.src = '/register-service-worker.js';
-      script.defer = true;
-      document.body.appendChild(script);
+      // Check if manifest link already exists
+      const existingManifest = document.querySelector('link[rel="manifest"]');
+      if (!existingManifest) {
+        // Add manifest link
+        const linkManifest = document.createElement('link');
+        linkManifest.rel = 'manifest';
+        linkManifest.href = '/manifest.json';
+        document.head.appendChild(linkManifest);
+      }
+      
+      // Add service worker registration script if it doesn't exist
+      const existingServiceWorkerScript = document.querySelector('script[src="/register-service-worker.js"]');
+      if (!existingServiceWorkerScript) {
+        const script = document.createElement('script');
+        script.src = '/register-service-worker.js';
+        script.defer = true;
+        document.body.appendChild(script);
+      }
     }
   }, []);
 
