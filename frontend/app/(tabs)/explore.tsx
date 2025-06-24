@@ -535,21 +535,11 @@ export default function ExploreScreen() {
       return filteredRoutes;
     }
     
-    // For users with 'all' subscription type, show all routes
-    if (user?.subscription?.type === 'all') {
+    // For users with verified subscriptions, show all routes regardless of vehicle type
+    // Check if either verified is true or isActive is true
+    if (user?.subscription && 
+        (user.subscription.verified || (user.subscription as any).isActive)) {
       return filteredRoutes;
-    }
-    
-    // For users with specific subscription types, filter by vehicle type
-    if (user?.subscription?.verified) {
-      // Get accessible vehicle types for this user
-      const accessibleTypes = getAccessibleVehicleTypes(user);
-      
-      // Filter routes by accessible vehicle types
-      return filteredRoutes.filter(route => {
-        const routeType = route.vehicleType || route.type;
-        return routeType && accessibleTypes.includes(routeType as VehicleTypeId);
-      });
     }
     
     // For users without a verified subscription, show all routes but mark them as locked
@@ -625,26 +615,13 @@ export default function ExploreScreen() {
       return true;
     }
     
-    // Get the route's vehicle type
-    const routeType = route.vehicleType || route.type;
-    
-    // If no route type, assume accessible
-    if (!routeType) {
-      return true;
-    }
-    
-    // If user has no subscription or it's not verified, route is not accessible
-    if (!user?.subscription || !user.subscription.verified) {
+    // If user has no subscription, route is not accessible
+    if (!user?.subscription) {
       return false;
     }
     
-    // If subscription type is 'all', route is accessible
-    if (user.subscription.type === 'all') {
-      return true;
-    }
-    
-    // Otherwise, check if subscription type matches route type
-    return user.subscription.type === routeType;
+    // If subscription is verified or active, all routes are accessible
+    return user.subscription.verified || (user.subscription as any).isActive === true;
   }, [user]);
 
   const renderSectionHeader = ({ section }: { section: SectionData }) => {

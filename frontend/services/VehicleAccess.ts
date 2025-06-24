@@ -20,18 +20,18 @@ export const hasAccessToVehicleType = (
     return false;
   }
   
-  // If subscription is not verified, no access
-  if (!user.subscription.verified) {
+  // Check if subscription is valid - either verified flag is true or isActive is true
+  // This ensures that if either field is properly set, the user gets access
+  const isSubscriptionValid = user.subscription.verified || 
+                             (user.subscription as any).isActive === true;
+  
+  if (!isSubscriptionValid) {
     return false;
   }
   
-  // If subscription type is 'all', access to all vehicle types
-  if (user.subscription.type === 'all') {
-    return true;
-  }
-  
-  // Otherwise, check if subscription type matches vehicle type
-  return user.subscription.type === vehicleType;
+  // If user has a valid subscription, give access to all vehicle types
+  // This ensures subscribed users (passengers/students) have access to any vehicle
+  return true;
 };
 
 /**
@@ -45,18 +45,17 @@ export const getAccessibleVehicleTypes = (user: User | null): VehicleTypeId[] =>
     return [];
   }
   
-  // If subscription is not verified, no access
-  if (!user.subscription.verified) {
+  // Check if subscription is valid - either verified flag is true or isActive is true
+  const isSubscriptionValid = user.subscription.verified || 
+                             (user.subscription as any).isActive === true;
+  
+  if (!isSubscriptionValid) {
     return [];
   }
   
-  // If subscription type is 'all', access to all vehicle types
-  if (user.subscription.type === 'all') {
-    return ['latransco', 'calvo', 'corominas', 'ceres', 'gabe', 'jeep'];
-  }
-  
-  // Otherwise, only access to the specific vehicle type
-  return [user.subscription.type as VehicleTypeId];
+  // If user has a valid subscription, give access to all vehicle types
+  // This ensures subscribed users (passengers/students) have access to any vehicle
+  return ['latransco', 'calvo', 'corominas', 'ceres', 'gabe', 'jeep'];
 };
 
 /**

@@ -23,6 +23,7 @@ export interface User {
     type: string;
     plan: string;
     verified: boolean;
+    isActive?: boolean;
     expiryDate: string;
     referenceNumber: string;
   };
@@ -172,6 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 type: subscription.type,
                 plan: subscription.planId,
                 verified: subscription.verification?.verified || false,
+                isActive: subscription.isActive || false,
                 expiryDate: subscription.expiryDate || '',
                 referenceNumber: subscription.paymentDetails.referenceNumber
               };
@@ -181,6 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 type: subscription.type,
                 plan: subscription.planId,
                 verified: subscription.verification?.verified || false,
+                isActive: subscription.isActive || false,
                 approved: subscription.verification?.verified || false,
                 expiryDate: subscription.expiryDate || '',
                 referenceNumber: subscription.paymentDetails.referenceNumber,
@@ -206,6 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                       type: parsedSub.type,
                       plan: parsedSub.plan,
                       verified: parsedSub.verified || false,
+                      isActive: parsedSub.isActive || false,
                       expiryDate: parsedSub.expiryDate || '',
                       referenceNumber: parsedSub.referenceNumber
                     };
@@ -459,6 +463,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               type: userData.subscription.type,
               plan: userData.subscription.plan,
               verified: userData.subscription.verified || false,
+              isActive: userData.subscription.isActive || false,
               expiryDate: userData.subscription.expiryDate || '',
               referenceNumber: userData.subscription.referenceNumber || ''
             }
@@ -471,6 +476,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             type: userData.subscription.type,
             plan: userData.subscription.plan,
             verified: userData.subscription.verified || false,
+            isActive: userData.subscription.isActive || false,
             approved: userData.subscription.verified || false,
             expiryDate: userData.subscription.expiryDate || '',
             referenceNumber: userData.subscription.referenceNumber || '',
@@ -500,6 +506,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     type: parsedSub.type,
                     plan: parsedSub.plan,
                     verified: parsedSub.verified || false,
+                    isActive: parsedSub.isActive || false,
                     expiryDate: parsedSub.expiryDate || '',
                     referenceNumber: parsedSub.referenceNumber || ''
                   }
@@ -544,6 +551,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   type: data.type,
                   plan: data.plan,
                   verified: data.verified || false,
+                  isActive: data.isActive || false,
                   expiryDate: data.expiryDate || '',
                   referenceNumber: data.referenceNumber || ''
                 }
