@@ -113,6 +113,9 @@ export const ENDPOINTS = {
     RIDES: '/api/admin/rides',
     SUBSCRIPTIONS: '/api/admin/subscriptions',
     REPORTS: '/api/admin/reports',
+    SYSTEM_SETTINGS: '/api/admin/system-settings',
+    CLEAR_CACHE: '/api/admin/clear-cache',
+    RESET_SETTINGS: '/api/admin/reset-settings',
     VERIFY_DRIVER: (driverId) => `/api/admin/drivers/${driverId}/verify`,
     DELETE_DRIVER: (driverId) => `/api/admin/drivers/${driverId}`
   },
