@@ -1678,106 +1678,6 @@ export default function DriverScreen() {
             </View>
             
             <View style={styles.routeActions}>
-              {route.status === 'active' && isOnDuty && !route.isInTrip && (
-                <>
-                    <TouchableOpacity 
-                      style={[styles.actionButton, styles.primaryActionButton]}
-                      onPress={() => {
-                        // Start trip logic would go here
-                        Alert.alert(
-                          "Start Trip",
-                          "Are you sure you want to start this trip?",
-                          [
-                            { text: "Cancel", style: "cancel" },
-                            { 
-                              text: "Start", 
-                              onPress: async () => {
-                                try {
-                                console.log("Starting trip for route:", route.id);
-                                  
-                                  // Update route status to in_progress
-                                  const updatedRoutes = driverRoutes.map(r => 
-                                    r.id === route.id 
-                                      ? { ...r, status: 'active' as const, isInTrip: true } 
-                                      : r
-                                  );
-                                  
-                                  // Update state
-                                  setDriverRoutes(updatedRoutes);
-                                  
-                                  // Save to AsyncStorage to persist after refresh
-                                  await AsyncStorage.setItem('driverRoutes', JSON.stringify(updatedRoutes));
-                                  console.log('Driver routes saved to AsyncStorage:', updatedRoutes.length);
-                                  
-                                  // If we have a socket connection, notify about trip start
-                                  const locationSocketModule = await import('../../services/socket/location.socket');
-                                  if (driverId) {
-                                    locationSocketModule.sendDriverLocation(driverId, userLocation || { latitude: 0, longitude: 0 }, route.routeNumber);
-                                    
-                                    // Also update via API to ensure trip status is recorded
-                                    try {
-                                      const token = await AsyncStorage.getItem('token') || '';
-                                      const response = await fetch(`${BASE_URL}/api/drivers/${driverId}/trip`, {
-                                        method: 'POST',
-                                        headers: {
-                                          'Content-Type': 'application/json',
-                                          'x-access-token': token
-                                        },
-                                        body: JSON.stringify({
-                                          routeId: route.routeNumber,
-                                          status: 'in_progress',
-                                          location: userLocation
-                                        })
-                                      });
-                                      console.log('Trip status update API response:', await response.json());
-                                    } catch (apiError) {
-                                      console.error('Failed to update trip status via API:', apiError);
-                                    }
-                                  }
-                                  
-                                  // Increase location tracking frequency during trip
-                                  setIsLocationTracking(true);
-                                  
-                                  // Show confirmation to user
-                                  Alert.alert(
-                                    "Trip Started",
-                                    "You have started your trip. Your location will be shared with passengers.",
-                                    [{ 
-                                      text: "OK",
-                                      onPress: () => {
-                                        // Refresh UI to show trip in progress
-                                        handleShowRouteDetails(route);
-                                      }
-                                    }]
-                                  );
-                                } catch (error) {
-                                  console.error('Error starting trip:', error);
-                                  Alert.alert(
-                                    "Error",
-                                    "Failed to start trip. Please try again.",
-                                    [{ text: "OK" }]
-                                  );
-                                }
-                              } 
-                            }
-                          ]
-                        );
-                      }}
-                    >
-                      <FontAwesome5 name="play-circle" size={16} color="#FFF" />
-                      <Text style={styles.primaryActionButtonText}>Start Trip</Text>
-                  </TouchableOpacity>
-                  
-                    <TouchableOpacity 
-                      style={styles.actionButton}
-                      onPress={() => handleShowRouteDetails(route)}
-                    >
-                      <FontAwesome5 name="headset" size={16} color="#2196F3" />
-                    <Text style={[styles.actionText, { color: '#2196F3' }]}>Support</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-              
               {route.status === 'active' && isOnDuty && route.isInTrip && (
                 <>
                   <TouchableOpacity 
@@ -1862,34 +1762,144 @@ export default function DriverScreen() {
                     <Text style={styles.primaryActionButtonText}>End Trip</Text>
                   </TouchableOpacity>
                   
+                  <View style={{flexDirection: 'row'}}>
+                    <TouchableOpacity 
+                      style={[styles.actionButton, {flex: 1, marginRight: 5}]}
+                      onPress={() => handleShowRouteMap(route)}
+                    >
+                      <FontAwesome5 name="map-marked-alt" size={16} color="#2196F3" />
+                      <Text style={[styles.actionText, { color: '#2196F3' }]}>Map</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={[styles.actionButton, {flex: 1, marginLeft: 5}]}
+                      onPress={() => handleShowRouteDetails(route)}
+                    >
+                      <FontAwesome5 name="info-circle" size={16} color="#2196F3" />
+                      <Text style={[styles.actionText, { color: '#2196F3' }]}>Info</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+              
+              {route.status === 'active' && isOnDuty && !route.isInTrip && (
+                <>
+                    <TouchableOpacity 
+                      style={[styles.actionButton, styles.primaryActionButton]}
+                      onPress={() => {
+                        // Start trip logic would go here
+                        Alert.alert(
+                          "Start Trip",
+                          "Are you sure you want to start this trip?",
+                          [
+                            { text: "Cancel", style: "cancel" },
+                            { 
+                              text: "Start", 
+                              onPress: async () => {
+                                try {
+                                console.log("Starting trip for route:", route.id);
+                                  
+                                  // Update route status to in_progress
+                                  const updatedRoutes = driverRoutes.map(r => 
+                                    r.id === route.id 
+                                      ? { ...r, status: 'active' as const, isInTrip: true } 
+                                      : r
+                                  );
+                                  
+                                  // Update state
+                                  setDriverRoutes(updatedRoutes);
+                                  
+                                  // Save to AsyncStorage to persist after refresh
+                                  await AsyncStorage.setItem('driverRoutes', JSON.stringify(updatedRoutes));
+                                  console.log('Driver routes saved to AsyncStorage:', updatedRoutes.length);
+                                  
+                                  // If we have a socket connection, notify about trip start
+                                  const locationSocketModule = await import('../../services/socket/location.socket');
+                                  if (driverId) {
+                                    locationSocketModule.sendDriverLocation(driverId, userLocation || { latitude: 0, longitude: 0 }, route.routeNumber);
+                                    
+                                    // Also update via API to ensure trip status is recorded
+                                    try {
+                                      const token = await AsyncStorage.getItem('token') || '';
+                                      const response = await fetch(`${BASE_URL}/api/drivers/${driverId}/trip`, {
+                                        method: 'POST',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'x-access-token': token
+                                        },
+                                        body: JSON.stringify({
+                                          routeId: route.routeNumber,
+                                          status: 'in_progress',
+                                          location: userLocation
+                                        })
+                                      });
+                                      console.log('Trip status update API response:', await response.json());
+                                    } catch (apiError) {
+                                      console.error('Failed to update trip status via API:', apiError);
+                                    }
+                                  }
+                                  
+                                  // Increase location tracking frequency during trip
+                                  setIsLocationTracking(true);
+                                  
+                                  // Show confirmation to user
+                                  Alert.alert(
+                                    "Trip Started",
+                                    "You have started your trip. Your location will be shared with passengers.",
+                                    [{ 
+                                      text: "OK"
+                                    }]
+                                  );
+                                } catch (error) {
+                                  console.error('Error starting trip:', error);
+                                  Alert.alert(
+                                    "Error",
+                                    "Failed to start trip. Please try again.",
+                                    [{ text: "OK" }]
+                                  );
+                                }
+                              } 
+                            }
+                          ]
+                        );
+                      }}
+                    >
+                      <FontAwesome5 name="play-circle" size={16} color="#FFF" />
+                      <Text style={styles.primaryActionButtonText}>Start Trip</Text>
+                  </TouchableOpacity>
+                  
                   <TouchableOpacity 
                     style={styles.actionButton}
-                    onPress={() => handleShowRouteMap(route)}
+                    onPress={() => handleShowRouteDetails(route)}
                   >
-                    <FontAwesome5 name="map-marked-alt" size={16} color="#2196F3" />
-                    <Text style={[styles.actionText, { color: '#2196F3' }]}>View Map</Text>
+                    <FontAwesome5 name="info-circle" size={16} color="#2196F3" />
+                    <Text style={[styles.actionText, { color: '#2196F3' }]}>Details</Text>
                   </TouchableOpacity>
                 </>
               )}
               
               {route.status === 'upcoming' && (
-                    <TouchableOpacity 
-                      style={[styles.actionButton, styles.secondaryActionButton]}
-                      onPress={() => handleShowRouteDetails(route)}
-                    >
+                <>
+                  <TouchableOpacity 
+                    style={[styles.actionButton, styles.secondaryActionButton]}
+                    onPress={() => handleShowRouteDetails(route)}
+                  >
                     <FontAwesome5 name="info-circle" size={16} color="#FFF" />
                     <Text style={styles.secondaryActionButtonText}>Details</Text>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                </>
               )}
               
               {route.status === 'completed' && (
+                <>
                   <TouchableOpacity 
                     style={styles.actionButton}
                     onPress={() => handleShowRouteDetails(route)}
                   >
                     <FontAwesome5 name="file-alt" size={16} color={isDarkMode ? '#BBBBBB' : '#9E9E9E'} />
-                  <Text style={[styles.actionText, { color: isDarkMode ? '#BBBBBB' : '#9E9E9E' }]}>View Report</Text>
-                </TouchableOpacity>
+                    <Text style={[styles.actionText, { color: isDarkMode ? '#BBBBBB' : '#9E9E9E' }]}>View Report</Text>
+                  </TouchableOpacity>
+                </>
               )}
             </View>
             </View>
