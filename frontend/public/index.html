@@ -45,6 +45,101 @@
       height: 100%;
     }
     
+    /* Splash screen styles */
+    .splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #4B6BFE, #1a2980);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+    }
+    
+    .splash-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .splash-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      max-width: 80%;
+    }
+    
+    .splash-logo {
+      width: 180px;
+      height: 180px;
+      margin-bottom: 20px;
+      object-fit: contain;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-font-smoothing: subpixel-antialiased;
+      border-radius: 20px;
+      animation: pulse 2s infinite;
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+    }
+    
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+      }
+      50% {
+        transform: scale(1.05);
+        filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8));
+      }
+      100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+      }
+    }
+    
+    .splash-title {
+      color: #FFFFFF;
+      font-size: 36px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      text-align: center;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .splash-subtitle {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 18px;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    
+    .splash-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #FFFFFF;
+      animation: spin 1s linear infinite;
+    }
+    
+    /* Initial loader styles */
     .initial-loader {
       display: flex;
       flex-direction: column;
@@ -100,6 +195,10 @@
         background-color: #121212;
       }
       
+      .splash-screen {
+        background: linear-gradient(135deg, #3D5AFE, #171E40);
+      }
+      
       .initial-loader-title {
         color: #6B8AFF;
       }
@@ -119,6 +218,16 @@
   <link rel="preload" href="/assets/images/PARAda-Logo.png" as="image" type="image/png">
 </head>
 <body>
+  <!-- Splash Screen -->
+  <div id="splash-screen" class="splash-screen">
+    <div class="splash-container">
+      <img src="/assets/images/PARAda-Logo.png" alt="PARAda Logo" class="splash-logo" />
+      <div class="splash-title">PARAda</div>
+      <div class="splash-subtitle">Real-Time Transportation Tracking</div>
+      <div class="splash-spinner"></div>
+    </div>
+  </div>
+  
   <div id="root">
     <div class="initial-loader">
       <img src="/assets/images/PARAda-Logo.png" alt="PARAda Logo" class="initial-loader-logo" />
@@ -130,6 +239,22 @@
   
   <!-- PWA Service Worker Registration -->
   <script>
+    // Splash screen timer
+    document.addEventListener('DOMContentLoaded', function() {
+      // Show splash screen for 5 seconds (5000ms)
+      setTimeout(function() {
+        const splashScreen = document.getElementById('splash-screen');
+        splashScreen.classList.add('hidden');
+        
+        // Remove from DOM after animation completes
+        setTimeout(function() {
+          if (splashScreen.parentNode) {
+            splashScreen.parentNode.removeChild(splashScreen);
+          }
+        }, 500); // Match this to the transition duration in CSS
+      }, 5000);
+    });
+    
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('/service-worker.js')
