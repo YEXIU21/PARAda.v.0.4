@@ -15,7 +15,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   
   <!-- PWA Links -->
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
   <link rel="shortcut icon" href="/favicon.ico" />
   
   <!-- Apple Touch Icons - these are crucial for crisp icons on iOS -->
@@ -30,6 +30,11 @@
   <link rel="apple-touch-icon" href="/assets/ios-icons/apple-touch-icon.png" />
   <!-- Precomposed icon for older iOS versions -->
   <link rel="apple-touch-icon-precomposed" href="/assets/ios-icons/apple-touch-icon-precomposed.png" />
+  
+  <!-- PWA icons for different platforms -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/icons/icon-512x512.png" />
+  <link rel="mask-icon" href="/assets/icons/maskable_icon.png" color="#4B6BFE" />
   
   <!-- Title -->
   <title>PARAda Transport</title>
@@ -70,6 +75,10 @@
       object-fit: contain;
       image-rendering: -webkit-optimize-contrast;
       image-rendering: crisp-edges;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-font-smoothing: subpixel-antialiased;
       border-radius: 20px;
     }
     
@@ -122,12 +131,13 @@
   
   <!-- Preload the icon images -->
   <link rel="preload" href="/assets/icons/icon-192x192.png" as="image" type="image/png">
+  <link rel="preload" href="/assets/icons/maskable_icon.png" as="image" type="image/png">
   <link rel="preload" href="/assets/ios-icons/apple-touch-icon-180x180.png" as="image" type="image/png">
 </head>
 <body>
   <div id="root">
     <div class="initial-loader">
-      <img src="/assets/icons/icon-192x192.png" alt="PARAda Logo" class="initial-loader-logo" />
+      <img src="/assets/icons/maskable_icon.png" alt="PARAda Logo" class="initial-loader-logo" />
       <div class="initial-loader-title">PARAda</div>
       <div class="initial-loader-subtitle">Real-Time Transportation Tracking</div>
       <div class="initial-loader-spinner"></div>
@@ -156,6 +166,13 @@
         img.src = `/assets/icons/icon-${size}x${size}.png`;
         return img;
       }),
+      
+      // Maskable icon
+      (() => {
+        const img = new Image();
+        img.src = '/assets/icons/maskable_icon.png';
+        return img;
+      })(),
       
       // iOS specific icons
       [60, 76, 114, 120, 144, 152, 167, 180].map(size => {
