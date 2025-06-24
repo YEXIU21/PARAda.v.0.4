@@ -5,6 +5,7 @@
   "scripts": {
     "start": "expo start --web",
     "clean": "rimraf dist",
+    "prebuild": "node ./scripts/sync-pwa-assets.js",
     "build": "expo export --platform web",
     "serve": "npx serve dist",
     "dev": "npm run build && npm run serve",
@@ -20,7 +21,8 @@
     "generate-ios-icons": "node ./scripts/generate-ios-icons.js",
     "generate-splash-screens": "node ./scripts/generate-splash-screen.js",
     "update-web-template": "node ./scripts/update-web-template.js",
-    "generate-all-assets": "npm run generate-android-icons && npm run generate-pwa-icons && npm run generate-ios-icons && npm run generate-splash-screens && npm run update-web-template"
+    "sync-pwa-assets": "node ./scripts/sync-pwa-assets.js",
+    "generate-all-assets": "npm run generate-android-icons && npm run generate-pwa-icons && npm run generate-ios-icons && npm run generate-splash-screens && npm run update-web-template && npm run sync-pwa-assets"
   },
   "jest": {
     "preset": "jest-expo",
