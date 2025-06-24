@@ -53,6 +53,7 @@ export default function DestinationModal({
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'list' | 'map'>('list');
+  const [selectedMapLocation, setSelectedMapLocation] = useState<Destination | null>(null);
   
   // Load destinations when the modal becomes visible
   useEffect(() => {
@@ -173,8 +174,19 @@ export default function DestinationModal({
         longitude: coordinate.longitude
       };
       
-      handleSelectDestination(customPlace);
+      // Instead of immediately selecting, store the selected location
+      setSelectedMapLocation(customPlace);
     }
+  };
+
+  const confirmMapSelection = () => {
+    if (selectedMapLocation) {
+      handleSelectDestination(selectedMapLocation);
+    }
+  };
+
+  const cancelMapSelection = () => {
+    setSelectedMapLocation(null);
   };
   
   const filteredDestinations = destinations;
@@ -225,7 +237,10 @@ export default function DestinationModal({
                   styles.destinationTab, 
                   activeTab === 'list' && styles.destinationTabActive
                 ]}
-                onPress={() => setActiveTab('list')}
+                onPress={() => {
+                  setActiveTab('list');
+                  setSelectedMapLocation(null);
+                }}
               >
                 <Text 
                   style={[
@@ -335,10 +350,45 @@ export default function DestinationModal({
                       </View>
                     </Marker>
                   ))}
+
+                  {/* Selected location marker */}
+                  {selectedMapLocation && (
+                    <Marker
+                      coordinate={{
+                        latitude: selectedMapLocation.latitude,
+                        longitude: selectedMapLocation.longitude,
+                      }}
+                      title="Selected Location"
+                    >
+                      <View style={styles.selectedLocationMarker}>
+                        <FontAwesome5 name="map-pin" size={24} color="#FF3B30" />
+                      </View>
+                    </Marker>
+                  )}
                 </MapView>
-                <Text style={styles.mapInstructions}>
-                  Tap anywhere on the map to select a location
-                </Text>
+                
+                {!selectedMapLocation ? (
+                  <Text style={styles.mapInstructions}>
+                    Tap anywhere on the map to select a location
+                  </Text>
+                ) : (
+                  <View style={styles.mapActionContainer}>
+                    <TouchableOpacity 
+                      style={styles.mapActionButton}
+                      onPress={cancelMapSelection}
+                    >
+                      <FontAwesome5 name="times" size={16} color="white" />
+                      <Text style={styles.mapActionButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.mapActionButton, styles.mapConfirmButton]}
+                      onPress={confirmMapSelection}
+                    >
+                      <FontAwesome5 name="check" size={16} color="white" />
+                      <Text style={styles.mapActionButtonText}>Confirm Location</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             )}
           </View>
@@ -501,6 +551,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  selectedLocationMarker: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -521,5 +577,33 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '500',
+  },
+  mapActionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  mapActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#999',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  mapConfirmButton: {
+    backgroundColor: '#4B6BFE',
+    flex: 1,
+  },
+  mapActionButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 5,
   }
 }); 
