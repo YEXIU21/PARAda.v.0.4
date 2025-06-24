@@ -24,10 +24,14 @@ const driverConnections = new Map();
 // Check if we're in a serverless environment
 const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSION;
 
+let io = null;
+
 // Initialize socket.io server
 const initializeSocketServer = (server) => {
+  if (io) return io;
+  
   // Configure Socket.IO even in serverless environments
-  const io = socketIO(server, {
+  io = socketIO(server, {
     cors: {
       origin: '*', // Allow all origins for now
       methods: ['GET', 'POST'],
@@ -79,6 +83,8 @@ const initializeSocketServer = (server) => {
 
   // Connection handler
   io.on('connection', (socket) => {
+    console.log('New socket connection:', socket.id);
+    
     // Handle authenticated users
     if (socket.user) {
       console.log(`Socket connected: ${socket.id} (User: ${socket.user.username})`);
@@ -235,6 +241,21 @@ const initializeSocketServer = (server) => {
         socket.join('routes:updates');
       });
     }
+    
+    // Handle client identification
+    socket.on('identify', (data) => {
+      if (data && data.id) {
+        console.log(`Socket ${socket.id} identified as ${data.id}`);
+        socket.join(data.id);
+        
+        // Join specific rooms based on user type
+        if (data.type === 'driver') {
+          socket.join(`driver:${data.id}`);
+        } else if (data.type === 'passenger') {
+          socket.join(`passenger:${data.id}`);
+        }
+      }
+    });
     
     // Disconnect handler
     socket.on('disconnect', () => {
@@ -457,44 +478,25 @@ const sendToUser = (userId, data) => {
  * @param {Object} location - Location coordinates
  * @param {string} rideId - Optional ride ID
  */
-const emitDriverLocation = async (driverId, location, rideId = null) => {
-  try {
-    const payload = {
-      driverId,
-      location,
-      timestamp: new Date().toISOString()
-    };
-    
-    if (rideId) {
-      payload.rideId = rideId;
-      
-      // If this is part of a ride, notify the passenger
-      const ride = await Ride.findById(rideId);
-      if (ride) {
-        // Find passenger socket and emit location update
-        const passengerConnection = Array.from(activeConnections.values())
-          .find(conn => conn.userId && conn.userId.toString() === ride.userId.toString());
-        
-        if (passengerConnection) {
-          passengerConnection.socket.emit('driver_location', payload);
-        }
-        
-        // Update active ride record
-        activeRides.set(rideId.toString(), {
-          ...(activeRides.get(rideId.toString()) || {}),
-          driverLocation: location
-        });
-      }
-    }
-    
-    // Also emit to admin connections
-    emitToAdmins('driver_location', payload);
-    
-    return true;
-  } catch (error) {
-    console.error('Error emitting driver location:', error);
-    return false;
+const emitDriverLocation = (driverId, location, rideId = null) => {
+  if (!io) return;
+  
+  const data = {
+    driverId,
+    location,
+    timestamp: new Date(),
+    rideId
+  };
+  
+  // Emit to specific rooms
+  io.to(`driver:${driverId}`).emit('location_update', data);
+  
+  if (rideId) {
+    io.to(`ride:${rideId}`).emit('driver_location', data);
   }
+  
+  // Also emit to general driver updates room
+  io.to('driver_updates').emit('driver_location', data);
 };
 
 /**
@@ -560,6 +562,32 @@ const emitRouteUpdates = async (driverId = null, routes) => {
   }
 };
 
+/**
+ * Emit trip status update
+ * @param {Object} data - Trip status data
+ */
+const emitTripStatusUpdate = (data) => {
+  if (!io) return;
+  
+  // Emit to specific rooms
+  io.to(`driver:${data.driverId}`).emit('trip_status', data);
+  
+  if (data.routeId) {
+    io.to(`route:${data.routeId}`).emit('trip_status', data);
+  }
+  
+  // Also emit to general updates room
+  io.to('trip_updates').emit('trip_status', data);
+};
+
+/**
+ * Get Socket.IO instance
+ * @returns {Object|null} - Socket.IO instance or null if not initialized
+ */
+const getIO = () => {
+  return io;
+};
+
 module.exports = {
   initializeSocketServer,
   emitToAll,
@@ -569,5 +597,7 @@ module.exports = {
   broadcast,
   sendToUser,
   emitDriverLocation,
-  emitRouteUpdates
+  emitRouteUpdates,
+  emitTripStatusUpdate,
+  getIO
 }; 

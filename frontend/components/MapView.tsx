@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
-import WebMapView from './WebMapView';
+import WebMapView, { WebPolyline } from './WebMapView';
 import { usePathname } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 
 // Only import react-native-maps on non-web platforms
 let NativeMapView: any = null;
+let NativePolyline: any = null;
 if (Platform.OS !== 'web') {
   // Dynamic import to avoid importing on web
   NativeMapView = require('react-native-maps').default;
+  NativePolyline = require('react-native-maps').Polyline;
 }
 
 interface MapViewProps {
@@ -62,14 +64,30 @@ const MapView: React.FC<MapViewProps> = (props) => {
   return <NativeMapView {...updatedProps} />;
 };
 
+interface PolylineProps {
+  coordinates: Array<{latitude: number, longitude: number}>;
+  strokeColor?: string;
+  strokeWidth?: number;
+  strokeOpacity?: number;
+  lineDashPattern?: number[];
+  [key: string]: any; // Allow any other props
+}
+
+/**
+ * Cross-platform Polyline component
+ */
+const Polyline: React.FC<PolylineProps> = (props) => {
+  if (Platform.OS === 'web') {
+    return <WebPolyline {...props} />;
+  }
+  
+  return <NativePolyline {...props} />;
+};
+
 // Export any needed sub-components from react-native-maps
 const Marker = Platform.OS === 'web' 
   ? (props: any) => null // Placeholder for web
   : require('react-native-maps').Marker;
-
-const Polyline = Platform.OS === 'web'
-  ? (props: any) => null // Placeholder for web
-  : require('react-native-maps').Polyline;
 
 export { Marker, Polyline };
 export default MapView; 

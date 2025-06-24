@@ -43,6 +43,11 @@ const DriverSchema = new Schema({
     enum: ['active', 'inactive', 'offline', 'busy'],
     default: 'inactive'
   },
+  activeTrip: {
+    type: Schema.Types.ObjectId,
+    ref: 'Trip',
+    default: null
+  },
   verified: {
     type: Boolean,
     default: false

@@ -3,22 +3,37 @@
  */
 const express = require('express');
 const router = express.Router();
-const { body } = require('express-validator');
+const { body, query } = require('express-validator');
 const vehicleController = require('../controllers/vehicle.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 
 /**
  * @route GET /api/vehicles
- * @desc Get all vehicles
- * @access Private/Admin
+ * @desc Get all vehicles or nearby vehicles if query params are provided
+ * @access Public for nearby vehicles, Private/Admin for all vehicles
  */
 router.get(
   '/',
   [
-    authMiddleware.verifyToken,
-    authMiddleware.isAdmin
+    query('nearby').optional().isBoolean().withMessage('nearby must be a boolean'),
+    query('latitude').optional().isNumeric().withMessage('latitude must be a number'),
+    query('longitude').optional().isNumeric().withMessage('longitude must be a number'),
+    query('radius').optional().isNumeric().withMessage('radius must be a number'),
+    query('type').optional().isString().withMessage('type must be a string')
   ],
-  vehicleController.getAllVehicles
+  (req, res, next) => {
+    // If nearby params are provided, skip auth middleware
+    if (req.query.nearby === 'true' && req.query.latitude && req.query.longitude) {
+      return vehicleController.getNearbyVehiclesGet(req, res, next);
+    }
+    
+    // Otherwise, apply auth middleware for admin-only access
+    authMiddleware.verifyToken(req, res, () => {
+      authMiddleware.isAdmin(req, res, () => {
+        vehicleController.getAllVehicles(req, res, next);
+      });
+    });
+  }
 );
 
 /**

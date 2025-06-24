@@ -5,6 +5,7 @@
 const Driver = require('../models/driver.model');
 const User = require('../models/user.model');
 const Route = require('../models/route.model');
+const Trip = require('../models/trip.model');
 const Notification = require('../models/notification.model');
 const mongoose = require('mongoose');
 
@@ -490,6 +491,92 @@ exports.getDriverRoutes = async (driverId) => {
     
     return routes;
   } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Update driver's trip status
+ * @param {string} driverId - Driver ID
+ * @param {string} routeId - Route ID
+ * @param {string} status - Trip status ('waiting', 'in_progress', 'completed', 'cancelled')
+ * @param {Object} location - Optional location coordinates
+ * @returns {Promise<Object>} - Updated trip information
+ */
+exports.updateTripStatus = async (driverId, routeId, status, location = null) => {
+  try {
+    // Verify driver exists
+    const driver = await Driver.findById(driverId);
+    if (!driver) {
+      throw new Error('Driver not found');
+    }
+    
+    // Verify route exists
+    const route = await Route.findOne({ 
+      $or: [
+        { _id: routeId },
+        { routeNumber: routeId }
+      ]
+    });
+    
+    if (!route) {
+      throw new Error('Route not found');
+    }
+    
+    // Create or update trip record
+    let trip = await Trip.findOne({
+      driverId,
+      routeId: route._id,
+      status: { $nin: ['completed', 'cancelled'] }
+    });
+    
+    if (!trip) {
+      // Create new trip if none exists
+      trip = new Trip({
+        driverId,
+        routeId: route._id,
+        status,
+        startTime: new Date(),
+        locations: location ? [{ location, timestamp: new Date() }] : []
+      });
+    } else {
+      // Update existing trip
+      trip.status = status;
+      
+      // Add location if provided
+      if (location) {
+        trip.locations.push({
+          location,
+          timestamp: new Date()
+        });
+      }
+      
+      // Set end time if trip is completed or cancelled
+      if (status === 'completed' || status === 'cancelled') {
+        trip.endTime = new Date();
+      }
+    }
+    
+    await trip.save();
+    
+    // Update driver's active trip reference
+    if (status === 'in_progress') {
+      driver.activeTrip = trip._id;
+    } else if (status === 'completed' || status === 'cancelled') {
+      driver.activeTrip = null;
+    }
+    
+    // Update driver location if provided
+    if (location) {
+      driver.location = location;
+      driver.lastActive = new Date();
+    }
+    
+    await driver.save();
+    
+    return trip;
+  } catch (error) {
+    console.error('Error updating trip status:', error);
     throw error;
   }
 }; 

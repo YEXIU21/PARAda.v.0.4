@@ -40,6 +40,7 @@ const WebMapView: React.FC<WebMapViewProps> = ({
   const mapRef = useRef<HTMLDivElement | null>(null);
   const googleMapRef = useRef<any>(null);
   const mapMarkersRef = useRef<any[]>([]);
+  const polylineRef = useRef<any>(null);
   
   // Only use this component on web platform
   if (Platform.OS !== 'web') {
@@ -51,6 +52,20 @@ const WebMapView: React.FC<WebMapViewProps> = ({
   const zoom = 15;
   const apiKey = env.googleMapsApiKey;
   const mapId = env.googleMapsId;
+
+  // Parse children to find polyline components
+  const findPolylines = () => {
+    if (!children) return [];
+    
+    const polylines: any[] = [];
+    React.Children.forEach(children, (child) => {
+      if (React.isValidElement(child) && child.type === WebPolyline) {
+        polylines.push(child.props);
+      }
+    });
+    
+    return polylines;
+  };
 
   // Load the Google Maps API script
   useEffect(() => {
@@ -315,8 +330,172 @@ const WebMapView: React.FC<WebMapViewProps> = ({
           console.error('Error removing location button:', error);
         }
       }
+      
+      // Clean up polyline
+      if (polylineRef.current) {
+        polylineRef.current.setMap(null);
+        polylineRef.current = null;
+      }
     };
   }, [mapLoaded, latitude, longitude, zoom, locations, showsUserLocation, mapStyle, showLocationButton]);
+
+  // Update markers when locations change
+  useEffect(() => {
+    if (!mapLoaded || !googleMapRef.current) return;
+    
+    try {
+      // Clear existing markers
+      mapMarkersRef.current.forEach(marker => marker.setMap(null));
+      mapMarkersRef.current = [];
+      
+      // Add driver marker if available
+      if (locations?.driver) {
+        try {
+          if (window.google.maps.marker && window.google.maps.marker.AdvancedMarkerElement) {
+            // Create a marker with the modern API
+            const driverMarkerElement = document.createElement('div');
+            driverMarkerElement.className = 'driver-location-marker';
+            
+            // Use FontAwesome car icon
+            driverMarkerElement.innerHTML = `
+              <div style="background-color: #4dabf7; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+                <i class="fas fa-car" style="color: white; font-size: 16px;"></i>
+              </div>
+            `;
+            
+            const driverMarker = new window.google.maps.marker.AdvancedMarkerElement({
+              position: { 
+                lat: locations.driver.latitude, 
+                lng: locations.driver.longitude 
+              },
+              map: googleMapRef.current,
+              title: "Driver",
+              content: driverMarkerElement
+            });
+            mapMarkersRef.current.push(driverMarker);
+          } else {
+            throw new Error("AdvancedMarkerElement not available");
+          }
+        } catch (error) {
+          // Fallback to legacy Marker
+          console.log("Using legacy marker for driver:", error);
+          const driverMarker = new window.google.maps.Marker({
+            position: { 
+              lat: locations.driver.latitude, 
+              lng: locations.driver.longitude 
+            },
+            map: googleMapRef.current,
+            title: "Driver",
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: "#4dabf7",
+              fillOpacity: 1,
+              strokeWeight: 2,
+              strokeColor: "#FFFFFF"
+            }
+          });
+          mapMarkersRef.current.push(driverMarker);
+        }
+      }
+      
+      // Add passenger marker if available
+      if (locations?.passenger) {
+        try {
+          if (window.google.maps.marker && window.google.maps.marker.AdvancedMarkerElement) {
+            // Create a marker with the modern API
+            const passengerMarkerElement = document.createElement('div');
+            passengerMarkerElement.className = 'passenger-location-marker';
+            
+            // Use FontAwesome user icon
+            passengerMarkerElement.innerHTML = `
+              <div style="background-color: #FF3B30; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+                <i class="fas fa-user" style="color: white; font-size: 16px;"></i>
+              </div>
+            `;
+            
+            const passengerMarker = new window.google.maps.marker.AdvancedMarkerElement({
+              position: { 
+                lat: locations.passenger.latitude, 
+                lng: locations.passenger.longitude 
+              },
+              map: googleMapRef.current,
+              title: "Passenger",
+              content: passengerMarkerElement
+            });
+            mapMarkersRef.current.push(passengerMarker);
+          } else {
+            throw new Error("AdvancedMarkerElement not available");
+          }
+        } catch (error) {
+          // Fallback to legacy Marker
+          console.log("Using legacy marker for passenger:", error);
+          const passengerMarker = new window.google.maps.Marker({
+            position: { 
+              lat: locations.passenger.latitude, 
+              lng: locations.passenger.longitude 
+            },
+            map: googleMapRef.current,
+            title: "Passenger",
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: "#FF3B30",
+              fillOpacity: 1,
+              strokeWeight: 2,
+              strokeColor: "#FFFFFF"
+            }
+          });
+          mapMarkersRef.current.push(passengerMarker);
+        }
+      }
+      
+      // Draw polyline between driver and passenger if both are available
+      if (locations?.driver && locations?.passenger) {
+        // Remove existing polyline
+        if (polylineRef.current) {
+          polylineRef.current.setMap(null);
+        }
+        
+        // Create new polyline
+        const polylinePath = [
+          { lat: locations.driver.latitude, lng: locations.driver.longitude },
+          { lat: locations.passenger.latitude, lng: locations.passenger.longitude }
+        ];
+        
+        polylineRef.current = new window.google.maps.Polyline({
+          path: polylinePath,
+          geodesic: true,
+          strokeColor: '#4dabf7',
+          strokeOpacity: 0.8,
+          strokeWeight: 3,
+          map: googleMapRef.current
+        });
+      }
+      
+      // Also render any polylines from children
+      const polylines = findPolylines();
+      polylines.forEach(polylineProps => {
+        if (polylineProps.coordinates && polylineProps.coordinates.length >= 2) {
+          const path = polylineProps.coordinates.map(coord => ({
+            lat: coord.latitude,
+            lng: coord.longitude
+          }));
+          
+          new window.google.maps.Polyline({
+            path: path,
+            geodesic: true,
+            strokeColor: polylineProps.strokeColor || '#4dabf7',
+            strokeOpacity: polylineProps.strokeOpacity || 0.8,
+            strokeWeight: polylineProps.strokeWidth || 3,
+            map: googleMapRef.current
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Error updating markers:', error);
+    }
+  }, [mapLoaded, locations, children]);
 
   if (!apiKey) {
     return (
@@ -344,9 +523,9 @@ const WebMapView: React.FC<WebMapViewProps> = ({
       ) : (
         <div 
           ref={mapRef}
-        className="map-iframe"
+          className="map-iframe"
           style={styles.mapDiv}
-      />
+        />
       )}
       
       {/* Render a placeholder for children components */}
@@ -355,6 +534,21 @@ const WebMapView: React.FC<WebMapViewProps> = ({
       </View>
     </View>
   );
+};
+
+// Web Polyline component for compatibility with react-native-maps Polyline
+interface WebPolylineProps {
+  coordinates: Array<{latitude: number, longitude: number}>;
+  strokeColor?: string;
+  strokeWidth?: number;
+  strokeOpacity?: number;
+  lineDashPattern?: number[];
+  [key: string]: any; // Allow any other props
+}
+
+const WebPolyline = (props: WebPolylineProps) => {
+  // This is just a placeholder component that gets parsed by WebMapView
+  return null;
 };
 
 const styles = StyleSheet.create({
@@ -399,6 +593,7 @@ declare global {
       maps: {
         Map: any;
         Marker: any;
+        Polyline: any;
         LatLng: any;
         LatLngBounds: any;
         event: any;
@@ -414,4 +609,5 @@ declare global {
   }
 }
 
+export { WebPolyline };
 export default WebMapView; 

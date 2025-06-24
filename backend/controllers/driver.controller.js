@@ -548,4 +548,78 @@ exports.updateLocationViaHttp = async (req, res) => {
       error: error.message
     });
   }
+};
+
+/**
+ * Update trip status for a driver
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} - Response with updated trip status or error
+ */
+exports.updateTripStatus = async (req, res) => {
+  try {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        message: 'Validation error', 
+        errors: errors.array() 
+      });
+    }
+    
+    const { driverId } = req.params;
+    const { routeId, status, location } = req.body;
+    
+    // Verify the driver exists
+    const driver = await driverService.getDriverById(driverId);
+    
+    // Verify the user has permission to update this driver's trip
+    // Only allow if the user is the driver or an admin
+    if (req.user.role !== 'admin' && (!driver.userId || driver.userId.toString() !== req.user._id.toString())) {
+      return res.status(403).json({
+        message: 'You are not authorized to update this driver\'s trip status'
+      });
+    }
+    
+    // Update the trip status
+    const result = await driverService.updateTripStatus(driverId, routeId, status, location);
+    
+    // If socket service is available, emit the trip status update
+    try {
+      const socketService = require('../services/socket.service');
+      socketService.emitTripStatusUpdate({
+        driverId,
+        routeId,
+        status,
+        location,
+        timestamp: new Date()
+      });
+    } catch (socketError) {
+      console.warn('Could not emit trip status update via socket:', socketError);
+    }
+    
+    return res.status(200).json({
+      message: 'Trip status updated successfully',
+      trip: result
+    });
+  } catch (error) {
+    console.error('Error updating trip status:', error);
+    
+    if (error.message === 'Driver not found') {
+      return res.status(404).json({
+        message: 'Driver not found'
+      });
+    }
+    
+    if (error.message === 'Route not found') {
+      return res.status(404).json({
+        message: 'Route not found'
+      });
+    }
+    
+    return res.status(500).json({
+      message: 'Error updating trip status',
+      error: error.message
+    });
+  }
 }; 

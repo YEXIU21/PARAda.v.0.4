@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Platform, Text, TouchableOpacity } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import MapView from './MapView';
+import MapView, { Polyline } from './MapView';
 import { getDriverLocation, getPassengerLocation } from '../services/socket/location.socket';
 import { useTheme, getThemeColors } from '../context/ThemeContext';
 import { lightMapStyle, darkMapStyle } from '../constants/MapStyles';
@@ -136,6 +136,17 @@ const RideMap: React.FC<RideMapProps> = ({
     fetchLocations();
   };
 
+  // Generate route coordinates for the polyline between driver and passenger
+  const getRouteCoordinates = () => {
+    if (driverLocation && passengerLocation) {
+      return [
+        { latitude: driverLocation.latitude, longitude: driverLocation.longitude },
+        { latitude: passengerLocation.latitude, longitude: passengerLocation.longitude }
+      ];
+    }
+    return [];
+  };
+
   return (
     <View style={[styles.container, style]}>
       <MapView 
@@ -147,7 +158,17 @@ const RideMap: React.FC<RideMapProps> = ({
           passenger: passengerLocation || undefined
         }}
         mapStyle={isDarkMode ? darkMapStyle : lightMapStyle}
-      />
+      >
+        {/* Draw route line between driver and passenger */}
+        {driverLocation && passengerLocation && (
+          <Polyline
+            coordinates={getRouteCoordinates()}
+            strokeColor={isDarkMode ? "#4dabf7" : "#339af0"}
+            strokeWidth={3}
+            lineDashPattern={[1, 3]}
+          />
+        )}
+      </MapView>
       
       {/* Refresh button */}
       <TouchableOpacity 

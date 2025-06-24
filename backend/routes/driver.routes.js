@@ -222,4 +222,28 @@ router.post(
   driverController.updateLocationViaHttp
 );
 
+/**
+ * @route POST /api/drivers/:driverId/trip
+ * @desc Update trip status for a driver
+ * @access Private/Driver
+ */
+router.post(
+  '/:driverId/trip',
+  [
+    authMiddleware.verifyToken,
+    authMiddleware.isDriver,
+    body('routeId')
+      .isString()
+      .withMessage('Route ID is required'),
+    body('status')
+      .isIn(['waiting', 'in_progress', 'completed', 'cancelled'])
+      .withMessage('Valid status is required'),
+    body('location')
+      .optional()
+      .isObject()
+      .withMessage('Location must be an object')
+  ],
+  driverController.updateTripStatus
+);
+
 module.exports = router; 
