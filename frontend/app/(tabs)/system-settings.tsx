@@ -369,7 +369,7 @@ export default function SystemSettingsScreen() {
             App Version: 1.0.0
           </Text>
           <Text style={[styles.buildText, { color: theme.textSecondary }]}>
-            Build: 2023.06.15
+            Build: 2025
           </Text>
         </View>
       </ScrollView>
