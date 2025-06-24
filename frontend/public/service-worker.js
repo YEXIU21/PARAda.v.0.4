@@ -7,7 +7,6 @@ const CACHE_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/register-service-worker.js',
-  '/favicon.ico',
   '/assets/images/PARAda-Logo.png'
 ];
 
@@ -92,8 +91,8 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: '/assets/icons/icon-192x192.png',
-      badge: '/assets/icons/icon-96x96.png',
+      icon: '/assets/images/PARAda-Logo.png',
+      badge: '/assets/images/PARAda-Logo.png',
       data: {
         url: data.url || '/'
       }
