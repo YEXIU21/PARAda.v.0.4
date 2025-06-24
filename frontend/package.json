@@ -14,7 +14,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "generate-android-icons": "node ./scripts/generate-android-icons.js",
+    "generate-splash-screens": "node ./scripts/generate-splash-screen.js",
+    "generate-all-assets": "npm run generate-android-icons && npm run generate-splash-screens"
   },
   "jest": {
     "preset": "jest-expo",

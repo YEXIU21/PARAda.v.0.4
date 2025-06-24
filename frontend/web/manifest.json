@@ -65,14 +65,14 @@
       "short_name": "Login",
       "description": "Login to your PARAda account",
       "url": "/auth/login",
-      "icons": [{ "src": "/assets/images/adaptive-icon.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/assets/images/adaptive-icon.png", "sizes": "96x96", "purpose": "any" }]
     },
     {
       "name": "Register",
       "short_name": "Register",
       "description": "Create a new PARAda account",
       "url": "/auth/register",
-      "icons": [{ "src": "/assets/images/adaptive-icon.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/assets/images/adaptive-icon.png", "sizes": "96x96", "purpose": "any" }]
     }
   ],
   "screenshots": [
