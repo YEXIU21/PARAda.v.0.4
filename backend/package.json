@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "test": "jest",
     "render-postbuild": "echo 'Render.com postbuild completed'",
-    "ping": "node scripts/external-ping.js"
+    "ping": "node scripts/external-ping.js",
+    "seed": "node scripts/seed-data.js"
   },
   "keywords": [
     "transportation",
