@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -44,6 +44,12 @@ export default function NotificationService({ children }: NotificationServicePro
 
   const registerForPushNotifications = async () => {
     try {
+      // Skip for web platform
+      if (Platform.OS === 'web') {
+        console.log('Push notifications are not supported on web platform');
+        return;
+      }
+
       // Request permission
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
@@ -77,19 +83,65 @@ export default function NotificationService({ children }: NotificationServicePro
 
 // Helper function to schedule notifications
 export const scheduleVehicleArrivalNotification = async (vehicleName: string, eta: string) => {
-  const seconds = estimateSecondsFromETA(eta);
-  
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Vehicle Approaching',
-      body: `${vehicleName} will arrive in ${eta}`,
-      data: { vehicleName, eta },
-    },
-    trigger: {
-      seconds: seconds,
-      channelId: 'default',
-    },
-  });
+  try {
+    // For web platform, use browser notifications if available
+    if (Platform.OS === 'web') {
+      // Check if browser notifications are supported
+      if ('Notification' in window) {
+        // Check if permission is already granted
+        if ((window as any).Notification.permission === 'granted') {
+          // Schedule a timeout to simulate the notification
+          const seconds = estimateSecondsFromETA(eta);
+          
+          // Store the timeout ID in localStorage to persist across refreshes
+          const timeoutId = setTimeout(() => {
+            new (window as any).Notification('Vehicle Approaching', {
+              body: `${vehicleName} will arrive in ${eta}`,
+              icon: '/assets/images/PARAda-Logo.png'
+            });
+          }, seconds * 1000);
+          
+          // We can't actually store the timeout ID in localStorage, but we can store the time
+          // when the notification should fire
+          const notificationTime = Date.now() + (seconds * 1000);
+          localStorage.setItem(`notification_${vehicleName}`, notificationTime.toString());
+          
+          return;
+        } else if ((window as any).Notification.permission !== 'denied') {
+          // Request permission
+          (window as any).Notification.requestPermission().then((permission: string) => {
+            if (permission === 'granted') {
+              // Call the function again now that we have permission
+              scheduleVehicleArrivalNotification(vehicleName, eta);
+            }
+          });
+          return;
+        }
+      }
+      
+      // Fallback for web if notifications aren't available or permission denied
+      console.log('Web notifications not available or permission denied');
+      return;
+    }
+    
+    // For native platforms, use Expo Notifications
+    const seconds = estimateSecondsFromETA(eta);
+    
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Vehicle Approaching',
+        body: `${vehicleName} will arrive in ${eta}`,
+        data: { vehicleName, eta },
+      },
+      trigger: {
+        seconds: seconds,
+        channelId: 'default',
+      },
+    });
+  } catch (error) {
+    console.error('Error scheduling notification:', error);
+    // Don't rethrow - we want to fail gracefully
+  }
 };
 
 // Helper function to convert ETA string to seconds
