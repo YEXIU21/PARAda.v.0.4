@@ -3,30 +3,161 @@
  * Handles all ride-related API calls
  */
 import axios from 'axios';
-import { BASE_URL, ENDPOINTS } from './api.config';
+import { BASE_URL, ENDPOINTS } from './endpoints';
 import { getAuthToken } from './auth.api';
 
 /**
- * Request a new ride
- * @param {Object} rideData - Ride request data including pickup location, destination, and vehicle type
- * @returns {Promise<Object>} - Created ride
+ * Request a ride
+ * @param {Object} rideData - Ride request data
+ * @returns {Promise<Object>} - Ride request response
  */
 export const requestRide = async (rideData) => {
   try {
     const token = await getAuthToken();
     if (!token) throw new Error('Authentication required');
-
-    const response = await axios.post(
-      `${BASE_URL}/api/rides`,
-      rideData,
-      {
-        headers: { 'x-access-token': token }
-      }
-    );
     
-    return response.data.ride;
+    const url = `${BASE_URL}/api/rides/request`;
+    
+    const response = await axios.post(url, rideData, {
+      headers: { 'x-access-token': token }
+    });
+    
+    return response.data;
   } catch (error) {
     console.error('Error requesting ride:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get ride status
+ * @param {string} rideId - Ride ID
+ * @returns {Promise<Object>} - Ride status
+ */
+export const getRideStatus = async (rideId) => {
+  try {
+    const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+    
+    const url = `${BASE_URL}/api/rides/${rideId}/status`;
+    
+    const response = await axios.get(url, {
+      headers: { 'x-access-token': token }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error getting ride status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Cancel ride
+ * @param {string} rideId - Ride ID
+ * @param {string} reason - Cancellation reason
+ * @returns {Promise<Object>} - Cancellation response
+ */
+export const cancelRide = async (rideId, reason = '') => {
+  try {
+    const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+    
+    const url = `${BASE_URL}/api/rides/${rideId}/cancel`;
+    
+    const response = await axios.post(url, { reason }, {
+      headers: { 'x-access-token': token }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error cancelling ride:', error);
+    throw error;
+  }
+};
+
+/**
+ * Accept ride (for drivers)
+ * @param {string} rideId - Ride ID
+ * @returns {Promise<Object>} - Acceptance response
+ */
+export const acceptRide = async (rideId) => {
+  try {
+    const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+    
+    const url = `${BASE_URL}/api/rides/${rideId}/accept`;
+    
+    const response = await axios.post(url, {}, {
+      headers: { 'x-access-token': token }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error accepting ride:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update ride status (for drivers)
+ * @param {string} rideId - Ride ID
+ * @param {string} status - New status
+ * @returns {Promise<Object>} - Update response
+ */
+export const updateRideStatus = async (rideId, status) => {
+  try {
+    const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+    
+    const url = `${BASE_URL}/api/rides/${rideId}/status`;
+    
+    const response = await axios.put(url, { status }, {
+      headers: { 'x-access-token': token }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error updating ride status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get ride history
+ * @param {Object} options - Query options
+ * @returns {Promise<Array>} - Ride history
+ */
+export const getRideHistory = async (options = {}) => {
+  try {
+    const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+    
+    // Build query string from options
+    const queryParams = new URLSearchParams();
+    
+    if (options.limit) {
+      queryParams.append('limit', options.limit);
+    }
+    
+    if (options.skip) {
+      queryParams.append('skip', options.skip);
+    }
+    
+    if (options.status) {
+      queryParams.append('status', options.status);
+    }
+    
+    const queryString = queryParams.toString();
+    const url = `${BASE_URL}/api/rides/history${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await axios.get(url, {
+      headers: { 'x-access-token': token }
+    });
+    
+    return response.data.rides;
+  } catch (error) {
+    console.error('Error getting ride history:', error);
     throw error;
   }
 };
@@ -74,87 +205,6 @@ export const getUserActiveRides = async () => {
     return response.data.rides;
   } catch (error) {
     console.error('Error getting active rides:', error);
-    throw error;
-  }
-};
-
-/**
- * Accept a ride (for drivers)
- * @param {string} rideId - Ride ID
- * @returns {Promise<Object>} - Updated ride
- */
-export const acceptRide = async (rideId) => {
-  try {
-    const token = await getAuthToken();
-    if (!token) throw new Error('Authentication required');
-
-    const response = await axios.post(
-      `${BASE_URL}/api/rides/${rideId}/accept`,
-      {},
-      {
-        headers: { 'x-access-token': token }
-      }
-    );
-    
-    return response.data.ride;
-  } catch (error) {
-    console.error(`Error accepting ride ${rideId}:`, error);
-    throw error;
-  }
-};
-
-/**
- * Update ride status
- * @param {string} rideId - Ride ID
- * @param {string} status - New status ('picked_up', 'in_progress', 'completed', 'cancelled')
- * @param {Object} additionalData - Additional data for the status update
- * @returns {Promise<Object>} - Updated ride
- */
-export const updateRideStatus = async (rideId, status, additionalData = {}) => {
-  try {
-    const token = await getAuthToken();
-    if (!token) throw new Error('Authentication required');
-
-    const response = await axios.put(
-      `${BASE_URL}/api/rides/${rideId}/status`,
-      {
-        status,
-        ...additionalData
-      },
-      {
-        headers: { 'x-access-token': token }
-      }
-    );
-    
-    return response.data.ride;
-  } catch (error) {
-    console.error(`Error updating ride ${rideId} status:`, error);
-    throw error;
-  }
-};
-
-/**
- * Cancel a ride
- * @param {string} rideId - Ride ID
- * @param {string} reason - Cancellation reason
- * @returns {Promise<Object>} - Cancelled ride
- */
-export const cancelRide = async (rideId, reason = '') => {
-  try {
-    const token = await getAuthToken();
-    if (!token) throw new Error('Authentication required');
-
-    const response = await axios.post(
-      `${BASE_URL}/api/rides/${rideId}/cancel`,
-      { reason },
-      {
-        headers: { 'x-access-token': token }
-      }
-    );
-    
-    return response.data.ride;
-  } catch (error) {
-    console.error(`Error cancelling ride ${rideId}:`, error);
     throw error;
   }
 };

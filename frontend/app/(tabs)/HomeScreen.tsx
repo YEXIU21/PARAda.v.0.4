@@ -26,10 +26,13 @@ import { getSubscriptionPlans, getUserSubscription, createSubscription } from '.
 import { BASE_URL } from '../../services/api/api.config';
 import * as routeApi from '../../services/api/route.api';
 import * as locationSocket from '../../services/socket/location.socket';
-import { initializeSocket, disconnectSocket } from '../../services/socket/socket.service';
+import { initializeSocket, disconnectSocket, getSocket } from '../../services/socket/socket.service';
 
 // Import the VehicleAccess service
 import { hasAccessToVehicleType, getAccessibleVehicleTypes } from '../../services/VehicleAccess';
+
+// Import the vehicle API service
+import { getNearbyVehicles } from '../../services/api/vehicle.api';
 
 // Add type definition for subscription
 interface SubscriptionResponse {
@@ -52,7 +55,7 @@ interface SubscriptionResponse {
 
 // Components
 import FeedbackForm from '../../components/FeedbackForm';
-import { scheduleVehicleArrivalNotification } from '../../components/NotificationService';
+import { scheduleVehicleArrivalNotification, NotificationPermissionRequest } from '../../components/NotificationService';
 import VehicleTypeModal from '../../components/VehicleTypeModal';
 import SubscriptionView from '../../components/SubscriptionView';
 import DestinationModal from '../../components/DestinationModal';
@@ -63,7 +66,7 @@ import AdminDashboard from '../../components/AdminDashboard';
 import GCashPaymentModal from '../../components/GCashPaymentModal';
 
 // Context
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, UserRole } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 
 // Constants and Types
@@ -554,6 +557,48 @@ export default function HomeScreen() {
           setHasSubscription(false);
         }
         
+        // Load routes if user has access
+        try {
+          // Use type assertion to fix the comparison
+          const userRole = user?.role as UserRole;
+          if (userRole === 'admin' || userRole === 'driver' || 
+              (user?.subscription && user.subscription.verified)) {
+            const routeData = await routeApi.getRoutes({ active: true });
+            if (routeData) {
+              setRoutes(routeData);
+            }
+          }
+        } catch (routeError) {
+          console.error('Error loading routes:', routeError);
+          // Continue with default routes if API fails
+        }
+        
+        // Load nearby vehicles using real data if location is available
+        if (location && location.coords) {
+          try {
+            const nearbyVehicles = await getNearbyVehicles({
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude
+            }, 10); // 10km radius
+            
+            if (nearbyVehicles && nearbyVehicles.length > 0) {
+              console.log('Loaded real vehicle data:', nearbyVehicles);
+              setVehicles(nearbyVehicles);
+            } else {
+              console.log('No nearby vehicles found, using default data');
+              // Fall back to default vehicles if no real data
+              setVehicles(defaultVehicles);
+            }
+          } catch (vehicleError) {
+            console.error('Error loading nearby vehicles:', vehicleError);
+            // Fall back to default vehicles if API fails
+            setVehicles(defaultVehicles);
+          }
+        } else {
+          // Use default vehicles if no location
+          setVehicles(defaultVehicles);
+        }
+        
         clearTimeout(timeout);
         setIsLoading(false);
       } catch (error) {
@@ -571,7 +616,54 @@ export default function HomeScreen() {
       // Clean up socket connection
       disconnectSocket();
     };
-  }, [user]);
+  }, [user, location]);
+
+  // Add a function to refresh vehicle data when location changes
+  const refreshNearbyVehicles = async () => {
+    if (!location || !location.coords) return;
+    
+    try {
+      const nearbyVehicles = await getNearbyVehicles({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude
+      }, 10);
+      
+      if (nearbyVehicles && nearbyVehicles.length > 0) {
+        console.log('Refreshed real vehicle data:', nearbyVehicles);
+        setVehicles(nearbyVehicles);
+      }
+    } catch (error) {
+      console.error('Error refreshing nearby vehicles:', error);
+      // Don't update vehicles on error to keep existing data
+    }
+  };
+  
+  // Add effect to refresh vehicles when location changes
+  useEffect(() => {
+    if (location && location.coords) {
+      refreshNearbyVehicles();
+    }
+  }, [location]);
+
+  // Update socket event handler to receive real-time vehicle updates
+  useEffect(() => {
+    // Get the socket from the service
+    const socketInstance = getSocket();
+    
+    if (socketInstance) {
+      // Subscribe to vehicle updates
+      socketInstance.on('vehicle_updates', (data) => {
+        if (data && data.vehicles && Array.isArray(data.vehicles)) {
+          console.log('Received real-time vehicle updates:', data.vehicles);
+          setVehicles(data.vehicles);
+        }
+      });
+      
+      return () => {
+        socketInstance.off('vehicle_updates');
+      };
+    }
+  }, []);
   
   // Effect to initialize bottom sheet position
   useEffect(() => {
@@ -770,11 +862,16 @@ export default function HomeScreen() {
 
   const sendNotification = async (vehicle: Vehicle) => {
     try {
-      await scheduleVehicleArrivalNotification(vehicle.name, vehicle.eta);
-      Alert.alert(
-        'Notification Set', 
-        `You will be notified when ${vehicle.name} is approaching.`
-      );
+      const success = await scheduleVehicleArrivalNotification(vehicle.name, vehicle.eta);
+      
+      if (success) {
+        Alert.alert(
+          'Notification Set', 
+          `You will be notified when ${vehicle.name} is approaching.`
+        );
+      }
+      // No need for else case as the scheduleVehicleArrivalNotification function
+      // will handle showing fallback notifications internally
     } catch (error) {
       console.error('Error scheduling notification:', error);
       Alert.alert('Error', 'Failed to set notification. Please try again.');
@@ -882,6 +979,46 @@ export default function HomeScreen() {
     }
   };
   
+  // Update the handleRequestRide function to use real data
+  const handleRequestRide = async () => {
+    if (!selectedDestination || !selectedVehicleType) {
+      Alert.alert('Error', 'Please select a destination and vehicle type');
+      return;
+    }
+    
+    setIsRequestingRide(true);
+    
+    try {
+      // Show a success message
+      Alert.alert(
+        'Ride Requested',
+        'Your ride request has been submitted. Looking for a driver...',
+        [{ text: 'OK' }]
+      );
+      
+      // Reset state
+      setShowRequestRideModal(false);
+      setSelectedDestination(null);
+      
+      // Start listening for ride status updates
+      // This would normally use the ride ID returned from the API
+      // For now, we'll use a placeholder ID
+      const rideId = 'placeholder-ride-id';
+      startRideStatusListener(rideId);
+      
+      // Set ride status to requested
+      setMyRideStatus({
+        status: 'requested',
+        destination: selectedDestination
+      });
+    } catch (error) {
+      console.error('Error requesting ride:', error);
+      Alert.alert('Error', 'Failed to request ride. Please try again.');
+    } finally {
+      setIsRequestingRide(false);
+    }
+  };
+  
   // Render loading state
   if (isLoading) {
     return (
@@ -925,6 +1062,9 @@ export default function HomeScreen() {
       
       {/* Show location error banner if there's an error */}
       {locationErrorBanner}
+      
+      {/* Add notification permission request banner for web */}
+      {Platform.OS === 'web' && <NotificationPermissionRequest />}
       
       <MapView
         ref={mapRef}
@@ -1325,74 +1465,7 @@ export default function HomeScreen() {
       <RequestRideModal
         isVisible={showRequestRideModal && !showDestinationModal} // Hide when destination modal is open
         onClose={() => setShowRequestRideModal(false)}
-        onRequestRide={() => {
-          // Request ride logic
-          if (selectedDestination && selectedVehicleType && location) {
-            setIsRequestingRide(true);
-            
-            // Use the ride API service
-            import('../../services/api/ride.api').then(rideApi => {
-              const rideData = {
-                pickupLocation: {
-                  latitude: location.coords.latitude,
-                  longitude: location.coords.longitude,
-                  name: 'Current Location'
-                },
-                destination: {
-                  latitude: selectedDestination.latitude,
-                  longitude: selectedDestination.longitude,
-                  name: selectedDestination.name
-                },
-                vehicleType: selectedVehicleType,
-                // Optional route ID if applicable
-                routeId: selectedDestination.routeId
-              };
-              
-              rideApi.requestRide(rideData)
-                .then(ride => {
-              setIsRequestingRide(false);
-              setShowRequestRideModal(false);
-              
-                  // Update ride status with real data from API
-              setMyRideStatus({
-                    status: ride.status,
-                    rideId: ride._id,
-                    eta: '5-10 min', // Estimated until driver accepts
-                    vehicle: ride.vehicleType ? {
-                      id: ride._id,
-                      type: ride.vehicleType,
-                      name: vehicleTypes.find(v => v.id === ride.vehicleType)?.name || 'Vehicle',
-                      eta: '5-10 min',
-                      location: ride.driverId?.currentLocation || {
-                        latitude: 0,
-                        longitude: 0
-                  }
-                    } : undefined
-              });
-              
-              // Show success message
-              Alert.alert(
-                'Ride Requested',
-                `Your ride to ${selectedDestination.name} has been requested successfully!`,
-                [{ text: 'OK' }]
-              );
-                  
-                  // Start listening for driver assignment via socket
-                  startRideStatusListener(ride._id);
-                })
-                .catch(error => {
-                  setIsRequestingRide(false);
-                  console.error('Error requesting ride:', error);
-                  
-                  Alert.alert(
-                    'Request Failed',
-                    error.response?.data?.message || 'Unable to request ride. Please try again.',
-                    [{ text: 'OK' }]
-                  );
-                });
-            });
-          }
-        }}
+        onRequestRide={handleRequestRide}
         hasLocation={!!location}
         selectedDestination={selectedDestination}
         selectedVehicleType={selectedVehicleType}

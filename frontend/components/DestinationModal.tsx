@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Modal, 
   View, 
@@ -8,13 +8,15 @@ import {
   TextInput, 
   StyleSheet,
   Alert,
-  Dimensions
+  Dimensions,
+  ActivityIndicator
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Destination } from '../models/RideTypes';
 import * as Location from 'expo-location';
 import MapView, { Marker } from './MapView';
+import { getPopularDestinations, searchDestinations, getNearbyDestinations } from '../services/api/destination.api';
 
 interface DestinationModalProps {
   isVisible: boolean;
@@ -48,9 +50,87 @@ export default function DestinationModal({
   theme
 }: DestinationModalProps) {
   const [searchText, setSearchText] = useState('');
-  const [suggestedDestinations] = useState<Destination[]>(DEFAULT_DESTINATIONS);
+  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'list' | 'map'>('list');
   
+  // Load destinations when the modal becomes visible
+  useEffect(() => {
+    if (isVisible) {
+      loadDestinations();
+    }
+  }, [isVisible]);
+  
+  // Load destinations based on user location
+  const loadDestinations = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Try to get nearby destinations if user location is available
+      if (userLocation && userLocation.coords) {
+        const nearbyDestinations = await getNearbyDestinations({
+          latitude: userLocation.coords.latitude,
+          longitude: userLocation.coords.longitude
+        }, 10);
+        
+        if (nearbyDestinations && nearbyDestinations.length > 0) {
+          console.log('Loaded nearby destinations:', nearbyDestinations);
+          setDestinations(nearbyDestinations);
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      // Fall back to popular destinations if nearby destinations are not available
+      const popularDestinations = await getPopularDestinations();
+      
+      if (popularDestinations && popularDestinations.length > 0) {
+        console.log('Loaded popular destinations:', popularDestinations);
+        setDestinations(popularDestinations);
+      } else {
+        console.log('No destinations found, using default data');
+        // Fall back to default destinations if API fails
+        setDestinations(DEFAULT_DESTINATIONS);
+      }
+    } catch (error) {
+      console.error('Error loading destinations:', error);
+      // Fall back to default destinations if API fails
+      setDestinations(DEFAULT_DESTINATIONS);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Search destinations based on user input
+  const handleSearch = async (text: string) => {
+    setSearchText(text);
+    
+    if (!text || text.trim() === '') {
+      // If search text is empty, load default destinations
+      loadDestinations();
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const results = await searchDestinations(text);
+      
+      if (results && results.length > 0) {
+        console.log('Search results:', results);
+        setDestinations(results);
+      } else {
+        // If no results, show empty state
+        setDestinations([]);
+      }
+    } catch (error) {
+      console.error('Error searching destinations:', error);
+      // Keep existing destinations on error
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSelectDestination = (destination: Destination) => {
     onSelectDestination(destination);
     onClose();
@@ -97,11 +177,7 @@ export default function DestinationModal({
     }
   };
   
-  const filteredDestinations = suggestedDestinations.filter(place => 
-    searchText === '' || 
-    place.name.toLowerCase().includes(searchText.toLowerCase())
-  );
-  
+  const filteredDestinations = destinations;
   const hasNoResults = searchText !== '' && filteredDestinations.length === 0;
   
   return (
@@ -134,10 +210,10 @@ export default function DestinationModal({
                 placeholder="Search for a destination..."
                 placeholderTextColor="#999"
                 value={searchText}
-                onChangeText={setSearchText}
+                onChangeText={handleSearch}
               />
               {searchText.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchText('')}>
+                <TouchableOpacity onPress={() => handleSearch('')}>
                   <FontAwesome5 name="times-circle" size={16} color="#999" />
                 </TouchableOpacity>
               )}
@@ -179,82 +255,92 @@ export default function DestinationModal({
             </View>
             
             {activeTab === 'list' ? (
-            <ScrollView style={styles.destinationList}>
-              {filteredDestinations.map((place, index) => (
-                <TouchableOpacity 
-                  key={index}
-                  style={[styles.destinationItem, { borderBottomColor: theme.border }]}
-                  onPress={() => handleSelectDestination(place)}
-                >
-                  <View style={styles.destinationIconContainer}>
-                    <FontAwesome5 name="map-marker-alt" size={18} color="#4B6BFE" />
+              <ScrollView style={styles.destinationList}>
+                {isLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#4B6BFE" />
+                    <Text style={[styles.loadingText, { color: theme.text }]}>Loading destinations...</Text>
                   </View>
-                  <View style={styles.destinationInfo}>
-                    <Text style={[styles.destinationName, { color: theme.text }]}>{place.name}</Text>
-                  </View>
-                  <FontAwesome5 name="chevron-right" size={14} color="#999" />
-                </TouchableOpacity>
-              ))}
-              
-              {hasNoResults && (
-                <View style={styles.noResultsContainer}>
-                  <FontAwesome5 name="search" size={40} color="#DDDDDD" />
-                  <Text style={[styles.noResultsText, { color: theme.textSecondary }]}>
-                    No results found
-                  </Text>
-                </View>
-              )}
-            </ScrollView>
-            ) : (
-              <View style={[styles.mapFallbackContainer, { backgroundColor: theme.card }]}>
-                <View style={styles.mapFallbackHeader}>
-                  <FontAwesome5 name="map" size={24} color="#4B6BFE" />
-                  <Text style={[styles.mapFallbackTitle, { color: theme.text }]}>
-                    Select from Popular Destinations
-                  </Text>
-                </View>
-                
-                <ScrollView style={styles.mapFallbackList}>
-                  {suggestedDestinations.map((place, index) => (
+                ) : filteredDestinations.length > 0 ? (
+                  filteredDestinations.map((place, index) => (
                     <TouchableOpacity 
                       key={index}
-                      style={[styles.mapFallbackItem, { 
-                        backgroundColor: theme.card === '#FFFFFF' ? '#F5F8FF' : '#2A3451',
-                        borderColor: theme.border 
-                      }]}
+                      style={[styles.destinationItem, { borderBottomColor: theme.border }]}
                       onPress={() => handleSelectDestination(place)}
                     >
-                      <View style={styles.mapFallbackIconContainer}>
-                        <FontAwesome5 name="map-marker-alt" size={20} color="#4B6BFE" />
+                      <View style={styles.destinationIconContainer}>
+                        <FontAwesome5 name="map-marker-alt" size={18} color="#4B6BFE" />
                       </View>
-                      <View style={styles.mapFallbackItemContent}>
-                        <Text style={[styles.mapFallbackItemTitle, { color: theme.text }]}>
-                          {place.name}
-                        </Text>
-                        <Text style={[styles.mapFallbackItemSubtitle, { color: theme.textSecondary }]}>
-                          Tap to select this destination
-                        </Text>
+                      <View style={styles.destinationInfo}>
+                        <Text style={[styles.destinationName, { color: theme.text }]}>{place.name}</Text>
                       </View>
+                      <FontAwesome5 name="chevron-right" size={14} color="#999" />
                     </TouchableOpacity>
+                  ))
+                ) : hasNoResults ? (
+                  <View style={styles.noResultsContainer}>
+                    <FontAwesome5 name="search" size={40} color="#DDDDDD" />
+                    <Text style={[styles.noResultsText, { color: theme.textSecondary }]}>
+                      No destinations found
+                    </Text>
+                    <TouchableOpacity 
+                      style={styles.createCustomButton}
+                      onPress={handleCreateCustomLocation}
+                    >
+                      <Text style={styles.createCustomButtonText}>Create Custom Location</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
+              </ScrollView>
+            ) : (
+              <View style={styles.mapContainer}>
+                <MapView
+                  style={styles.map}
+                  initialRegion={{
+                    latitude: userLocation?.coords?.latitude || 37.78825,
+                    longitude: userLocation?.coords?.longitude || -122.4324,
+                    latitudeDelta: 0.0122,
+                    longitudeDelta: 0.0121,
+                  }}
+                  onPress={handleMapPress}
+                >
+                  {/* User location marker */}
+                  {userLocation && (
+                    <Marker
+                      coordinate={{
+                        latitude: userLocation.coords.latitude,
+                        longitude: userLocation.coords.longitude,
+                      }}
+                      title="Your Location"
+                    >
+                      <View style={styles.userLocationMarker}>
+                        <View style={styles.userLocationDot} />
+                      </View>
+                    </Marker>
+                  )}
+                  
+                  {/* Destination markers */}
+                  {filteredDestinations.map((place, index) => (
+                    <Marker
+                      key={index}
+                      coordinate={{
+                        latitude: place.latitude,
+                        longitude: place.longitude,
+                      }}
+                      title={place.name}
+                      onPress={() => handleSelectDestination(place)}
+                    >
+                      <View style={styles.destinationMarker}>
+                        <FontAwesome5 name="map-pin" size={20} color="#FF3B30" />
+                      </View>
+                    </Marker>
                   ))}
-                </ScrollView>
-                
-                <View style={styles.mapFallbackNote}>
-                  <FontAwesome5 name="info-circle" size={16} color="#4B6BFE" style={{ marginRight: 8 }} />
-                  <Text style={[styles.mapFallbackNoteText, { color: theme.textSecondary }]}>
-                    Map view is currently unavailable. Please select from the list of destinations.
-                  </Text>
-                </View>
+                </MapView>
+                <Text style={styles.mapInstructions}>
+                  Tap anywhere on the map to select a location
+                </Text>
               </View>
             )}
-            
-            <TouchableOpacity 
-              style={styles.useCurrentLocationButton}
-              onPress={handleCreateCustomLocation}
-            >
-              <FontAwesome5 name="location-arrow" size={16} color="#4B6BFE" style={{ marginRight: 10 }} />
-              <Text style={styles.useCurrentLocationText}>Drop Pin Near Me</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -374,7 +460,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
-  mapFallbackContainer: {
+  mapContainer: {
     flex: 1,
     marginBottom: 15,
     borderRadius: 8,
@@ -383,72 +469,56 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
-  mapFallbackHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  mapFallbackTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 10,
-  },
-  mapFallbackList: {
+  map: {
     flex: 1,
   },
-  mapFallbackItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    marginHorizontal: 10,
-    marginVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
+  mapInstructions: {
+    color: '#4B6BFE',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 10,
   },
-  mapFallbackIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E8EDFF',
+  userLocationMarker: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(75, 107, 254, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
-  mapFallbackItemContent: {
+  userLocationDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#4B6BFE',
+    marginTop: 4,
+  },
+  destinationMarker: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  mapFallbackItemTitle: {
+  loadingText: {
+    marginTop: 10,
     fontSize: 16,
     fontWeight: '500',
   },
-  mapFallbackItemSubtitle: {
-    fontSize: 14,
-    marginTop: 3,
-  },
-  mapFallbackNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    backgroundColor: 'rgba(75, 107, 254, 0.1)',
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-  },
-  mapFallbackNoteText: {
-    fontSize: 14,
-    flex: 1,
-  },
-  useCurrentLocationButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#E8EDFF',
+  createCustomButton: {
+    backgroundColor: '#4B6BFE',
     paddingVertical: 15,
     borderRadius: 8,
+    marginTop: 10,
   },
-  useCurrentLocationText: {
-    color: '#4B6BFE',
+  createCustomButtonText: {
+    color: 'white',
     fontSize: 16,
     fontWeight: '500',
   }
