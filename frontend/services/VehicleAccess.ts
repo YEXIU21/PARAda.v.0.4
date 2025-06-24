@@ -20,6 +20,11 @@ export const hasAccessToVehicleType = (
     return false;
   }
   
+  // If subscription is not verified, no access
+  if (!user.subscription.verified) {
+    return false;
+  }
+  
   // If subscription type is 'all', access to all vehicle types
   if (user.subscription.type === 'all') {
     return true;
@@ -37,6 +42,11 @@ export const hasAccessToVehicleType = (
 export const getAccessibleVehicleTypes = (user: User | null): VehicleTypeId[] => {
   // If no user or no subscription, no access
   if (!user || !user.subscription) {
+    return [];
+  }
+  
+  // If subscription is not verified, no access
+  if (!user.subscription.verified) {
     return [];
   }
   

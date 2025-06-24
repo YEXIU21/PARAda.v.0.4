@@ -633,8 +633,8 @@ export default function ExploreScreen() {
       return true;
     }
     
-    // If user has no subscription, route is not accessible
-    if (!user?.subscription) {
+    // If user has no subscription or it's not verified, route is not accessible
+    if (!user?.subscription || !user.subscription.verified) {
       return false;
     }
     
