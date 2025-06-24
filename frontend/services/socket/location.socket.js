@@ -212,6 +212,12 @@ export const initializeLocationSocket = async (clientId, token) => {
         }
       }
       
+      // Check if we're running on Vercel (production)
+      const isVercel = typeof window !== 'undefined' && 
+                      window.location && 
+                      (window.location.hostname.includes('vercel.app') || 
+                       window.location.hostname.includes('parada'));
+                       
       // Connect to the socket server with client ID and auth token
       socket = io(socketUrl, {
         query: { id: clientId },
