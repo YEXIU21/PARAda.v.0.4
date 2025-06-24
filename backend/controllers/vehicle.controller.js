@@ -3,9 +3,9 @@
  * Handles all vehicle-related operations
  */
 const { validationResult } = require('express-validator');
+const mongoose = require('mongoose');
 const Vehicle = require('../models/vehicle.model');
 const Driver = require('../models/driver.model');
-const mongoose = require('mongoose');
 const vehicleService = require('../services/vehicle.service');
 
 /**

@@ -1177,6 +1177,17 @@ export default function DriverScreen() {
     setShowRouteDetailsModal(true);
   };
 
+  // Handle showing route map
+  const handleShowRouteMap = (route: DriverRoute) => {
+    // For now, we'll just show an alert that this feature is coming soon
+    // In a future update, this would open a map view with the route displayed
+    Alert.alert(
+      "View Route Map",
+      "The route map view is coming soon. This will show your current location and the route on a map.",
+      [{ text: "OK" }]
+    );
+  };
+
   // Render route details modal
   const renderRouteDetailsModal = () => (
     <Modal
@@ -1303,7 +1314,7 @@ export default function DriverScreen() {
                   </TouchableOpacity>
                 )}
                 
-                {selectedRouteDetails.status === 'active' && (
+                {selectedRouteDetails.status === 'active' && !selectedRouteDetails.isInTrip && (
                   <TouchableOpacity 
                     style={[styles.routeDetailActionButton, { backgroundColor: '#FF9800' }]}
                     onPress={() => {
@@ -1339,6 +1350,60 @@ export default function DriverScreen() {
                   >
                     <FontAwesome5 name="check" size={16} color="white" style={{ marginRight: 8 }} />
                     <Text style={styles.routeDetailActionButtonText}>Complete Route</Text>
+                  </TouchableOpacity>
+                )}
+                
+                {selectedRouteDetails.status === 'active' && selectedRouteDetails.isInTrip && (
+                  <TouchableOpacity 
+                    style={[styles.routeDetailActionButton, { backgroundColor: '#FF5722' }]}
+                    onPress={() => {
+                      console.log('End trip button pressed');
+                      try {
+                        // Update the route to end the trip
+                        const updatedRoutes = driverRoutes.map(r => 
+                          r.id === selectedRouteDetails.id 
+                            ? { ...r, status: 'active' as const, isInTrip: false } 
+                            : r
+                        );
+                        setDriverRoutes(updatedRoutes);
+                        
+                        // Update AsyncStorage
+                        AsyncStorage.setItem('driverRoutes', JSON.stringify(updatedRoutes))
+                          .then(() => {
+                            console.log('Trip ended and saved to AsyncStorage');
+                            
+                            // If we have a socket connection, notify about trip end
+                            import('../../services/socket/location.socket')
+                              .then(locationSocketModule => {
+                                if (driverId) {
+                                  locationSocketModule.sendTripUpdate({
+                                    driverId,
+                                    routeId: selectedRouteDetails.routeNumber,
+                                    status: 'completed',
+                                    location: userLocation
+                                  });
+                                }
+                              })
+                              .catch(err => console.error('Error importing location socket module:', err));
+                            
+                            // Close the modal
+                            setShowRouteDetailsModal(false);
+                            setSelectedRouteDetails(null);
+                            
+                            Alert.alert('Success', 'Trip ended successfully');
+                          })
+                          .catch(err => {
+                            console.error('Error saving trip end status:', err);
+                            Alert.alert('Error', 'Failed to end trip. Please try again.');
+                          });
+                      } catch (error) {
+                        console.error('Error in end trip function:', error);
+                        Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+                      }
+                    }}
+                  >
+                    <FontAwesome5 name="stop-circle" size={16} color="white" style={{ marginRight: 8 }} />
+                    <Text style={styles.routeDetailActionButtonText}>End Trip</Text>
                   </TouchableOpacity>
                 )}
                 
@@ -1799,7 +1864,7 @@ export default function DriverScreen() {
                   
                   <TouchableOpacity 
                     style={styles.actionButton}
-                    onPress={() => handleShowRouteDetails(route)}
+                    onPress={() => handleShowRouteMap(route)}
                   >
                     <FontAwesome5 name="map-marked-alt" size={16} color="#2196F3" />
                     <Text style={[styles.actionText, { color: '#2196F3' }]}>View Map</Text>
