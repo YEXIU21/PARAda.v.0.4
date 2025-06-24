@@ -174,10 +174,32 @@ const WebMapView: React.FC<WebMapViewProps> = (props) => {
         locationButton.style.alignItems = "center";
         locationButton.style.justifyContent = "center";
         locationButton.style.position = "absolute";
-        locationButton.style.bottom = "200px"; // Position it higher up
+        locationButton.style.bottom = "80px"; // Position it closer to the bottom of the screen
         locationButton.style.right = "10px";
-        locationButton.style.zIndex = "1"; // Same z-index as map controls
+        locationButton.style.zIndex = "10"; // Higher z-index to ensure it's above other elements
         locationButton.title = "Your Location";
+        
+        // Add a visual feedback effect when hovering
+        locationButton.onmouseover = () => {
+          locationButton.style.backgroundColor = "#f8f8f8";
+          locationButton.style.transform = "scale(1.05)";
+        };
+        
+        locationButton.onmouseout = () => {
+          locationButton.style.backgroundColor = "rgb(255, 255, 255)";
+          locationButton.style.transform = "scale(1)";
+        };
+        
+        // Add a visual feedback effect when clicking
+        locationButton.onmousedown = () => {
+          locationButton.style.backgroundColor = "#e8e8e8";
+          locationButton.style.transform = "scale(0.95)";
+        };
+        
+        locationButton.onmouseup = () => {
+          locationButton.style.backgroundColor = "rgb(255, 255, 255)";
+          locationButton.style.transform = "scale(1)";
+        };
         
         // Create an SVG for the location icon instead of using an image
         const svgNS = "http://www.w3.org/2000/svg";
@@ -195,12 +217,35 @@ const WebMapView: React.FC<WebMapViewProps> = (props) => {
         
         locationButton.addEventListener("click", () => {
           if (navigator.geolocation) {
+            // Show a loading state on the button
+            locationButton.innerHTML = `
+              <div style="width: 18px; height: 18px; border: 2px solid #1A73E8; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            `;
+            
+            // Add a style for the spinner animation
+            if (!document.getElementById('location-spinner-style')) {
+              const style = document.createElement('style');
+              style.id = 'location-spinner-style';
+              style.textContent = `
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `;
+              document.head.appendChild(style);
+            }
+            
             navigator.geolocation.getCurrentPosition(
               (position) => {
                 const pos = {
                   lat: position.coords.latitude,
                   lng: position.coords.longitude,
                 };
+                
+                // Reset the button content
+                locationButton.innerHTML = '';
+                svg.appendChild(path);
+                locationButton.appendChild(svg);
                 
                 googleMapRef.current.setCenter(pos);
                 googleMapRef.current.setZoom(15);
@@ -253,12 +298,88 @@ const WebMapView: React.FC<WebMapViewProps> = (props) => {
                   }
                 }
               },
-              () => {
-                console.error('Error getting user location');
+              (error) => {
+                // Reset the button content
+                locationButton.innerHTML = '';
+                svg.appendChild(path);
+                locationButton.appendChild(svg);
+                
+                console.error('Error getting user location:', error);
+                
+                // Show a user-friendly error message
+                let errorMessage = 'Could not get your location. ';
+                switch (error.code) {
+                  case error.PERMISSION_DENIED:
+                    errorMessage += 'Please allow location access in your browser settings.';
+                    break;
+                  case error.POSITION_UNAVAILABLE:
+                    errorMessage += 'Location information is unavailable.';
+                    break;
+                  case error.TIMEOUT:
+                    errorMessage += 'The request to get your location timed out.';
+                    break;
+                  default:
+                    errorMessage += 'An unknown error occurred.';
+                }
+                
+                // Create a toast notification
+                const toast = document.createElement('div');
+                toast.style.position = 'absolute';
+                toast.style.bottom = '140px';
+                toast.style.right = '10px';
+                toast.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                toast.style.color = 'white';
+                toast.style.padding = '10px 15px';
+                toast.style.borderRadius = '4px';
+                toast.style.maxWidth = '300px';
+                toast.style.zIndex = '1000';
+                toast.style.fontSize = '14px';
+                toast.textContent = errorMessage;
+                
+                if (mapRef.current) {
+                  mapRef.current.appendChild(toast);
+                  
+                  // Remove the toast after 5 seconds
+                  setTimeout(() => {
+                    if (toast.parentNode) {
+                      toast.parentNode.removeChild(toast);
+                    }
+                  }, 5000);
+                }
+              },
+              {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
               }
             );
           } else {
             console.error('Geolocation is not supported by this browser');
+            
+            // Show a user-friendly error message
+            const toast = document.createElement('div');
+            toast.style.position = 'absolute';
+            toast.style.bottom = '140px';
+            toast.style.right = '10px';
+            toast.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            toast.style.color = 'white';
+            toast.style.padding = '10px 15px';
+            toast.style.borderRadius = '4px';
+            toast.style.maxWidth = '300px';
+            toast.style.zIndex = '1000';
+            toast.style.fontSize = '14px';
+            toast.textContent = 'Geolocation is not supported by your browser.';
+            
+            if (mapRef.current) {
+              mapRef.current.appendChild(toast);
+              
+              // Remove the toast after 5 seconds
+              setTimeout(() => {
+                if (toast.parentNode) {
+                  toast.parentNode.removeChild(toast);
+                }
+              }, 5000);
+            }
           }
         });
         
