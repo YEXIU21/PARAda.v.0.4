@@ -129,6 +129,82 @@ const initializeSocketServer = (server) => {
         adminConnections.delete(socket.id);
         console.log(`Admin unsubscribed from events: ${socket.id}`);
       });
+      
+      // Handle driver replies to admin messages
+      socket.on('driver_reply', async (data, callback) => {
+        try {
+          console.log('Received driver reply:', data);
+          
+          // Validate data
+          if (!data || !data.message || !data.data || !data.data.inReplyTo) {
+            callback({ success: false, message: 'Invalid reply data' });
+            return;
+          }
+          
+          // Create notification for admin
+          const notification = {
+            title: data.title || `Reply from ${socket.user.username}`,
+            message: data.message,
+            type: 'info',
+            category: 'reply',
+            userId: 'admin', // Send to all admins
+            data: {
+              ...data.data,
+              fromDriver: true,
+              fromUserId: socket.user._id,
+              fromUsername: socket.user.username,
+              timestamp: new Date().toISOString()
+            }
+          };
+          
+          // Emit to all admins
+          emitToAdmins('admin_notification', notification);
+          
+          // Send success response
+          callback({ success: true, message: 'Reply sent to admin' });
+        } catch (error) {
+          console.error('Error handling driver reply:', error);
+          callback({ success: false, message: 'Error processing reply' });
+        }
+      });
+      
+      // Handle passenger replies to admin messages
+      socket.on('passenger_reply', async (data, callback) => {
+        try {
+          console.log('Received passenger reply:', data);
+          
+          // Validate data
+          if (!data || !data.message || !data.data || !data.data.inReplyTo) {
+            callback({ success: false, message: 'Invalid reply data' });
+            return;
+          }
+          
+          // Create notification for admin
+          const notification = {
+            title: data.title || `Reply from ${socket.user.username}`,
+            message: data.message,
+            type: 'info',
+            category: 'reply',
+            userId: 'admin', // Send to all admins
+            data: {
+              ...data.data,
+              fromPassenger: true,
+              fromUserId: socket.user._id,
+              fromUsername: socket.user.username,
+              timestamp: new Date().toISOString()
+            }
+          };
+          
+          // Emit to all admins
+          emitToAdmins('admin_notification', notification);
+          
+          // Send success response
+          callback({ success: true, message: 'Reply sent to admin' });
+        } catch (error) {
+          console.error('Error handling passenger reply:', error);
+          callback({ success: false, message: 'Error processing reply' });
+        }
+      });
     } 
     // Handle location tracking clients (migrated from WebSocket)
     else if (socket.clientId) {

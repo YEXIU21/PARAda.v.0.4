@@ -193,7 +193,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
             // Add timeout
             setTimeout(() => {
               reject(new Error('Socket reply timed out'));
-            }, 5000);
+            }, 10000);
           });
         } catch (replyError) {
           console.error('Error sending pending reply:', replyError);
@@ -593,7 +593,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
             // Add timeout
             setTimeout(() => {
               reject(new Error('Socket reply timed out'));
-            }, 5000);
+            }, 10000);
           });
           
           // Show success message
