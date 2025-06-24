@@ -481,11 +481,17 @@ export default function AdminSubscribersScreen() {
                     </>
                   )}
                   <TouchableOpacity
-                    style={[styles.cancelButton, { borderColor: theme.error }]}
+                    style={[
+                      styles.cancelButton, 
+                      { 
+                        backgroundColor: theme.error + '15',
+                        borderColor: theme.error 
+                      }
+                    ]}
                     onPress={() => handleCancelSubscription(subscription._id)}
                   >
                     <FontAwesome5 name="times" size={14} color={theme.error} />
-                    <Text style={[styles.cancelText, { color: theme.error }]}>Cancel</Text>
+                    <Text style={[styles.cancelText, { color: theme.error, fontWeight: 'bold' }]}>Cancel</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -698,14 +704,16 @@ const styles = StyleSheet.create({
   cancelButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    justifyContent: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 18,
     borderRadius: 8,
     borderWidth: 1,
+    minWidth: 100,
   },
   cancelText: {
-    marginLeft: 6,
-    fontWeight: 'bold',
+    marginLeft: 8,
+    fontSize: 14,
   },
   loadingContainer: {
     flex: 1,
