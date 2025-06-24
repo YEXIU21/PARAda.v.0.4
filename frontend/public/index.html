@@ -18,11 +18,9 @@
   <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
   <link rel="shortcut icon" href="/favicon.ico" />
   
-  <!-- Simplified icon approach - just a few key sizes instead of many -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/parada-icon.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/assets/icons/parada-icon-512.png" />
-  <link rel="apple-touch-icon" href="/assets/icons/parada-icon.png" />
-  <link rel="mask-icon" href="/assets/icons/maskable_icon.png" color="#4B6BFE" />
+  <!-- Single logo image approach -->
+  <link rel="icon" type="image/png" href="/assets/images/PARAda-Logo.png" />
+  <link rel="apple-touch-icon" href="/assets/images/PARAda-Logo.png" />
   
   <!-- Title -->
   <title>PARAda Transport</title>
@@ -117,14 +115,13 @@
     }
   </style>
   
-  <!-- Preload the icon images -->
-  <link rel="preload" href="/assets/icons/parada-icon.png" as="image" type="image/png">
-  <link rel="preload" href="/assets/icons/maskable_icon.png" as="image" type="image/png">
+  <!-- Preload the logo image -->
+  <link rel="preload" href="/assets/images/PARAda-Logo.png" as="image" type="image/png">
 </head>
 <body>
   <div id="root">
     <div class="initial-loader">
-      <img src="/assets/icons/parada-icon.png" alt="PARAda Logo" class="initial-loader-logo" />
+      <img src="/assets/images/PARAda-Logo.png" alt="PARAda Logo" class="initial-loader-logo" />
       <div class="initial-loader-title">PARAda</div>
       <div class="initial-loader-subtitle">Real-Time Transportation Tracking</div>
       <div class="initial-loader-spinner"></div>
@@ -145,13 +142,9 @@
       });
     }
     
-    // Preload main icon
-    const mainIcon = new Image();
-    mainIcon.src = '/assets/icons/parada-icon.png';
-    
-    // Preload maskable icon
-    const maskableIcon = new Image();
-    maskableIcon.src = '/assets/icons/maskable_icon.png';
+    // Preload logo image
+    const logoImage = new Image();
+    logoImage.src = '/assets/images/PARAda-Logo.png';
   </script>
 </body>
 </html> 

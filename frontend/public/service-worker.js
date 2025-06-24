@@ -8,9 +8,7 @@ const CACHE_ASSETS = [
   '/manifest.json',
   '/register-service-worker.js',
   '/favicon.ico',
-  '/assets/icons/parada-icon.png',
-  '/assets/icons/parada-icon-512.png',
-  '/assets/icons/maskable_icon.png'
+  '/assets/images/PARAda-Logo.png'
 ];
 
 // Install event - cache assets
