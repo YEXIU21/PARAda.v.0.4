@@ -26,15 +26,23 @@ interface WebMapViewProps {
  * A web-compatible map component that renders Google Maps
  * This is used as a fallback when react-native-maps is not available on web
  */
-const WebMapView: React.FC<WebMapViewProps> = ({ 
-  style, 
-  initialRegion,
-  children,
-  showsUserLocation,
-  locations,
-  mapStyle,
-  showLocationButton = true
-}) => {
+const WebMapView: React.FC<WebMapViewProps> = (props) => {
+  // Only continue with the component if we're on web platform
+  if (Platform.OS !== 'web') {
+    return null;
+  }
+
+  // Destructure props after the early return
+  const { 
+    style, 
+    initialRegion,
+    children,
+    showsUserLocation,
+    locations,
+    mapStyle,
+    showLocationButton = true
+  } = props;
+
   const [mapError, setMapError] = useState<boolean>(false);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -48,18 +56,16 @@ const WebMapView: React.FC<WebMapViewProps> = ({
   const apiKey = env.googleMapsApiKey;
   const mapId = env.googleMapsId;
 
-  // Only use this component on web platform
-  if (Platform.OS !== 'web') {
-    return null;
-  }
-
   // Parse children to find polyline components
   const findPolylines = () => {
     if (!children) return [];
     
     const polylines: any[] = [];
     React.Children.forEach(children, (child) => {
-      if (React.isValidElement(child) && child.type === WebPolyline) {
+      if (React.isValidElement(child) && 
+          child.type && 
+          typeof child.type === 'function' && 
+          (child.type as any).name === 'WebPolyline') {
         polylines.push(child.props);
       }
     });
@@ -135,8 +141,8 @@ const WebMapView: React.FC<WebMapViewProps> = ({
         zoomControlOptions: {
           position: window.google.maps.ControlPosition.RIGHT_BOTTOM
         },
-        styles: mapStyle || [],
-        mapId: mapId
+        // Only use mapId if it exists, otherwise use styles
+        ...(mapId ? { mapId } : { styles: mapStyle || [] })
       });
       
       // Remove any existing location button first
@@ -205,18 +211,15 @@ const WebMapView: React.FC<WebMapViewProps> = ({
                 if (existingUserMarker) {
                   existingUserMarker.setPosition(pos);
                 } else {
-                  // Create marker using AdvancedMarkerElement if available
                   try {
+                    // Try to use advanced marker if available
                     if (window.google.maps.marker && window.google.maps.marker.AdvancedMarkerElement) {
-                      // Create a marker with the modern API
                       const userMarkerElement = document.createElement('div');
-                      userMarkerElement.className = 'user-location-marker';
-                      userMarkerElement.style.backgroundColor = '#007AFF';
-                      userMarkerElement.style.borderRadius = '50%';
-                      userMarkerElement.style.border = '2px solid white';
-                      userMarkerElement.style.width = '16px';
-                      userMarkerElement.style.height = '16px';
-                      userMarkerElement.style.boxShadow = '0 1px 4px rgba(0,0,0,0.3)';
+                      userMarkerElement.innerHTML = `
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background-color: #4285F4; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,.3); position: relative;">
+                          <div style="width: 8px; height: 8px; border-radius: 50%; background-color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+                        </div>
+                      `;
                       
                       const userMarker = new window.google.maps.marker.AdvancedMarkerElement({
                         position: pos,
@@ -224,40 +227,41 @@ const WebMapView: React.FC<WebMapViewProps> = ({
                         title: "Your Location",
                         content: userMarkerElement
                       });
+                      
                       mapMarkersRef.current.push(userMarker);
                     } else {
                       throw new Error("AdvancedMarkerElement not available");
                     }
                   } catch (error) {
                     // Fallback to legacy Marker
-                    console.log("Using legacy marker instead:", error);
+                    console.log("Using legacy marker for user location:", error);
                     const userMarker = new window.google.maps.Marker({
                       position: pos,
                       map: googleMapRef.current,
                       title: "Your Location",
                       icon: {
                         path: window.google.maps.SymbolPath.CIRCLE,
-                        scale: 7,
-                        fillColor: "#007AFF",
+                        scale: 8,
+                        fillColor: "#4285F4",
                         fillOpacity: 1,
                         strokeWeight: 2,
                         strokeColor: "#FFFFFF"
                       }
                     });
+                    
                     mapMarkersRef.current.push(userMarker);
                   }
                 }
               },
               () => {
-                alert("Error: The Geolocation service failed.");
+                console.error('Error getting user location');
               }
             );
           } else {
-            alert("Error: Your browser doesn't support geolocation.");
+            console.error('Geolocation is not supported by this browser');
           }
         });
         
-        // Append to the map container instead of document body
         mapRef.current.appendChild(locationButton);
       }
       
