@@ -20,10 +20,10 @@
   <!-- PWA Links -->
   <link rel="manifest" href="/manifest.json" />
   <link rel="shortcut icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/adaptive-icon.png" />
-  <link rel="apple-touch-icon" sizes="167x167" href="/assets/images/adaptive-icon.png" />
-  <link rel="apple-touch-icon" sizes="152x152" href="/assets/images/adaptive-icon.png" />
-  <link rel="apple-touch-icon" sizes="120x120" href="/assets/images/adaptive-icon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/icon-192x192.png" />
+  <link rel="apple-touch-icon" sizes="167x167" href="/assets/icons/icon-192x192.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/icon-152x152.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/icon-128x128.png" />
   
   <!-- Title -->
   <title>PARAda Transport</title>
@@ -132,13 +132,14 @@
     }
   </style>
   
-  <!-- Preload the icon image -->
-  <link rel="preload" href="/assets/images/adaptive-icon.png" as="image" type="image/png">
+  <!-- Preload the icon images -->
+  <link rel="preload" href="/assets/icons/icon-192x192.png" as="image" type="image/png">
+  <link rel="preload" href="/assets/icons/icon-512x512.png" as="image" type="image/png">
 </head>
 <body>
   <div id="root">
     <div class="initial-loader">
-      <img src="/assets/images/adaptive-icon.png" alt="PARAda Logo" class="initial-loader-logo" />
+      <img src="/assets/icons/icon-192x192.png" alt="PARAda Logo" class="initial-loader-logo" />
       <div class="initial-loader-title">PARAda</div>
       <div class="initial-loader-subtitle">Real-Time Transportation Tracking</div>
       <div class="initial-loader-spinner"></div>
@@ -164,9 +165,12 @@
       console.log('Google Maps initialization placeholder');
     };
     
-    // Preload the icon image
-    const img = new Image();
-    img.src = '/assets/images/adaptive-icon.png';
+    // Preload the icon images
+    const preloadIcons = [72, 96, 128, 144, 152, 192, 384, 512];
+    preloadIcons.forEach(size => {
+      const img = new Image();
+      img.src = `/assets/icons/icon-${size}x${size}.png`;
+    });
   </script>
 </body>
 </html> 

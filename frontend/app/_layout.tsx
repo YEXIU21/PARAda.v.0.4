@@ -17,11 +17,19 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useEffect(() => {
-    // Preload the adaptive icon image to ensure it's ready when needed
+    // Preload the PWA icons to ensure they're ready when needed
     if (Platform.OS === 'web') {
-      const img = new window.Image();
-      img.src = '/assets/images/adaptive-icon.png';
-      img.onload = () => {
+      // Preload all icon sizes
+      const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
+      iconSizes.forEach(size => {
+        const img = new window.Image();
+        img.src = `/assets/icons/icon-${size}x${size}.png`;
+      });
+      
+      // Also preload the splash screen image
+      const splashImg = new window.Image();
+      splashImg.src = '/assets/images/adaptive-icon.png';
+      splashImg.onload = () => {
         console.log('Splash screen image preloaded');
       };
     }
@@ -87,12 +95,25 @@ export default function RootLayout() {
       document.head.appendChild(linkManifest);
       
       // Add apple touch icon with proper sizes
-      const iconSizes = [180, 167, 152, 120];
-      iconSizes.forEach(size => {
+      const appleTouchIconSizes = [180, 167, 152, 120];
+      appleTouchIconSizes.forEach(size => {
         const linkAppleTouchIcon = document.createElement('link');
         linkAppleTouchIcon.rel = 'apple-touch-icon';
         linkAppleTouchIcon.setAttribute('sizes', `${size}x${size}`);
-        linkAppleTouchIcon.href = `/assets/images/adaptive-icon.png`;
+        
+        // Use the nearest properly sized icon for each Apple touch icon size
+        let nearestSize = 512; // Default to largest
+        
+        // Find the closest icon size we have generated
+        const availableSizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        for (const availableSize of availableSizes) {
+          if (availableSize >= size || availableSize >= nearestSize) {
+            nearestSize = availableSize;
+            break;
+          }
+        }
+        
+        linkAppleTouchIcon.href = `/assets/icons/icon-${nearestSize}x${nearestSize}.png`;
         document.head.appendChild(linkAppleTouchIcon);
       });
       

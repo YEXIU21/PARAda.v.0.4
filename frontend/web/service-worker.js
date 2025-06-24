@@ -5,7 +5,14 @@ const URLS_TO_CACHE = [
   '/index.html',
   '/static/js/main.bundle.js',
   '/static/css/main.css',
-  '/assets/images/adaptive-icon.png'
+  '/assets/icons/icon-72x72.png',
+  '/assets/icons/icon-96x96.png',
+  '/assets/icons/icon-128x128.png',
+  '/assets/icons/icon-144x144.png',
+  '/assets/icons/icon-152x152.png',
+  '/assets/icons/icon-192x192.png',
+  '/assets/icons/icon-384x384.png',
+  '/assets/icons/icon-512x512.png'
 ];
 
 // Install event - cache assets
@@ -79,8 +86,8 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: '/assets/images/adaptive-icon.png',
-      badge: '/assets/images/adaptive-icon.png',
+      icon: '/assets/icons/icon-192x192.png',
+      badge: '/assets/icons/icon-96x96.png',
       data: {
         url: data.url || '/'
       }
