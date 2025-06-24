@@ -17,14 +17,14 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useEffect(() => {
-    // Preload the PWA icons to ensure they're ready when needed
+    // Preload the PARAda-Logo.png image to ensure it's ready when needed
     if (Platform.OS === 'web') {
-      // Preload all icon sizes
-      const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
-      iconSizes.forEach(size => {
-        const img = new window.Image();
-        img.src = `/assets/icons/icon-${size}x${size}.png`;
-      });
+      // Preload the logo image
+      const logoImg = new window.Image();
+      logoImg.src = '/assets/images/PARAda-Logo.png';
+      logoImg.onload = () => {
+        console.log('Logo image preloaded');
+      };
       
       // Also preload the splash screen image
       const splashImg = new window.Image();

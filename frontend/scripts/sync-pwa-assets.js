@@ -1,15 +1,13 @@
 /**
- * This script syncs PWA icon assets from the source directories to the public directory
+ * This script syncs PARAda-Logo.png from assets/images to public/assets/images
  * to ensure proper deployment on Vercel.
  */
 const fs = require('fs');
 const path = require('path');
 
 // Define source and destination directories
-const sourceIconsDir = path.join(__dirname, '../assets/icons');
-const destIconsDir = path.join(__dirname, '../public/assets/icons');
-const sourceIOSIconsDir = path.join(__dirname, '../assets/ios-icons');
-const destIOSIconsDir = path.join(__dirname, '../public/assets/ios-icons');
+const sourceImagesDir = path.join(__dirname, '../assets/images');
+const destImagesDir = path.join(__dirname, '../public/assets/images');
 
 // Create destination directories if they don't exist
 function ensureDirectoryExists(dir) {
@@ -19,38 +17,32 @@ function ensureDirectoryExists(dir) {
   }
 }
 
-// Copy all files from source to destination
-function copyFiles(sourceDir, destDir, fileType = '.png') {
-  ensureDirectoryExists(destDir);
+// Copy PARAda-Logo.png from source to destination
+function copyLogoFile() {
+  ensureDirectoryExists(destImagesDir);
   
   try {
-    const files = fs.readdirSync(sourceDir);
+    const logoFileName = 'PARAda-Logo.png';
+    const sourcePath = path.join(sourceImagesDir, logoFileName);
+    const destPath = path.join(destImagesDir, logoFileName);
     
-    files.forEach(file => {
-      if (file.endsWith(fileType)) {
-        const sourcePath = path.join(sourceDir, file);
-        const destPath = path.join(destDir, file);
-        
-        fs.copyFileSync(sourcePath, destPath);
-        console.log(`Copied: ${file}`);
-      }
-    });
-    
-    console.log(`Successfully copied ${fileType} files from ${sourceDir} to ${destDir}`);
+    if (fs.existsSync(sourcePath)) {
+      fs.copyFileSync(sourcePath, destPath);
+      console.log(`Successfully copied ${logoFileName} to ${destImagesDir}`);
+    } else {
+      console.error(`Error: ${logoFileName} not found in ${sourceImagesDir}`);
+    }
   } catch (error) {
-    console.error(`Error copying files: ${error.message}`);
+    console.error(`Error copying logo file: ${error.message}`);
   }
 }
 
-// Main function to sync all assets
+// Main function to sync assets
 function syncPWAAssets() {
   console.log('Syncing PWA assets to public directory...');
   
-  // Sync PWA icons
-  copyFiles(sourceIconsDir, destIconsDir);
-  
-  // Sync iOS icons
-  copyFiles(sourceIOSIconsDir, destIOSIconsDir);
+  // Sync PARAda-Logo.png
+  copyLogoFile();
   
   console.log('PWA asset sync complete!');
 }

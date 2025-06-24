@@ -4,7 +4,7 @@
     "slug": "parada",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/adaptive-icon.png",
+    "icon": "./assets/images/PARAda-Logo.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash/splash.png",
@@ -17,15 +17,15 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yourcompany.parada",
-      "icon": "./assets/images/adaptive-icon.png"
+      "icon": "./assets/images/PARAda-Logo.png"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/PARAda-Logo.png",
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.yourcompany.parada",
-      "icon": "./assets/images/adaptive-icon.png",
+      "icon": "./assets/images/PARAda-Logo.png",
       "splash": {
         "image": "./assets/splash/splash.png",
         "resizeMode": "contain",
@@ -33,7 +33,7 @@
       }
     },
     "web": {
-      "favicon": "./assets/images/adaptive-icon.png",
+      "favicon": "./assets/images/favicon.png",
       "bundler": "metro",
       "output": "static",
       "name": "PARAda Transport",
