@@ -22,7 +22,7 @@ import { useAuth } from '../context/AuthContext';
 // Images
 const images = {
   gcash: require('../assets/images/gcash.jpg'),
-  logo: require('../assets/images/adaptive-icon.png'),
+  logo: require('../assets/icons/icon-192x192.png'),
   instapay: require('../assets/images/gcash.jpg') // Using gcash.jpg as a placeholder for the InstaPay QR code
 };
 

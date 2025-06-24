@@ -86,7 +86,7 @@ import { homeScreenStyles } from '../../styles/HomeScreenStyles';
 // Ensure images are available
 const paymentImages = {
   gcash: require('../../assets/images/gcash.jpg'),
-  logo: require('../../assets/images/adaptive-icon.png'),
+  logo: require('../../assets/icons/icon-192x192.png'),
   instapay: require('../../assets/images/gcash.jpg') // Using gcash.jpg as a placeholder for the InstaPay QR code
 };
 
@@ -1072,7 +1072,7 @@ export default function HomeScreen() {
           <View style={homeScreenStyles.headerContent}>
             <View style={homeScreenStyles.logoContainer}>
               <Image 
-                source={require('../../assets/images/adaptive-icon.png')} 
+                source={require('../../assets/icons/icon-192x192.png')} 
                 style={homeScreenStyles.logo} 
                 resizeMode="contain"
               />

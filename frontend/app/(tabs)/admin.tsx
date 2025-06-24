@@ -584,7 +584,7 @@ export default function AdminScreen() {
         <View style={styles.headerContent}>
           <View style={styles.logoContainer}>
             <Image 
-              source={require('../../assets/images/adaptive-icon.png')} 
+              source={require('../../assets/icons/icon-192x192.png')} 
               style={styles.logo} 
               resizeMode="contain"
             />
