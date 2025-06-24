@@ -20,11 +20,6 @@ export const hasAccessToVehicleType = (
     return false;
   }
   
-  // If subscription is not verified, no access
-  if (!user.subscription.verified) {
-    return false;
-  }
-  
   // If subscription type is 'all', access to all vehicle types
   if (user.subscription.type === 'all') {
     return true;
@@ -45,11 +40,6 @@ export const getAccessibleVehicleTypes = (user: User | null): VehicleTypeId[] =>
     return [];
   }
   
-  // If subscription is not verified, no access
-  if (!user.subscription.verified) {
-    return [];
-  }
-  
   // If subscription type is 'all', access to all vehicle types
   if (user.subscription.type === 'all') {
     return ['latransco', 'calvo', 'corominas', 'ceres', 'gabe', 'jeep'];
@@ -57,7 +47,7 @@ export const getAccessibleVehicleTypes = (user: User | null): VehicleTypeId[] =>
   
   // Otherwise, only access to the specific vehicle type
   return [user.subscription.type as VehicleTypeId];
-}; 
+};
 
 /**
  * Check if a route is accessible to a user
