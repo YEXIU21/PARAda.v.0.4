@@ -129,7 +129,7 @@ const adminFunctions: AdminFunction[] = [
 // Ensure images are available
 const paymentImages = {
   gcash: require('../../assets/images/gcash.jpg'),
-  logo: require('../../assets/images/PARAdalogo.jpg'),
+  logo: require('../../assets/images/PARAda-Logo.png'),
   instapay: require('../../assets/images/gcash.jpg') // Using gcash.jpg as a placeholder for the InstaPay QR code
 };
 
