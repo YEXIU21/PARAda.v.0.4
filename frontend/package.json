@@ -16,8 +16,9 @@
     "test": "jest --watchAll",
     "lint": "expo lint",
     "generate-android-icons": "node ./scripts/generate-android-icons.js",
+    "generate-pwa-icons": "node ./scripts/generate-pwa-icons.js",
     "generate-splash-screens": "node ./scripts/generate-splash-screen.js",
-    "generate-all-assets": "npm run generate-android-icons && npm run generate-splash-screens"
+    "generate-all-assets": "npm run generate-android-icons && npm run generate-pwa-icons && npm run generate-splash-screens"
   },
   "jest": {
     "preset": "jest-expo",
