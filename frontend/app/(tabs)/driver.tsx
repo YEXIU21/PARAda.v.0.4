@@ -1524,7 +1524,24 @@ export default function DriverScreen() {
       ) : (
           driverRoutes.map((route) => (
             <View key={route.id} style={[styles.routeCard, { backgroundColor: theme.card }]}>
-            <View style={styles.routeHeader}>
+            {route.isInTrip && (
+              <View style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                backgroundColor: '#FF5722',
+                paddingVertical: 4,
+                zIndex: 1,
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}>
+                <FontAwesome5 name="route" size={12} color="#FFF" style={{marginRight: 6}} />
+                <Text style={{color: '#FFF', fontWeight: 'bold', fontSize: 12}}>TRIP IN PROGRESS</Text>
+              </View>
+            )}
+            <View style={[styles.routeHeader, route.isInTrip && {marginTop: 20}]}>
                 <View style={styles.routeHeaderLeft}>
                   <View style={styles.routeNumberContainer}>
                     <FontAwesome5 
@@ -1596,7 +1613,7 @@ export default function DriverScreen() {
             </View>
             
             <View style={styles.routeActions}>
-              {route.status === 'active' && isOnDuty && (
+              {route.status === 'active' && isOnDuty && !route.isInTrip && (
                 <>
                     <TouchableOpacity 
                       style={[styles.actionButton, styles.primaryActionButton]}
@@ -1692,6 +1709,100 @@ export default function DriverScreen() {
                     >
                       <FontAwesome5 name="headset" size={16} color="#2196F3" />
                     <Text style={[styles.actionText, { color: '#2196F3' }]}>Support</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+              
+              {route.status === 'active' && isOnDuty && route.isInTrip && (
+                <>
+                  <TouchableOpacity 
+                    style={[styles.actionButton, { backgroundColor: '#FF5722' }]}
+                    onPress={() => {
+                      Alert.alert(
+                        "End Trip",
+                        "Are you sure you want to end this trip?",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          { 
+                            text: "End Trip", 
+                            onPress: async () => {
+                              try {
+                                console.log("Ending trip for route:", route.id);
+                                
+                                // Update route status to active (not in trip)
+                                const updatedRoutes = driverRoutes.map(r => 
+                                  r.id === route.id 
+                                    ? { ...r, status: 'active' as const, isInTrip: false } 
+                                    : r
+                                );
+                                
+                                // Update state
+                                setDriverRoutes(updatedRoutes);
+                                
+                                // Save to AsyncStorage to persist after refresh
+                                await AsyncStorage.setItem('driverRoutes', JSON.stringify(updatedRoutes));
+                                
+                                // If we have a socket connection, notify about trip end
+                                const locationSocketModule = await import('../../services/socket/location.socket');
+                                if (driverId) {
+                                  locationSocketModule.sendTripUpdate({
+                                    driverId,
+                                    routeId: route.routeNumber,
+                                    status: 'completed',
+                                    location: userLocation
+                                  });
+                                  
+                                  // Also update via API
+                                  try {
+                                    const token = await AsyncStorage.getItem('token') || '';
+                                    const response = await fetch(`${BASE_URL}/api/drivers/${driverId}/trip`, {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                        'x-access-token': token
+                                      },
+                                      body: JSON.stringify({
+                                        routeId: route.routeNumber,
+                                        status: 'completed',
+                                        location: userLocation
+                                      })
+                                    });
+                                    console.log('Trip end update API response:', await response.json());
+                                  } catch (apiError) {
+                                    console.error('Failed to update trip end status via API:', apiError);
+                                  }
+                                }
+                                
+                                // Show confirmation to user
+                                Alert.alert(
+                                  "Trip Ended",
+                                  "Your trip has been completed and your location will no longer be shared.",
+                                  [{ text: "OK" }]
+                                );
+                              } catch (error) {
+                                console.error('Error ending trip:', error);
+                                Alert.alert(
+                                  "Error",
+                                  "Failed to end trip. Please try again.",
+                                  [{ text: "OK" }]
+                                );
+                              }
+                            } 
+                          }
+                        ]
+                      );
+                    }}
+                  >
+                    <FontAwesome5 name="stop-circle" size={16} color="#FFF" />
+                    <Text style={styles.primaryActionButtonText}>End Trip</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => handleShowRouteDetails(route)}
+                  >
+                    <FontAwesome5 name="map-marked-alt" size={16} color="#2196F3" />
+                    <Text style={[styles.actionText, { color: '#2196F3' }]}>View Map</Text>
                   </TouchableOpacity>
                 </>
               )}
