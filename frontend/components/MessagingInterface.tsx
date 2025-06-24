@@ -596,17 +596,22 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
             }, 10000);
           });
           
-          // Show success message
+          // Show success modal with more details
           Alert.alert(
-            'Reply Sent',
-            'Your reply has been sent to the administrator.',
-            [{ text: 'OK' }]
+            'Reply Sent Successfully',
+            `Your reply has been sent to the administrator.\n\nMessage: "${replyText.substring(0, 50)}${replyText.length > 50 ? '...' : ''}"`,
+            [
+              { 
+                text: 'OK', 
+                onPress: () => {
+                  // Reset state
+                  setReplyText('');
+                  setShowReplyModal(false);
+                  setSelectedMessage(null);
+                } 
+              }
+            ]
           );
-          
-          // Reset state
-          setReplyText('');
-          setShowReplyModal(false);
-          setSelectedMessage(null);
           
         } catch (socketError) {
           console.error('Socket error when sending reply:', socketError);
@@ -626,17 +631,22 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
             // Save back to AsyncStorage
             await AsyncStorage.setItem('pendingReplies', JSON.stringify(replies));
             
-            // Show message to user
+            // Show detailed message to user
             Alert.alert(
               'Reply Queued',
-              'You appear to be offline. Your reply will be sent when you reconnect.',
-              [{ text: 'OK' }]
+              `You appear to be offline. Your reply will be sent when you reconnect.\n\nQueued Message: "${replyText.substring(0, 50)}${replyText.length > 50 ? '...' : ''}"`,
+              [
+                { 
+                  text: 'OK', 
+                  onPress: () => {
+                    // Reset state
+                    setReplyText('');
+                    setShowReplyModal(false);
+                    setSelectedMessage(null);
+                  } 
+                }
+              ]
             );
-            
-            // Reset state
-            setReplyText('');
-            setShowReplyModal(false);
-            setSelectedMessage(null);
           } catch (storageError) {
             console.error('Error storing pending reply:', storageError);
             
@@ -671,17 +681,22 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
           // Save back to AsyncStorage
           await AsyncStorage.setItem('pendingReplies', JSON.stringify(replies));
           
-          // Show message to user
+          // Show detailed message to user
           Alert.alert(
             'Reply Queued',
-            'You appear to be offline. Your reply will be sent when you reconnect.',
-            [{ text: 'OK' }]
+            `You appear to be offline. Your reply will be sent when you reconnect.\n\nQueued Message: "${replyText.substring(0, 50)}${replyText.length > 50 ? '...' : ''}"`,
+            [
+              { 
+                text: 'OK', 
+                onPress: () => {
+                  // Reset state
+                  setReplyText('');
+                  setShowReplyModal(false);
+                  setSelectedMessage(null);
+                } 
+              }
+            ]
           );
-          
-          // Reset state
-          setReplyText('');
-          setShowReplyModal(false);
-          setSelectedMessage(null);
         } catch (storageError) {
           console.error('Error storing pending reply:', storageError);
           
