@@ -1,13 +1,13 @@
 {
   "name": "PARAda Transport",
   "short_name": "PARAda",
-  "theme_color": "#4B6BFE",
-  "background_color": "#FFFFFF",
+  "description": "Real-Time Transportation Tracking for Smarter Travel",
+  "start_url": "/",
   "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#4B6BFE",
   "orientation": "portrait",
   "scope": "/",
-  "start_url": "/",
-  "description": "Real-Time Transportation Tracking for Smarter Travel",
   "icons": [
     {
       "src": "/favicon.ico",
