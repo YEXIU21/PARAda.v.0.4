@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1.00001, viewport-fit=cover" />
   
   <!-- PWA Meta Tags -->
   <meta name="theme-color" content="#4B6BFE" />
@@ -13,8 +13,6 @@
   <meta name="apple-mobile-web-app-title" content="PARAda" />
   <meta name="application-name" content="PARAda" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="HandheldFriendly" content="true" />
-  <meta name="MobileOptimized" content="width" />
   
   <!-- PWA Links -->
   <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
@@ -40,22 +38,6 @@
       padding: 0;
       background-color: #FFFFFF;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      /* Disable zooming */
-      touch-action: none;
-      overflow: hidden;
-      -ms-text-size-adjust: 100%;
-      -webkit-text-size-adjust: 100%;
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-tap-highlight-color: rgba(0,0,0,0);
-    }
-    
-    /* Ensure all elements inherit touch-action: none */
-    * {
-      touch-action: none;
-      -ms-touch-action: none;
-      -webkit-touch-callout: none;
     }
     
     #root {
@@ -257,68 +239,6 @@
   
   <!-- PWA Service Worker Registration -->
   <script>
-    // Comprehensive zoom prevention
-    (function() {
-      // Prevent all touch-based zooming
-      document.addEventListener('touchstart', function(event) {
-        if (event.touches.length > 1) {
-          event.preventDefault();
-          return false;
-        }
-      }, { passive: false });
-      
-      // Prevent gesture-based zooming (iOS)
-      document.addEventListener('gesturestart', function(event) {
-        event.preventDefault();
-        return false;
-      }, { passive: false });
-      
-      // Prevent gesture change
-      document.addEventListener('gesturechange', function(event) {
-        event.preventDefault();
-        return false;
-      }, { passive: false });
-      
-      // Prevent gesture end
-      document.addEventListener('gestureend', function(event) {
-        event.preventDefault();
-        return false;
-      }, { passive: false });
-      
-      // Prevent double-tap zooming
-      let lastTouchEnd = 0;
-      document.addEventListener('touchend', function(event) {
-        const now = Date.now();
-        if (now - lastTouchEnd < 300) {
-          event.preventDefault();
-        }
-        lastTouchEnd = now;
-      }, { passive: false });
-      
-      // Prevent pinch zoom with touch events
-      document.addEventListener('touchmove', function(event) {
-        if (event.scale !== undefined && event.scale !== 1) {
-          event.preventDefault();
-        }
-      }, { passive: false });
-      
-      // Prevent keyboard shortcuts for zooming
-      document.addEventListener('keydown', function(event) {
-        // Ctrl/Cmd + +/-/0
-        if ((event.ctrlKey || event.metaKey) && 
-            (event.key === '+' || event.key === '-' || event.key === '0')) {
-          event.preventDefault();
-        }
-      });
-      
-      // Disable mousewheel zoom when combined with ctrl/cmd
-      document.addEventListener('wheel', function(event) {
-        if (event.ctrlKey || event.metaKey) {
-          event.preventDefault();
-        }
-      }, { passive: false });
-    })();
-    
     // Splash screen timer
     document.addEventListener('DOMContentLoaded', function() {
       // Show splash screen for 5 seconds (5000ms)

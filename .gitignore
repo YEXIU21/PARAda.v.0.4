@@ -65,6 +65,8 @@ blackhole.md
 rulesforparada.md
 zparadsystemplanrules.md
 zparadarules.md
+.cursorignore
+
 # Ignore .cursor folder
 .cursor/
 

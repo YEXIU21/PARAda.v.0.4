@@ -9,14 +9,12 @@ import {
   Switch,
   Alert,
   TextInput,
-  Platform,
-  ActivityIndicator
+  Platform
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
-import { getSystemSettings, updateSystemSettings, clearAppCache, resetSystemSettings } from '../../services/api/system-settings.api';
 
 interface SettingItem {
   id: string;
@@ -33,8 +31,6 @@ export default function SystemSettingsScreen() {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
   const [settings, setSettings] = useState<SettingItem[]>([
     {
       id: 'darkMode',
@@ -115,39 +111,31 @@ export default function SystemSettingsScreen() {
     }
   ]);
 
-  // Load settings from API
+  // Load settings from storage
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        setIsLoading(true);
-        setIsError(false);
-        
-        // Get settings from API
-        const apiSettings = await getSystemSettings();
-        
-        if (apiSettings) {
+        const savedSettings = await AsyncStorage.getItem('systemSettings');
+        if (savedSettings) {
+          const parsedSettings = JSON.parse(savedSettings);
+          
           // Update settings with saved values, preserving the structure
           setSettings(settings.map(setting => {
-            if (apiSettings[setting.id] !== undefined) {
-              return { ...setting, value: apiSettings[setting.id] };
+            if (parsedSettings[setting.id] !== undefined) {
+              return { ...setting, value: parsedSettings[setting.id] };
             }
             return setting;
           }));
         }
-        
-        setIsLoading(false);
       } catch (error) {
         console.error('Error loading settings:', error);
-        setIsError(true);
-        setIsLoading(false);
-        Alert.alert('Error', 'Failed to load settings from server. Using local settings instead.');
       }
     };
     
     loadSettings();
   }, []);
 
-  // Save settings to API
+  // Save settings to storage
   const saveSettings = async (updatedSettings: SettingItem[]) => {
     try {
       // Convert settings array to object for storage
@@ -156,14 +144,10 @@ export default function SystemSettingsScreen() {
         return obj;
       }, {});
       
-      // Save settings to API
-      await updateSystemSettings(settingsObject);
-      
-      // Notify success
-      console.log('Settings saved successfully');
+      await AsyncStorage.setItem('systemSettings', JSON.stringify(settingsObject));
     } catch (error) {
       console.error('Error saving settings:', error);
-      Alert.alert('Error', 'Failed to save settings to server. Changes were saved locally.');
+      Alert.alert('Error', 'Failed to save settings');
     }
   };
 
@@ -219,15 +203,9 @@ export default function SystemSettingsScreen() {
             { 
               text: 'Clear', 
               style: 'destructive',
-              onPress: async () => {
-                try {
-                  // Call API to clear cache
-                  await clearAppCache();
-                  Alert.alert('Success', 'Cache cleared successfully');
-                } catch (error) {
-                  console.error('Error clearing cache:', error);
-                  Alert.alert('Error', 'Failed to clear cache');
-                }
+              onPress: () => {
+                // Implement cache clearing logic
+                Alert.alert('Success', 'Cache cleared successfully');
               }
             }
           ]
@@ -243,74 +221,32 @@ export default function SystemSettingsScreen() {
             { 
               text: 'Reset', 
               style: 'destructive',
-              onPress: async () => {
-                try {
-                  // Call API to reset settings
-                  const defaultSettings = await resetSystemSettings();
+              onPress: () => {
+                // Reset settings to default
+                const defaultSettings = settings.map(setting => {
+                  if (setting.id === 'darkMode') {
+                    // Keep the current theme
+                    return setting;
+                  }
                   
-                  // Update local state with default settings
-                  setSettings(settings.map(setting => {
-                    if (setting.id === 'darkMode') {
-                      // Set dark mode based on API response
-                      if (defaultSettings.darkMode !== undefined) {
-                        if (setting.value !== defaultSettings.darkMode) {
-                          toggleDarkMode(); // Toggle theme if needed
-                        }
-                        return { ...setting, value: defaultSettings.darkMode };
-                      }
+                  switch (setting.id) {
+                    case 'notifications':
+                    case 'dataSync':
+                      return { ...setting, value: true };
+                    case 'etaBuffer':
+                      return { ...setting, value: '5' };
+                    case 'maxActiveRoutes':
+                      return { ...setting, value: '20' };
+                    case 'mapProvider':
+                      return { ...setting, value: 'google' };
+                    default:
                       return setting;
-                    }
-                    
-                    // Update other settings from API response
-                    if (defaultSettings[setting.id] !== undefined) {
-                      return { ...setting, value: defaultSettings[setting.id] };
-                    }
-                    
-                    // Fallback to hardcoded defaults if API doesn't provide a value
-                    switch (setting.id) {
-                      case 'notifications':
-                      case 'dataSync':
-                        return { ...setting, value: true };
-                      case 'etaBuffer':
-                        return { ...setting, value: '5' };
-                      case 'maxActiveRoutes':
-                        return { ...setting, value: '20' };
-                      case 'mapProvider':
-                        return { ...setting, value: 'google' };
-                      default:
-                        return setting;
-                    }
-                  }));
-                  
-                  Alert.alert('Success', 'Settings reset to default');
-                } catch (error) {
-                  console.error('Error resetting settings:', error);
-                  
-                  // Fallback to local reset if API fails
-                  const defaultSettings = settings.map(setting => {
-                    if (setting.id === 'darkMode') {
-                      return setting; // Keep the current theme
-                    }
-                    
-                    switch (setting.id) {
-                      case 'notifications':
-                      case 'dataSync':
-                        return { ...setting, value: true };
-                      case 'etaBuffer':
-                        return { ...setting, value: '5' };
-                      case 'maxActiveRoutes':
-                        return { ...setting, value: '20' };
-                      case 'mapProvider':
-                        return { ...setting, value: 'google' };
-                      default:
-                        return setting;
-                    }
-                  });
-                  
-                  setSettings(defaultSettings);
-                  saveSettings(defaultSettings);
-                  Alert.alert('Warning', 'Settings reset to default locally. Server sync failed.');
-                }
+                  }
+                });
+                
+                setSettings(defaultSettings);
+                saveSettings(defaultSettings);
+                Alert.alert('Success', 'Settings reset to default');
               }
             }
           ]
@@ -414,49 +350,29 @@ export default function SystemSettingsScreen() {
         <Text style={styles.headerTitle}>System Settings</Text>
       </LinearGradient>
       
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={[styles.loadingText, { color: theme.text }]}>Loading settings...</Text>
-        </View>
-      ) : isError ? (
-        <View style={styles.errorContainer}>
-          <FontAwesome5 name="exclamation-circle" size={40} color={theme.error} />
-          <Text style={[styles.errorText, { color: theme.text }]}>
-            Failed to load settings from server
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>App Configuration</Text>
+        {settings.slice(0, 3).map(renderSettingItem)}
+        
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Advanced Settings</Text>
+        {settings.slice(3, 6).map(renderSettingItem)}
+        
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Maintenance</Text>
+        {settings.slice(6).map(renderSettingItem)}
+        
+        <View style={styles.versionContainer}>
+          <Text style={[styles.versionText, { color: theme.textSecondary }]}>
+            App Version: 1.0.0
           </Text>
-          <Text style={[styles.errorSubtext, { color: theme.textSecondary }]}>
-            Using locally cached settings
+          <Text style={[styles.buildText, { color: theme.textSecondary }]}>
+            Build: 2023.06.15
           </Text>
         </View>
-      ) : (
-        <ScrollView 
-          style={styles.content}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>App Configuration</Text>
-          {settings.slice(0, 3).map(renderSettingItem)}
-          
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Advanced Settings</Text>
-          {settings.slice(3, 6).map(renderSettingItem)}
-          
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Maintenance</Text>
-          {settings.slice(6).map(renderSettingItem)}
-          
-          <View style={styles.versionContainer}>
-            <Text style={[styles.versionText, { color: theme.textSecondary }]}>
-              App Version: 1.0.0
-            </Text>
-            <Text style={[styles.buildText, { color: theme.textSecondary }]}>
-              Build: 2025
-            </Text>
-            <Text style={[styles.serverStatusText, { color: isError ? theme.error : '#34A853' }]}>
-              Server Status: {isError ? 'Offline' : 'Online'}
-            </Text>
-          </View>
-        </ScrollView>
-      )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -578,38 +494,5 @@ const styles = StyleSheet.create({
   },
   buildText: {
     fontSize: 12,
-    marginBottom: 4,
-  },
-  serverStatusText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    marginTop: 12,
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  errorSubtext: {
-    marginTop: 8,
-    fontSize: 14,
-    textAlign: 'center',
   },
 }); 
