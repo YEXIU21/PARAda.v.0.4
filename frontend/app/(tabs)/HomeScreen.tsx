@@ -20,6 +20,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 
 // Import API services
 import { getSubscriptionPlans, getUserSubscription, createSubscription } from '../../services/api/subscription.api';
@@ -862,6 +863,37 @@ export default function HomeScreen() {
 
   const sendNotification = async (vehicle: Vehicle) => {
     try {
+      // Check if nearby vehicle notifications are enabled in settings
+      const systemSettings = await AsyncStorage.getItem('systemSettings');
+      let nearbyVehicleNotificationsEnabled = true; // Default to true if setting not found
+      
+      if (systemSettings) {
+        const parsedSettings = JSON.parse(systemSettings);
+        if (parsedSettings.nearbyVehicleNotifications !== undefined) {
+          nearbyVehicleNotificationsEnabled = parsedSettings.nearbyVehicleNotifications;
+        }
+      }
+      
+      // Only proceed if notifications are enabled
+      if (!nearbyVehicleNotificationsEnabled) {
+        console.log('Nearby vehicle notifications are disabled in settings');
+        Alert.alert(
+          'Notifications Disabled',
+          'Nearby vehicle notifications are currently disabled. You can enable them in Settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Go to Settings', 
+              onPress: () => {
+                // Navigate to settings screen
+                router.push('/(tabs)/system-settings');
+              }
+            }
+          ]
+        );
+        return;
+      }
+      
       const success = await scheduleVehicleArrivalNotification(vehicle.name, vehicle.eta);
       
       if (success) {

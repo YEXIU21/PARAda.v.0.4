@@ -51,6 +51,15 @@ export default function SystemSettingsScreen() {
       iconColor: '#FF9500'
     },
     {
+      id: 'nearbyVehicleNotifications',
+      title: 'Notify on Nearby Vehicles',
+      description: 'Get notified when vehicles are approaching your location',
+      type: 'toggle',
+      value: true,
+      icon: 'car',
+      iconColor: '#34C759'
+    },
+    {
       id: 'dataSync',
       title: 'Background Data Sync',
       description: 'Allow app to sync data in the background',
@@ -232,6 +241,7 @@ export default function SystemSettingsScreen() {
                   switch (setting.id) {
                     case 'notifications':
                     case 'dataSync':
+                    case 'nearbyVehicleNotifications':
                       return { ...setting, value: true };
                     case 'etaBuffer':
                       return { ...setting, value: '5' };
