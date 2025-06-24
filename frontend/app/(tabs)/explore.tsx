@@ -616,6 +616,10 @@ export default function ExploreScreen() {
   }, [user]);
 
   const renderSectionHeader = ({ section }: { section: SectionData }) => {
+    // Find the vehicle type info for this section
+    const vehicleTypeInfo = vehicleTypes.find(vt => vt.id.toLowerCase() === section.title.toLowerCase()) || 
+      { gradient: defaultGradient, icon: 'bus', name: 'Bus' };
+    
     return (
       <LinearGradient
         colors={getGradientColorsForVehicleType(section.title)}
@@ -627,7 +631,7 @@ export default function ExploreScreen() {
           <View style={styles.sectionHeaderLeft}>
             <View style={styles.sectionIconContainer}>
               <FontAwesome5 
-                name={section.title} // Changed from section.icon to section.title
+                name={vehicleTypeInfo.icon} // Use the icon from vehicleTypeInfo instead of section.title
                 size={18} 
                 color="white" 
               />
