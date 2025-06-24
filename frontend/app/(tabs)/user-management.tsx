@@ -428,51 +428,53 @@ export default function UserManagementScreen() {
       </View>
       
       <View style={[styles.actionBar, { borderTopColor: theme.border }]}>
-        <View style={{ flex: 1, flexDirection: 'row' }}>
-          {!item.isEmailVerified ? (
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => handleVerifyUser(item._id)}
-            >
-              <FontAwesome5 name="check-circle" size={16} color="#4CAF50" />
-              <Text style={[styles.actionText, { color: '#4CAF50' }]}>Verify</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.actionButton} />
-          )}
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => {
-              setSelectedUser(item);
-              setShowRoleModal(true);
-            }}
-          >
-            <FontAwesome5 name="user-tag" size={16} color="#FF9500" />
-            <Text style={[styles.actionText, { color: '#FF9500' }]}>Change Role</Text>
-          </TouchableOpacity>
-          
-          {item.role === 'passenger' && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={{ flexDirection: 'row' }}>
+            {!item.isEmailVerified ? (
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => handleVerifyUser(item._id)}
+              >
+                <FontAwesome5 name="check-circle" size={16} color="#4CAF50" />
+                <Text style={[styles.actionText, { color: '#4CAF50' }]}>Verify</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.actionButton} />
+            )}
+            
             <TouchableOpacity 
               style={styles.actionButton}
               onPress={() => {
                 setSelectedUser(item);
-                setShowMessageModal(true);
+                setShowRoleModal(true);
               }}
             >
-              <FontAwesome5 name="envelope" size={16} color="#4B6BFE" />
-              <Text style={[styles.actionText, { color: '#4B6BFE' }]}>Message</Text>
+              <FontAwesome5 name="user-tag" size={16} color="#FF9500" />
+              <Text style={[styles.actionText, { color: '#FF9500' }]}>Change Role</Text>
             </TouchableOpacity>
-          )}
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => handleDeleteUser(item._id)}
-          >
-            <FontAwesome5 name="trash" size={16} color="#FF3B30" />
-            <Text style={[styles.actionText, { color: '#FF3B30' }]}>Delete</Text>
-          </TouchableOpacity>
-        </View>
+            
+            {item.role === 'passenger' && (
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => {
+                  setSelectedUser(item);
+                  setShowMessageModal(true);
+                }}
+              >
+                <FontAwesome5 name="envelope" size={16} color="#4B6BFE" />
+                <Text style={[styles.actionText, { color: '#4B6BFE' }]}>Message</Text>
+              </TouchableOpacity>
+            )}
+            
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => handleDeleteUser(item._id)}
+            >
+              <FontAwesome5 name="trash" size={16} color="#FF3B30" />
+              <Text style={[styles.actionText, { color: '#FF3B30' }]}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
     </View>
   );
@@ -812,7 +814,7 @@ const styles = StyleSheet.create({
   },
   actionBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     borderTopWidth: 1,
     paddingTop: 12,
@@ -824,6 +826,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 8,
+    marginRight: 12,
   },
   actionText: {
     fontSize: 14,
