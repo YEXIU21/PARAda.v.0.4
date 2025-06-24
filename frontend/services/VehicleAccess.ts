@@ -15,6 +15,11 @@ export const hasAccessToVehicleType = (
   user: User | null, 
   vehicleType: VehicleTypeId
 ): boolean => {
+  // Admin and driver users have access to all routes
+  if (user?.role === 'admin' || user?.role === 'driver') {
+    return true;
+  }
+  
   // If no user or no subscription, no access
   if (!user || !user.subscription) {
     return false;
@@ -22,7 +27,7 @@ export const hasAccessToVehicleType = (
   
   // Check if subscription is valid - either verified flag is true or isActive is true
   // This ensures that if either field is properly set, the user gets access
-  const isSubscriptionValid = user.subscription.verified || 
+  const isSubscriptionValid = user.subscription.verified === true || 
                              (user.subscription as any).isActive === true;
   
   if (!isSubscriptionValid) {
@@ -40,13 +45,18 @@ export const hasAccessToVehicleType = (
  * @returns VehicleTypeId[] - Array of vehicle types the user has access to
  */
 export const getAccessibleVehicleTypes = (user: User | null): VehicleTypeId[] => {
+  // Admin and driver users have access to all routes
+  if (user?.role === 'admin' || user?.role === 'driver') {
+    return ['latransco', 'calvo', 'corominas', 'ceres', 'gabe', 'jeep'];
+  }
+  
   // If no user or no subscription, no access
   if (!user || !user.subscription) {
     return [];
   }
   
   // Check if subscription is valid - either verified flag is true or isActive is true
-  const isSubscriptionValid = user.subscription.verified || 
+  const isSubscriptionValid = user.subscription.verified === true || 
                              (user.subscription as any).isActive === true;
   
   if (!isSubscriptionValid) {
@@ -73,14 +83,27 @@ export const isRouteAccessible = (
     return true;
   }
   
+  // If no user or no subscription, no access
+  if (!user || !user.subscription) {
+    return false;
+  }
+  
+  // Check if subscription is valid - either verified flag is true or isActive is true
+  const isSubscriptionValid = user.subscription.verified === true || 
+                             (user.subscription as any).isActive === true;
+  
+  if (!isSubscriptionValid) {
+    return false;
+  }
+  
   // Get the route's vehicle type
   const routeType = route.vehicleType || route.type;
   
-  // If no route type, assume accessible
+  // If no route type, assume accessible for verified subscriptions
   if (!routeType) {
     return true;
   }
   
-  // Check if user has access to this vehicle type
-  return hasAccessToVehicleType(user, routeType);
+  // For verified subscriptions, all vehicle types are accessible
+  return true;
 }; 

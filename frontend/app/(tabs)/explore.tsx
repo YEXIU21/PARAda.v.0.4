@@ -31,7 +31,7 @@ import * as locationSocket from '../../services/socket/location.socket';
 import { useAuth } from '../../context/AuthContext';
 
 // Import the VehicleAccess service
-import { hasAccessToVehicleType, getAccessibleVehicleTypes } from '../../services/VehicleAccess';
+import { hasAccessToVehicleType, getAccessibleVehicleTypes, isRouteAccessible } from '../../services/VehicleAccess';
 
 // Extended interfaces for the explore screen
 interface RouteStop extends Partial<RouteStopBase> {
@@ -609,19 +609,10 @@ export default function ExploreScreen() {
   };
 
   // Check if a route is accessible to the current user
-  const isRouteAccessible = useCallback((route: Route) => {
-    // Admin and driver users have access to all routes
-    if (user?.role === 'admin' || user?.role === 'driver') {
-      return true;
-    }
-    
-    // If user has no subscription, route is not accessible
-    if (!user?.subscription) {
-      return false;
-    }
-    
-    // If subscription is verified or active, all routes are accessible
-    return user.subscription.verified || (user.subscription as any).isActive === true;
+  const checkRouteAccessibility = useCallback((route: Route) => {
+    // Use the isRouteAccessible function from VehicleAccess service
+    // This ensures we use the centralized logic for route access
+    return isRouteAccessible(user, route);
   }, [user]);
 
   const renderSectionHeader = ({ section }: { section: SectionData }) => {
@@ -651,7 +642,7 @@ export default function ExploreScreen() {
 
   const renderRouteItem = ({ item }: { item: Route }) => {
     // Check if the route is accessible to the current user
-    const isAccessible = isRouteAccessible(item);
+    const isAccessible = checkRouteAccessibility(item);
     
     // Get the vehicle type info
     const vehicleTypeInfo = vehicleTypes.find(vt => vt.id === (item.vehicleType || item.type)) || 

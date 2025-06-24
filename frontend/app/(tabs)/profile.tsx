@@ -448,8 +448,9 @@ export default function ProfileScreen() {
           subscription.paymentDetails.referenceNumber) {
         
         // We have a valid subscription with payment details
-        if (subscription.verification && subscription.verification.verified) {
-          // Subscription is verified
+        if ((subscription.verification && subscription.verification.verified) || 
+            subscription.isActive === true) {
+          // Subscription is verified or active
           setSubscriptionStatus({
             hasSubscription: true,
             isPendingApproval: false,
