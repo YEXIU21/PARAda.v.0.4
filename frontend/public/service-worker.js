@@ -1,104 +1,89 @@
-// Service worker for PARAda PWA
-const CACHE_NAME = 'parada-v1.1';
-const URLS_TO_CACHE = [
+// Service worker for the PARAda PWA
+const CACHE_NAME = 'parada-cache-v1';
+
+// Assets to cache on install
+const CACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/register-service-worker.js',
-  '/assets/icons/icon-72x72.png',
-  '/assets/icons/icon-96x96.png',
-  '/assets/icons/icon-128x128.png',
-  '/assets/icons/icon-144x144.png',
-  '/assets/icons/icon-152x152.png',
-  '/assets/icons/icon-192x192.png',
-  '/assets/icons/icon-384x384.png',
-  '/assets/icons/icon-512x512.png',
+  '/favicon.ico',
+  '/assets/icons/parada-icon.png',
+  '/assets/icons/parada-icon-512.png',
   '/assets/icons/maskable_icon.png'
 ];
 
 // Install event - cache assets
 self.addEventListener('install', (event) => {
+  console.log('Service Worker: Installing');
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Cache opened');
-        return cache.addAll(URLS_TO_CACHE.map(url => {
-          return new Request(url, { mode: 'no-cors' });
-        }));
+        console.log('Service Worker: Caching files');
+        return cache.addAll(CACHE_ASSETS);
       })
       .then(() => self.skipWaiting())
-      .catch(error => {
-        console.warn('Service worker cache failed:', error);
-        // Continue anyway to avoid breaking the service worker
-        return self.skipWaiting();
-      })
   );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME];
+  console.log('Service Worker: Activated');
+  
+  // Remove old caches
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
+        cacheNames.map(cache => {
+          if (cache !== CACHE_NAME) {
+            console.log('Service Worker: Clearing old cache');
+            return caches.delete(cache);
           }
         })
       );
-    }).then(() => self.clients.claim())
+    })
   );
 });
 
-// Fetch event - serve from cache, fall back to network
+// Fetch event - serve from cache or network
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
-
-  // Skip requests to API endpoints
-  if (event.request.url.includes('/api/') || 
-      event.request.url.includes('maps.googleapis.com') ||
-      event.request.url.includes('socket.io')) {
-    return;
-  }
-
+  console.log('Service Worker: Fetching');
+  
   event.respondWith(
     caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return the response from the cached version
+      .then(response => {
+        // Return cached response if found
         if (response) {
+          console.log('Service Worker: Found in Cache', event.request.url);
           return response;
         }
         
-        // Not in cache - return the result from the live server
-        return fetch(event.request).then(
-          (response) => {
-            // Check if we received a valid response
+        // Clone the request
+        const fetchRequest = event.request.clone();
+        
+        // Make network request and cache new resources
+        return fetch(fetchRequest)
+          .then(response => {
+            // Check if response is valid
             if (!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
-
-            // Clone the response since it's a stream and can only be consumed once
+            
+            // Clone the response
             const responseToCache = response.clone();
-
+            
+            // Cache the new resource
             caches.open(CACHE_NAME)
-              .then((cache) => {
-                // Don't cache API requests or other dynamic content
-                if (!event.request.url.includes('/api/')) {
-                  cache.put(event.request, responseToCache);
-                }
+              .then(cache => {
+                cache.put(event.request, responseToCache);
               });
-
+            
             return response;
-          }
-        );
-      })
-      .catch(() => {
-        // If both cache and network fail, try to serve the offline page
-        return caches.match('/');
+          })
+          .catch(err => {
+            console.log('Service Worker: Error fetching and caching new data', err);
+          });
       })
   );
 });

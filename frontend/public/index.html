@@ -18,22 +18,10 @@
   <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
   <link rel="shortcut icon" href="/favicon.ico" />
   
-  <!-- Apple Touch Icons - these are crucial for crisp icons on iOS -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/ios-icons/apple-touch-icon-180x180.png" />
-  <link rel="apple-touch-icon" sizes="167x167" href="/assets/ios-icons/apple-touch-icon-167x167.png" />
-  <link rel="apple-touch-icon" sizes="152x152" href="/assets/ios-icons/apple-touch-icon-152x152.png" />
-  <link rel="apple-touch-icon" sizes="120x120" href="/assets/ios-icons/apple-touch-icon-120x120.png" />
-  <link rel="apple-touch-icon" sizes="114x114" href="/assets/ios-icons/apple-touch-icon-114x114.png" />
-  <link rel="apple-touch-icon" sizes="76x76" href="/assets/ios-icons/apple-touch-icon-76x76.png" />
-  <link rel="apple-touch-icon" sizes="60x60" href="/assets/ios-icons/apple-touch-icon-60x60.png" />
-  <!-- Default icon for older iOS devices -->
-  <link rel="apple-touch-icon" href="/assets/ios-icons/apple-touch-icon.png" />
-  <!-- Precomposed icon for older iOS versions -->
-  <link rel="apple-touch-icon-precomposed" href="/assets/ios-icons/apple-touch-icon-precomposed.png" />
-  
-  <!-- PWA icons for different platforms -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192x192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/assets/icons/icon-512x512.png" />
+  <!-- Simplified icon approach - just a few key sizes instead of many -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/parada-icon.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/icons/parada-icon-512.png" />
+  <link rel="apple-touch-icon" href="/assets/icons/parada-icon.png" />
   <link rel="mask-icon" href="/assets/icons/maskable_icon.png" color="#4B6BFE" />
   
   <!-- Title -->
@@ -130,14 +118,13 @@
   </style>
   
   <!-- Preload the icon images -->
-  <link rel="preload" href="/assets/icons/icon-192x192.png" as="image" type="image/png">
+  <link rel="preload" href="/assets/icons/parada-icon.png" as="image" type="image/png">
   <link rel="preload" href="/assets/icons/maskable_icon.png" as="image" type="image/png">
-  <link rel="preload" href="/assets/ios-icons/apple-touch-icon-180x180.png" as="image" type="image/png">
 </head>
 <body>
   <div id="root">
     <div class="initial-loader">
-      <img src="/assets/icons/maskable_icon.png" alt="PARAda Logo" class="initial-loader-logo" />
+      <img src="/assets/icons/parada-icon.png" alt="PARAda Logo" class="initial-loader-logo" />
       <div class="initial-loader-title">PARAda</div>
       <div class="initial-loader-subtitle">Real-Time Transportation Tracking</div>
       <div class="initial-loader-spinner"></div>
@@ -158,29 +145,13 @@
       });
     }
     
-    // Preload all icon sizes for better performance
-    const preloadIcons = [
-      // Standard PWA icons
-      [72, 96, 128, 144, 152, 192, 384, 512].map(size => {
-        const img = new Image();
-        img.src = `/assets/icons/icon-${size}x${size}.png`;
-        return img;
-      }),
-      
-      // Maskable icon
-      (() => {
-        const img = new Image();
-        img.src = '/assets/icons/maskable_icon.png';
-        return img;
-      })(),
-      
-      // iOS specific icons
-      [60, 76, 114, 120, 144, 152, 167, 180].map(size => {
-        const img = new Image();
-        img.src = `/assets/ios-icons/apple-touch-icon-${size}x${size}.png`;
-        return img;
-      })
-    ];
+    // Preload main icon
+    const mainIcon = new Image();
+    mainIcon.src = '/assets/icons/parada-icon.png';
+    
+    // Preload maskable icon
+    const maskableIcon = new Image();
+    maskableIcon.src = '/assets/icons/maskable_icon.png';
   </script>
 </body>
 </html> 
