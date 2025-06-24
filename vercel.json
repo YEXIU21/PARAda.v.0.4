@@ -30,8 +30,15 @@
       "dest": "/frontend/web/manifest.json"
     },
     {
-      "src": "/assets/(.*)",
-      "dest": "/frontend/public/assets/$1",
+      "src": "/assets/images/(.*)",
+      "dest": "/frontend/public/assets/images/$1",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/assets/icons/(.*)",
+      "dest": "/frontend/public/assets/icons/$1",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
       }
