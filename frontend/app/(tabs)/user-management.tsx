@@ -870,12 +870,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   roleBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    marginRight: 8,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  roleBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   roleText: {
     fontSize: 12,
