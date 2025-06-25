@@ -234,39 +234,73 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
   };
   
   const confirmDeletePlan = async () => {
-    if (!planToDelete) return;
+    console.log('confirmDeletePlan called, planToDelete:', planToDelete);
+    if (!planToDelete) {
+      console.log('No plan to delete');
+      return;
+    }
     
     try {
+      console.log('Setting loading state...');
       setIsLoading(true);
       console.log(`Deleting plan with ID: ${planToDelete}`);
       
-      // Call the API to delete the plan
-      const result = await deleteSubscriptionPlan(planToDelete);
-      console.log('Delete result:', result);
-      
-      // Refresh the plans list
-      await fetchSubscriptionPlans();
-      
-      // Close the modal
-      setDeleteModalVisible(false);
-      setPlanToDelete(null);
-      
-      // Show success message
-      Alert.alert(
-        'Success',
-        'Subscription plan deleted successfully',
-        [{ text: 'OK' }]
-      );
+      try {
+        // Call the API to delete the plan
+        console.log('Calling deleteSubscriptionPlan API...');
+        const result = await deleteSubscriptionPlan(planToDelete);
+        console.log('Delete result:', result);
+        
+        // Refresh the plans list
+        console.log('Refreshing plans list...');
+        await fetchSubscriptionPlans();
+        
+        // Close the modal
+        console.log('Closing delete modal...');
+        setDeleteModalVisible(false);
+        setPlanToDelete(null);
+        
+        // Show success message
+        console.log('Showing success alert...');
+        setTimeout(() => {
+          Alert.alert(
+            'Success',
+            'Subscription plan deleted successfully',
+            [{ text: 'OK' }]
+          );
+        }, 500);
+      } catch (apiError: any) {
+        console.error('API error in delete plan:', apiError);
+        
+        // Get detailed error message
+        let errorMessage = 'Failed to delete subscription plan';
+        if (apiError.response && apiError.response.data) {
+          errorMessage = apiError.response.data.message || errorMessage;
+          console.error('API error response:', apiError.response.data);
+        }
+        
+        // Show error message
+        setTimeout(() => {
+          Alert.alert(
+            'Error',
+            errorMessage,
+            [{ text: 'OK' }]
+          );
+        }, 500);
+      }
     } catch (error: any) {
-      console.error('Error deleting plan:', error);
+      console.error('General error in confirmDeletePlan:', error);
       
       // Show error message
-      Alert.alert(
-        'Error',
-        error.message || 'Failed to delete subscription plan',
-        [{ text: 'OK' }]
-      );
+      setTimeout(() => {
+        Alert.alert(
+          'Error',
+          error.message || 'Failed to delete subscription plan',
+          [{ text: 'OK' }]
+        );
+      }, 500);
     } finally {
+      console.log('Setting loading state to false...');
       setIsLoading(false);
     }
   };
@@ -757,8 +791,13 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.deleteConfirmButton, { backgroundColor: theme.error }]}
-                onPress={confirmDeletePlan}
+                onPress={() => {
+                  console.log('Delete confirm button pressed');
+                  confirmDeletePlan();
+                }}
+                activeOpacity={0.7}
               >
+                <FontAwesome5 name="trash-alt" size={14} color="#FFFFFF" style={{ marginRight: 8 }} />
                 <Text style={styles.deleteConfirmButtonText}>Delete</Text>
               </TouchableOpacity>
             </View>
@@ -1167,6 +1206,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   deleteConfirmButtonText: {
     color: '#FFFFFF',
