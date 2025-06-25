@@ -51,7 +51,7 @@ export default function AdminSubscribersScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'active' | 'pending' | 'plans'>('plans');
+  const [activeTab, setActiveTab] = useState<'active' | 'pending' | 'plans'>('active');
   const [searchText, setSearchText] = useState('');
   
   // Modal states

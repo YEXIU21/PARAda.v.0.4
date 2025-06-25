@@ -309,7 +309,7 @@ exports.changePassword = async (req, res) => {
       error: error.message
     });
   }
-};
+}; 
 
 /**
  * Change user role (admin only)

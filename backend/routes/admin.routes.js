@@ -1,18 +1,23 @@
 /**
  * Admin Routes
+ * Main router for admin-related routes
  */
 const express = require('express');
 const router = express.Router();
+const { isAdmin } = require('../middleware/admin.middleware');
+const adminSubscriptionPlansRoutes = require('./admin.subscription-plans.routes');
+const adminStudentDiscountRoutes = require('./admin.student-discount.routes');
 const authMiddleware = require('../middleware/auth.middleware');
 
 // Import controller (will create later)
 const adminController = require('../controllers/admin.controller');
 
-// Import subscription plans routes
-const subscriptionPlansRoutes = require('./admin.subscription-plans.routes');
+// Apply admin middleware to all routes
+router.use(isAdmin);
 
-// Use subscription plans routes
-router.use('/subscription-plans', subscriptionPlansRoutes);
+// Use specific route handlers
+router.use('/subscription-plans', adminSubscriptionPlansRoutes);
+router.use('/student-discount', adminStudentDiscountRoutes);
 
 /**
  * @route GET /api/admin/dashboard

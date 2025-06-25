@@ -19,7 +19,9 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { router } from 'expo-router';
-import { getDashboardData, getReportsData } from '../../services/api/admin.api';
+import { getDashboardData, getReportsData, getStudentDiscountSettings, updateStudentDiscountSettings } from '../../services/api/admin.api';
+import { getSubscriptionPlans } from '../../services/api/subscription.api';
+import { updateSubscriptionPlan, createSubscriptionPlan, deleteSubscriptionPlan } from '../../services/api/admin.api';
 
 // Define interfaces for API data
 interface DashboardData {
@@ -148,45 +150,241 @@ export default function AdminScreen() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [systemStats, setSystemStats] = useState<Array<{id: string, title: string, value: number, icon: string, color: string}>>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>([]);
+  
+  // New state variables for subscription plan management
+  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
+  const [planModalVisible, setPlanModalVisible] = useState(false);
+  const [planFormData, setPlanFormData] = useState({
+    id: '',
+    name: '',
+    price: '',
+    duration: '',
+    features: [] as string[],
+    recommended: false
+  });
+  const [newFeature, setNewFeature] = useState('');
+  const [isPlanLoading, setIsPlanLoading] = useState(false);
 
-  // Load saved subscription plans on component mount
+  // Load saved subscription plans and student discount settings on component mount
   useEffect(() => {
-    const loadSubscriptionPlans = async () => {
+    const loadSubscriptionData = async () => {
       try {
-        const savedPlans = await AsyncStorage.getItem('subscriptionPlans');
-        if (savedPlans) {
-          setSubscriptionPlans(JSON.parse(savedPlans));
+        // Try to fetch plans from API first
+        try {
+          const apiPlans = await getSubscriptionPlans();
+          if (apiPlans && apiPlans.length > 0) {
+            setSubscriptionPlans(apiPlans);
+            console.log('Loaded subscription plans from API:', apiPlans);
+          }
+        } catch (apiError) {
+          console.warn('Failed to load plans from API, falling back to local storage:', apiError);
+          
+          // Fall back to local storage if API fails
+          const savedPlans = await AsyncStorage.getItem('subscriptionPlans');
+          if (savedPlans) {
+            setSubscriptionPlans(JSON.parse(savedPlans));
+          }
         }
 
-        const savedDiscount = await AsyncStorage.getItem('studentDiscountPercent');
-        if (savedDiscount) {
-          setStudentDiscountPercent(parseInt(savedDiscount, 10));
-        }
+        // Try to fetch student discount settings from API
+        try {
+          const discountSettings = await getStudentDiscountSettings();
+          if (discountSettings) {
+            setIsStudentDiscountEnabled(discountSettings.isEnabled);
+            setStudentDiscountPercent(discountSettings.discountPercent);
+            console.log('Loaded student discount settings from API:', discountSettings);
+          }
+        } catch (apiError) {
+          console.warn('Failed to load student discount settings from API, falling back to local storage:', apiError);
+          
+          // Fall back to local storage if API fails
+          const savedDiscount = await AsyncStorage.getItem('studentDiscountPercent');
+          if (savedDiscount) {
+            setStudentDiscountPercent(parseInt(savedDiscount, 10));
+          }
 
-        const discountEnabled = await AsyncStorage.getItem('isStudentDiscountEnabled');
-        if (discountEnabled !== null) {
-          setIsStudentDiscountEnabled(discountEnabled === 'true');
+          const discountEnabled = await AsyncStorage.getItem('isStudentDiscountEnabled');
+          if (discountEnabled !== null) {
+            setIsStudentDiscountEnabled(discountEnabled === 'true');
+          }
         }
       } catch (error) {
-        console.error('Error loading subscription plans:', error);
+        console.error('Error loading subscription data:', error);
       }
     };
 
-    loadSubscriptionPlans();
+    loadSubscriptionData();
   }, []);
 
-  // Save subscription plans
+  // Save subscription plans and student discount settings
   const saveSubscriptionPlans = async () => {
     try {
+      // Save plans to local storage as backup
       await AsyncStorage.setItem('subscriptionPlans', JSON.stringify(subscriptionPlans));
-      await AsyncStorage.setItem('studentDiscountPercent', studentDiscountPercent.toString());
-      await AsyncStorage.setItem('isStudentDiscountEnabled', isStudentDiscountEnabled.toString());
+      
+      // Save student discount settings to API
+      try {
+        await updateStudentDiscountSettings({
+          isEnabled: isStudentDiscountEnabled,
+          discountPercent: studentDiscountPercent
+        });
+        console.log('Saved student discount settings to API');
+      } catch (apiError) {
+        console.warn('Failed to save student discount settings to API:', apiError);
+        
+        // Fall back to local storage if API fails
+        await AsyncStorage.setItem('studentDiscountPercent', studentDiscountPercent.toString());
+        await AsyncStorage.setItem('isStudentDiscountEnabled', isStudentDiscountEnabled.toString());
+      }
       
       setShowSubscriptionModal(false);
-      Alert.alert('Success', 'Subscription plans updated successfully!');
+      Alert.alert('Success', 'Subscription settings updated successfully!');
     } catch (error) {
-      console.error('Error saving subscription plans:', error);
-      Alert.alert('Error', 'Failed to update subscription plans. Please try again.');
+      console.error('Error saving subscription settings:', error);
+      Alert.alert('Error', 'Failed to update subscription settings. Please try again.');
+    }
+  };
+  
+  // New functions for subscription plan management
+  const handleCreatePlan = () => {
+    setIsCreatingPlan(true);
+    setPlanFormData({
+      id: '',
+      name: '',
+      price: '',
+      duration: '',
+      features: [],
+      recommended: false
+    });
+    setPlanModalVisible(true);
+  };
+
+  const handleEditPlan = (plan: Subscription) => {
+    setIsCreatingPlan(false);
+    setPlanFormData({
+      id: plan.id,
+      name: plan.name,
+      price: typeof plan.price === 'string' ? plan.price : `${plan.price}`,
+      duration: plan.duration,
+      features: [...plan.features],
+      recommended: !!plan.recommended
+    });
+    setPlanModalVisible(true);
+  };
+
+  const handleDeletePlan = (planId: string) => {
+    Alert.alert(
+      'Confirm Deletion',
+      'Are you sure you want to delete this subscription plan? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsPlanLoading(true);
+              
+              // Try to delete from API first
+              try {
+                await deleteSubscriptionPlan(planId);
+              } catch (apiError) {
+                console.warn('Failed to delete plan from API:', apiError);
+              }
+              
+              // Update local state
+              const updatedPlans = subscriptionPlans.filter(plan => plan.id !== planId);
+              setSubscriptionPlans(updatedPlans);
+              
+              // Save to local storage
+              await AsyncStorage.setItem('subscriptionPlans', JSON.stringify(updatedPlans));
+              
+              Alert.alert('Success', 'Subscription plan deleted successfully');
+            } catch (error) {
+              console.error('Error deleting subscription plan:', error);
+              Alert.alert('Error', 'Failed to delete subscription plan');
+            } finally {
+              setIsPlanLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleAddFeature = () => {
+    if (newFeature.trim() === '') return;
+    setPlanFormData({
+      ...planFormData,
+      features: [...planFormData.features, newFeature.trim()]
+    });
+    setNewFeature('');
+  };
+
+  const handleRemoveFeature = (index: number) => {
+    const updatedFeatures = [...planFormData.features];
+    updatedFeatures.splice(index, 1);
+    setPlanFormData({
+      ...planFormData,
+      features: updatedFeatures
+    });
+  };
+
+  const handleSavePlan = async () => {
+    try {
+      // Validate form data
+      if (!planFormData.id || !planFormData.name || !planFormData.price || !planFormData.duration) {
+        Alert.alert('Validation Error', 'Please fill in all required fields');
+        return;
+      }
+
+      setIsPlanLoading(true);
+      
+      // Format the plan data
+      const planData = {
+        id: planFormData.id,
+        name: planFormData.name,
+        price: planFormData.price,
+        duration: planFormData.duration,
+        features: planFormData.features,
+        recommended: planFormData.recommended
+      };
+      
+      // Try to save to API first
+      try {
+        if (isCreatingPlan) {
+          await createSubscriptionPlan(planData);
+        } else {
+          await updateSubscriptionPlan(planFormData.id, planData);
+        }
+      } catch (apiError) {
+        console.warn('Failed to save plan to API:', apiError);
+      }
+      
+      // Update local state
+      if (isCreatingPlan) {
+        setSubscriptionPlans([...subscriptionPlans, planData]);
+      } else {
+        const updatedPlans = subscriptionPlans.map(plan => 
+          plan.id === planData.id ? planData : plan
+        );
+        setSubscriptionPlans(updatedPlans);
+      }
+      
+      // Save to local storage
+      await AsyncStorage.setItem('subscriptionPlans', JSON.stringify(
+        isCreatingPlan ? [...subscriptionPlans, planData] : subscriptionPlans.map(plan => 
+          plan.id === planData.id ? planData : plan
+        )
+      ));
+      
+      Alert.alert('Success', `Subscription plan ${isCreatingPlan ? 'created' : 'updated'} successfully`);
+      setPlanModalVisible(false);
+    } catch (error) {
+      console.error('Error saving subscription plan:', error);
+      Alert.alert('Error', 'Failed to save subscription plan');
+    } finally {
+      setIsPlanLoading(false);
     }
   };
 
@@ -374,8 +572,7 @@ export default function AdminScreen() {
   const handleFunctionPress = (id) => {
     // Handle function press based on ID
     if (id === 'subscriptions') {
-      // Navigate to subscription plans management screen
-      router.push('/(tabs)/admin-subscribers');
+      setShowSubscriptionModal(true);
     } else if (id === 'notifications') {
       // Navigate to notifications screen
       router.push('/(tabs)/notifications');
@@ -400,6 +597,7 @@ export default function AdminScreen() {
     }
   };
 
+  // Updated subscription modal with enhanced plan management
   const renderSubscriptionModal = () => (
     <Modal
       animationType="slide"
@@ -412,7 +610,7 @@ export default function AdminScreen() {
           backgroundColor: colors.card,
           borderColor: colors.border,
           borderWidth: 1,
-          maxHeight: '80%',
+          maxHeight: '90%',
         }]}>
           <LinearGradient
             colors={colors.gradientColors}
@@ -475,7 +673,16 @@ export default function AdminScreen() {
               )}
             </View>
 
-            <Text style={[styles.plansSectionTitle, { color: colors.text }]}>Available Plans</Text>
+            <View style={styles.plansSectionHeader}>
+              <Text style={[styles.plansSectionTitle, { color: colors.text }]}>Available Plans</Text>
+              <TouchableOpacity
+                style={[styles.createPlanButton, { backgroundColor: colors.primary }]}
+                onPress={handleCreatePlan}
+              >
+                <FontAwesome5 name="plus" size={14} color="#FFF" style={styles.createPlanIcon} />
+                <Text style={styles.createPlanText}>Create Plan</Text>
+              </TouchableOpacity>
+            </View>
             
             {subscriptionPlans.map((plan, index) => (
               <View key={plan.id} style={[styles.planItem, { 
@@ -495,19 +702,9 @@ export default function AdminScreen() {
                 
                 <View style={styles.planRow}>
                   <Text style={[styles.planLabel, { color: colors.textSecondary }]}>Price:</Text>
-                  <TextInput
-                    style={[styles.planInput, { 
-                      color: colors.text,
-                      borderColor: colors.border,
-                      backgroundColor: colors.inputBackground
-                    }]}
-                    value={plan.price}
-                    onChangeText={(text) => {
-                      const updatedPlans = [...subscriptionPlans];
-                      updatedPlans[index].price = text;
-                      setSubscriptionPlans(updatedPlans);
-                    }}
-                  />
+                  <Text style={[styles.planPrice, { color: colors.primary }]}>
+                    {typeof plan.price === 'string' ? plan.price : `₱${plan.price}`}
+                  </Text>
                 </View>
                 
                 <Text style={[styles.featuresTitle, { color: colors.text, marginTop: 10 }]}>Features:</Text>
@@ -533,6 +730,23 @@ export default function AdminScreen() {
                     thumbColor={!!plan.recommended ? "#fff" : "#f4f3f4"}
                   />
                 </View>
+                
+                <View style={styles.planActions}>
+                  <TouchableOpacity
+                    style={[styles.editPlanButton, { backgroundColor: colors.primary + '20' }]}
+                    onPress={() => handleEditPlan(plan)}
+                  >
+                    <FontAwesome5 name="edit" size={14} color={colors.primary} />
+                    <Text style={[styles.editPlanText, { color: colors.primary }]}>Edit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.deletePlanButton, { backgroundColor: colors.error + '20' }]}
+                    onPress={() => handleDeletePlan(plan.id)}
+                  >
+                    <FontAwesome5 name="trash-alt" size={14} color={colors.error} />
+                    <Text style={[styles.deletePlanText, { color: colors.error }]}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
             
@@ -543,6 +757,145 @@ export default function AdminScreen() {
               <Text style={styles.saveButtonText}>Save Changes</Text>
             </TouchableOpacity>
           </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+  
+  // Plan edit/create modal
+  const renderPlanModal = () => (
+    <Modal
+      visible={planModalVisible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setPlanModalVisible(false)}
+    >
+      <View style={[styles.modalOverlay, { backgroundColor: colors.modalOverlay }]}>
+        <View style={[styles.planModalContent, { backgroundColor: colors.card }]}>
+          <View style={styles.planModalHeader}>
+            <Text style={[styles.planModalTitle, { color: colors.text }]}>
+              {isCreatingPlan ? 'Create Subscription Plan' : 'Edit Subscription Plan'}
+            </Text>
+            <TouchableOpacity onPress={() => setPlanModalVisible(false)}>
+              <FontAwesome5 name="times" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.planFormContainer}>
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { color: colors.text }]}>Plan ID</Text>
+              <TextInput
+                style={[styles.formInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.inputBackground || colors.background }]}
+                value={planFormData.id}
+                onChangeText={(text) => setPlanFormData({ ...planFormData, id: text.toLowerCase().replace(/\s+/g, '_') })}
+                placeholder="e.g. basic, premium, annual"
+                placeholderTextColor={colors.textSecondary}
+                editable={isCreatingPlan} // Only editable when creating a new plan
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { color: colors.text }]}>Plan Name</Text>
+              <TextInput
+                style={[styles.formInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.inputBackground || colors.background }]}
+                value={planFormData.name}
+                onChangeText={(text) => setPlanFormData({ ...planFormData, name: text })}
+                placeholder="e.g. Basic, Premium, Annual"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { color: colors.text }]}>Price</Text>
+              <TextInput
+                style={[styles.formInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.inputBackground || colors.background }]}
+                value={planFormData.price.toString()}
+                onChangeText={(text) => setPlanFormData({ ...planFormData, price: text })}
+                placeholder="e.g. ₱99/month, ₱999/year"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { color: colors.text }]}>Duration</Text>
+              <TextInput
+                style={[styles.formInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.inputBackground || colors.background }]}
+                value={planFormData.duration.toString()}
+                onChangeText={(text) => setPlanFormData({ ...planFormData, duration: text })}
+                placeholder="e.g. Monthly, Yearly"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { color: colors.text }]}>Recommended</Text>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  { backgroundColor: planFormData.recommended ? colors.primary : colors.background, borderColor: colors.border }
+                ]}
+                onPress={() => setPlanFormData({ ...planFormData, recommended: !planFormData.recommended })}
+              >
+                <Text style={[styles.toggleButtonText, { color: planFormData.recommended ? '#FFF' : colors.textSecondary }]}>
+                  {planFormData.recommended ? 'YES' : 'NO'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { color: colors.text }]}>Features</Text>
+              <View style={styles.featuresEditor}>
+                {planFormData.features.map((feature, index) => (
+                  <View key={index} style={[styles.featureItemEditor, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                    <Text style={[styles.featureTextEditor, { color: colors.text }]}>{feature}</Text>
+                    <TouchableOpacity onPress={() => handleRemoveFeature(index)}>
+                      <FontAwesome5 name="times" size={14} color={colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+
+              <View style={styles.addFeatureContainer}>
+                <TextInput
+                  style={[
+                    styles.featureInput,
+                    { color: colors.text, borderColor: colors.border, backgroundColor: colors.inputBackground || colors.background }
+                  ]}
+                  value={newFeature}
+                  onChangeText={setNewFeature}
+                  placeholder="Add a feature"
+                  placeholderTextColor={colors.textSecondary}
+                />
+                <TouchableOpacity
+                  style={[styles.addFeatureButton, { backgroundColor: colors.primary }]}
+                  onPress={handleAddFeature}
+                >
+                  <FontAwesome5 name="plus" size={14} color="#FFF" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.formActions}>
+              <TouchableOpacity
+                style={[styles.cancelButton, { backgroundColor: colors.background, borderColor: colors.border }]}
+                onPress={() => setPlanModalVisible(false)}
+              >
+                <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveButton, { backgroundColor: colors.primary }]}
+                onPress={handleSavePlan}
+              >
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+          
+          {isPlanLoading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          )}
         </View>
       </View>
     </Modal>
@@ -667,6 +1020,7 @@ export default function AdminScreen() {
       </ScrollView>
 
       {renderSubscriptionModal()}
+      {renderPlanModal()}
     </SafeAreaView>
   );
 }
@@ -905,12 +1259,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     width: '25%',
   },
-  planInput: {
+  planPrice: {
     fontSize: 16,
-    padding: 8,
-    borderWidth: 1,
-    borderRadius: 6,
-    width: '70%',
+    fontWeight: 'bold',
   },
   featuresTitle: {
     fontSize: 16,
@@ -1037,5 +1388,149 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
+  },
+  plansSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  createPlanButton: {
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  createPlanIcon: {
+    marginRight: 8,
+  },
+  createPlanText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  planModalContent: {
+    width: '90%',
+    maxHeight: '80%',
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+  planModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+  },
+  planModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  formGroup: {
+    marginBottom: 15,
+  },
+  formLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  formInput: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+  },
+  toggleButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+  },
+  toggleButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  featuresEditor: {
+    marginBottom: 15,
+  },
+  featureItemEditor: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+  },
+  featureTextEditor: {
+    flex: 1,
+  },
+  addFeatureContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  featureInput: {
+    flex: 1,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+  },
+  addFeatureButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+  },
+  formActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  cancelButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  loadingOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  planActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 15,
+    gap: 10,
+  },
+  editPlanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 6,
+    gap: 5,
+  },
+  editPlanText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  deletePlanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 6,
+    gap: 5,
+  },
+  deletePlanText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  planFormContainer: {
+    padding: 16,
   },
 }); 

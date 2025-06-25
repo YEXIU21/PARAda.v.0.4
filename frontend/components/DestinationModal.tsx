@@ -131,7 +131,7 @@ export default function DestinationModal({
       setIsLoading(false);
     }
   };
-
+  
   const handleSelectDestination = (destination: Destination) => {
     onSelectDestination(destination);
     onClose();
@@ -178,7 +178,7 @@ export default function DestinationModal({
       setSelectedMapLocation(customPlace);
     }
   };
-
+  
   const confirmMapSelection = () => {
     if (selectedMapLocation) {
       handleSelectDestination(selectedMapLocation);
@@ -270,7 +270,7 @@ export default function DestinationModal({
             </View>
             
             {activeTab === 'list' ? (
-              <ScrollView style={styles.destinationList}>
+            <ScrollView style={styles.destinationList}>
                 {isLoading ? (
                   <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#4B6BFE" />
@@ -278,35 +278,35 @@ export default function DestinationModal({
                   </View>
                 ) : filteredDestinations.length > 0 ? (
                   filteredDestinations.map((place, index) => (
-                    <TouchableOpacity 
-                      key={index}
-                      style={[styles.destinationItem, { borderBottomColor: theme.border }]}
-                      onPress={() => handleSelectDestination(place)}
-                    >
-                      <View style={styles.destinationIconContainer}>
-                        <FontAwesome5 name="map-marker-alt" size={18} color="#4B6BFE" />
-                      </View>
-                      <View style={styles.destinationInfo}>
-                        <Text style={[styles.destinationName, { color: theme.text }]}>{place.name}</Text>
-                      </View>
-                      <FontAwesome5 name="chevron-right" size={14} color="#999" />
-                    </TouchableOpacity>
+                <TouchableOpacity 
+                  key={index}
+                  style={[styles.destinationItem, { borderBottomColor: theme.border }]}
+                  onPress={() => handleSelectDestination(place)}
+                >
+                  <View style={styles.destinationIconContainer}>
+                    <FontAwesome5 name="map-marker-alt" size={18} color="#4B6BFE" />
+                  </View>
+                  <View style={styles.destinationInfo}>
+                    <Text style={[styles.destinationName, { color: theme.text }]}>{place.name}</Text>
+                  </View>
+                  <FontAwesome5 name="chevron-right" size={14} color="#999" />
+                </TouchableOpacity>
                   ))
                 ) : hasNoResults ? (
-                  <View style={styles.noResultsContainer}>
-                    <FontAwesome5 name="search" size={40} color="#DDDDDD" />
-                    <Text style={[styles.noResultsText, { color: theme.textSecondary }]}>
+                <View style={styles.noResultsContainer}>
+                  <FontAwesome5 name="search" size={40} color="#DDDDDD" />
+                  <Text style={[styles.noResultsText, { color: theme.textSecondary }]}>
                       No destinations found
-                    </Text>
+                  </Text>
                     <TouchableOpacity 
                       style={styles.createCustomButton}
                       onPress={handleCreateCustomLocation}
                     >
                       <Text style={styles.createCustomButtonText}>Create Custom Location</Text>
                     </TouchableOpacity>
-                  </View>
+                </View>
                 ) : null}
-              </ScrollView>
+            </ScrollView>
             ) : (
               <View style={styles.mapContainer}>
                 <MapView
@@ -330,7 +330,7 @@ export default function DestinationModal({
                     >
                       <View style={styles.userLocationMarker}>
                         <View style={styles.userLocationDot} />
-                      </View>
+                </View>
                     </Marker>
                   )}
                   
@@ -387,7 +387,7 @@ export default function DestinationModal({
                       <FontAwesome5 name="check" size={16} color="white" />
                       <Text style={styles.mapActionButtonText}>Confirm Location</Text>
                     </TouchableOpacity>
-                  </View>
+                </View>
                 )}
               </View>
             )}

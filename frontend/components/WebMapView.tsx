@@ -34,13 +34,13 @@ const WebMapView: React.FC<WebMapViewProps> = (props) => {
 
   // Destructure props after the early return
   const { 
-    style, 
-    initialRegion,
-    children,
-    showsUserLocation,
-    locations,
-    mapStyle,
-    showLocationButton = true
+  style, 
+  initialRegion,
+  children,
+  showsUserLocation,
+  locations,
+  mapStyle,
+  showLocationButton = true
   } = props;
 
   const [mapError, setMapError] = useState<boolean>(false);
@@ -49,7 +49,7 @@ const WebMapView: React.FC<WebMapViewProps> = (props) => {
   const googleMapRef = useRef<any>(null);
   const mapMarkersRef = useRef<any[]>([]);
   const polylineRef = useRef<any>(null);
-  
+
   const latitude = initialRegion?.latitude || 14.6091;
   const longitude = initialRegion?.longitude || 121.0223;
   const zoom = 15;
@@ -112,7 +112,7 @@ const WebMapView: React.FC<WebMapViewProps> = (props) => {
       return () => {
         // Cleanup script when component unmounts
         if (document.getElementById('google-maps-script')) {
-          document.head.removeChild(script);
+        document.head.removeChild(script);
         }
         
         // Clean up global functions
@@ -653,9 +653,9 @@ const WebMapView: React.FC<WebMapViewProps> = (props) => {
       ) : (
         <div 
           ref={mapRef}
-          className="map-iframe"
+        className="map-iframe"
           style={styles.mapDiv}
-        />
+      />
       )}
       
       {/* Render a placeholder for children components */}

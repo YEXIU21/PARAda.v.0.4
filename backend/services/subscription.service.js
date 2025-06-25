@@ -6,6 +6,7 @@ const Subscription = require('../models/subscription.model');
 const User = require('../models/user.model');
 const NotificationService = require('./notification.service');
 const SubscriptionPlan = require('../models/subscription-plan.model');
+const StudentDiscount = require('../models/student-discount.model');
 
 // Initial subscription plans - will be replaced by database plans
 let subscriptionPlans = [
@@ -48,8 +49,81 @@ let subscriptionPlans = [
   }
 ];
 
-// Student discount percentage
-const STUDENT_DISCOUNT_PERCENT = 20;
+// Student discount settings - will be replaced by database settings
+let studentDiscountSettings = {
+  isEnabled: true,
+  discountPercent: 20
+};
+
+/**
+ * Refresh student discount settings from database
+ * @returns {Promise<Object>} - Updated student discount settings
+ */
+exports.refreshStudentDiscountSettings = async () => {
+  try {
+    // Get settings from database (creates default if none exist)
+    const settings = await StudentDiscount.getSettings();
+    
+    // Update local settings
+    studentDiscountSettings = {
+      isEnabled: settings.isEnabled,
+      discountPercent: settings.discountPercent
+    };
+    
+    console.log('Refreshed student discount settings:', studentDiscountSettings);
+    return studentDiscountSettings;
+  } catch (error) {
+    console.error('Error refreshing student discount settings:', error);
+    return studentDiscountSettings; // Return current settings if refresh fails
+  }
+};
+
+/**
+ * Get current student discount settings
+ * @returns {Promise<Object>} - Student discount settings
+ */
+exports.getStudentDiscountSettings = async () => {
+  // Try to refresh settings first
+  try {
+    await this.refreshStudentDiscountSettings();
+  } catch (error) {
+    console.error('Error refreshing student discount settings:', error);
+  }
+  
+  return studentDiscountSettings;
+};
+
+/**
+ * Update student discount settings
+ * @param {Object} settings - New settings
+ * @param {string} adminId - Admin user ID
+ * @returns {Promise<Object>} - Updated settings
+ */
+exports.updateStudentDiscountSettings = async (settings, adminId) => {
+  try {
+    const currentSettings = await StudentDiscount.getSettings();
+    
+    // Update settings
+    currentSettings.isEnabled = settings.isEnabled;
+    currentSettings.discountPercent = settings.discountPercent;
+    currentSettings.updatedBy = adminId;
+    currentSettings.updatedAt = new Date();
+    
+    // Save to database
+    const updatedSettings = await currentSettings.save();
+    
+    // Update local settings
+    studentDiscountSettings = {
+      isEnabled: updatedSettings.isEnabled,
+      discountPercent: updatedSettings.discountPercent
+    };
+    
+    return updatedSettings;
+  } catch (error) {
+    console.error('Error updating student discount settings:', error);
+    throw error;
+  }
+};
 
 /**
  * Refresh subscription plans from database
@@ -202,11 +276,14 @@ exports.getSubscriptionPlanWithDiscount = async (planId, isStudent) => {
   // Clone the plan to avoid modifying the original
   const planWithDiscount = { ...plan };
   
-  // Apply student discount if applicable
-  if (isStudent) {
+  // Get current student discount settings
+  const discountSettings = await this.getStudentDiscountSettings();
+  
+  // Apply student discount if applicable and enabled
+  if (isStudent && discountSettings.isEnabled) {
     planWithDiscount.originalPrice = planWithDiscount.price;
-    planWithDiscount.price = Math.round(planWithDiscount.price * (1 - STUDENT_DISCOUNT_PERCENT / 100));
-    planWithDiscount.discountPercent = STUDENT_DISCOUNT_PERCENT;
+    planWithDiscount.price = Math.round(planWithDiscount.price * (1 - discountSettings.discountPercent / 100));
+    planWithDiscount.discountPercent = discountSettings.discountPercent;
   }
   
   return planWithDiscount;
@@ -239,8 +316,12 @@ exports.createSubscription = async (subscriptionData, user) => {
   // Use 'all' to allow access to all vehicle types
   const vehicleType = subscriptionData.type || 'all';
 
-  // Calculate final price based on student status
-  const finalPrice = isStudent ? selectedPlan.price : selectedPlan.price;
+  // Get student discount settings if needed
+  let studentDiscountPercentage = 0;
+  if (isStudent) {
+    const discountSettings = await this.getStudentDiscountSettings();
+    studentDiscountPercentage = discountSettings.isEnabled ? discountSettings.discountPercent : 0;
+  }
 
   // Create subscription
   const subscription = new Subscription({
@@ -250,13 +331,13 @@ exports.createSubscription = async (subscriptionData, user) => {
     startDate: new Date(),
     expiryDate,
     paymentDetails: {
-      amount: finalPrice,
+      amount: selectedPlan.price,
       referenceNumber: subscriptionData.referenceNumber,
       paymentDate: new Date(),
       paymentMethod: subscriptionData.paymentMethod || 'gcash',
       studentDiscount: {
-        applied: isStudent,
-        percentage: isStudent ? STUDENT_DISCOUNT_PERCENT : 0
+        applied: isStudent && studentDiscountPercentage > 0,
+        percentage: studentDiscountPercentage
       }
     },
     isActive: false, // Will be set to true after verification

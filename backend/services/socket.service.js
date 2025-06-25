@@ -482,19 +482,19 @@ const emitDriverLocation = (driverId, location, rideId = null) => {
   if (!io) return;
   
   const data = {
-    driverId,
-    location,
+      driverId,
+      location,
     timestamp: new Date(),
     rideId
-  };
+    };
   
   // Emit to specific rooms
   io.to(`driver:${driverId}`).emit('location_update', data);
-  
-  if (rideId) {
+    
+    if (rideId) {
     io.to(`ride:${rideId}`).emit('driver_location', data);
-  }
-  
+        }
+        
   // Also emit to general driver updates room
   io.to('driver_updates').emit('driver_location', data);
 };

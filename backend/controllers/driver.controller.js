@@ -548,7 +548,7 @@ exports.updateLocationViaHttp = async (req, res) => {
       error: error.message
     });
   }
-};
+}; 
 
 /**
  * Update trip status for a driver

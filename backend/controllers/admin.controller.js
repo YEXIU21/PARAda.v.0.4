@@ -323,14 +323,11 @@ exports.getSubscriptions = async (req, res) => {
       filter.userId = req.query.userId;
     }
     
-    // Special filter for pending subscriptions (not verified, not rejected, and not cancelled)
+    // Special filter for pending subscriptions (not verified and not cancelled)
     if (req.query.pending === 'true') {
       filter['verification.verified'] = false;
-      filter['verification.status'] = 'pending'; // Only pending status, not rejected
+      filter['verification.status'] = 'pending';
       filter.cancelledAt = null;
-      
-      // Log the pending filter being applied
-      console.log('Applied pending filter - looking for status=pending, verified=false, cancelledAt=null');
     }
     
     console.log('Applied filter:', filter);

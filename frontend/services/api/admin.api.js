@@ -5,6 +5,7 @@
 import axios from 'axios';
 import { BASE_URL, ENDPOINTS } from './endpoints';
 import { getAuthToken } from './auth.api';
+import { apiRequest } from './api.config';
 
 /**
  * Get admin dashboard data
@@ -630,6 +631,37 @@ export const deleteSubscriptionPlan = async (planId) => {
     return response.data;
   } catch (error) {
     console.error('Error deleting subscription plan:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get student discount settings
+ * @returns {Promise<Object>} - Student discount settings
+ */
+export const getStudentDiscountSettings = async () => {
+  try {
+    const response = await apiRequest('GET', '/admin/student-discount');
+    return response.data.settings;
+  } catch (error) {
+    console.error('Error fetching student discount settings:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update student discount settings
+ * @param {Object} settings - Student discount settings
+ * @param {boolean} settings.isEnabled - Whether student discount is enabled
+ * @param {number} settings.discountPercent - Student discount percentage
+ * @returns {Promise<Object>} - Updated settings
+ */
+export const updateStudentDiscountSettings = async (settings) => {
+  try {
+    const response = await apiRequest('PUT', '/admin/student-discount', settings);
+    return response.data.settings;
+  } catch (error) {
+    console.error('Error updating student discount settings:', error);
     throw error;
   }
 }; 

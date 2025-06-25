@@ -897,10 +897,10 @@ export default function HomeScreen() {
       const success = await scheduleVehicleArrivalNotification(vehicle.name, vehicle.eta);
       
       if (success) {
-        Alert.alert(
-          'Notification Set', 
-          `You will be notified when ${vehicle.name} is approaching.`
-        );
+      Alert.alert(
+        'Notification Set', 
+        `You will be notified when ${vehicle.name} is approaching.`
+      );
       }
       // No need for else case as the scheduleVehicleArrivalNotification function
       // will handle showing fallback notifications internally
