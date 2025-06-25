@@ -515,20 +515,60 @@ export default function UserManagementScreen() {
       animationType="fade"
       onRequestClose={() => setShowDeleteModal(false)}
     >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-          <Text style={[styles.modalTitle, { color: theme.text }]}>Delete User</Text>
+      <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
+        <View style={[styles.modalContent, { 
+          backgroundColor: theme.card, 
+          borderColor: theme.border,
+          padding: 20,
+          width: '90%',
+          maxWidth: 400,
+          borderRadius: 16,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84,
+          elevation: 5
+        }]}>
+          <View style={styles.modalHeader}>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <FontAwesome5 name="exclamation-triangle" size={20} color="#FF9800" style={{marginRight: 10}} />
+              <Text style={[styles.modalTitle, { color: theme.text, fontSize: 20 }]}>Delete User</Text>
+            </View>
+            <TouchableOpacity 
+              onPress={() => setShowDeleteModal(false)}
+              style={{padding: 5}}
+            >
+              <FontAwesome5 name="times" size={20} color={theme.text} />
+            </TouchableOpacity>
+          </View>
           
           {selectedUser && (
-            <View style={styles.deleteConfirmContent}>
-              <Text style={[styles.deleteConfirmText, { color: theme.text }]}>
-                Are you sure you want to delete the user:
+            <View style={{ marginVertical: 20, alignItems: 'center' }}>
+              <View style={{
+                width: 60,
+                height: 60,
+                borderRadius: 30,
+                backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginBottom: 16
+              }}>
+                <FontAwesome5 name="trash" size={24} color="#F44336" />
+              </View>
+              
+              <Text style={[{ color: theme.text, fontSize: 18, fontWeight: '600', textAlign: 'center', marginBottom: 8 }]}>
+                Delete "{selectedUser.username}"?
               </Text>
               
               <View style={styles.userInfoContainer}>
-                <Text style={[styles.userName, { color: theme.text }]}>{selectedUser.username}</Text>
-                <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{selectedUser.email}</Text>
-                <View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(selectedUser.role), flexDirection: 'row', alignItems: 'center' }]}>
+                <Text style={[styles.userEmail, { color: theme.textSecondary, textAlign: 'center' }]}>{selectedUser.email}</Text>
+                <View style={[styles.roleBadge, { 
+                  backgroundColor: getRoleBadgeColor(selectedUser.role), 
+                  flexDirection: 'row', 
+                  alignItems: 'center',
+                  alignSelf: 'center',
+                  marginTop: 8
+                }]}>
                   <FontAwesome5 
                     name={
                       selectedUser.role === 'admin' ? 'crown' : 
@@ -541,28 +581,45 @@ export default function UserManagementScreen() {
                 </View>
               </View>
               
-              <Text style={[styles.deleteWarning, { color: theme.error }]}>
+              <Text style={[{ color: theme.textSecondary, fontSize: 14, textAlign: 'center', marginTop: 16 }]}>
                 This action cannot be undone. All user data will be permanently deleted.
               </Text>
             </View>
           )}
           
-          <View style={styles.modalActions}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton, { borderColor: theme.border }]}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
+            <TouchableOpacity 
+              style={[{ 
+                backgroundColor: isDarkMode ? '#333' : '#f0f0f0',
+                paddingVertical: 12,
+                paddingHorizontal: 20,
+                borderRadius: 8,
+                flex: 1,
+                marginRight: 10,
+                alignItems: 'center',
+                borderWidth: 1,
+                borderColor: isDarkMode ? '#444' : '#ddd'
+              }]}
               onPress={() => {
                 setShowDeleteModal(false);
                 setSelectedUser(null);
               }}
             >
-              <Text style={[styles.buttonText, { color: theme.text }]}>Cancel</Text>
+              <Text style={{ color: isDarkMode ? '#fff' : '#333', fontWeight: 'bold' }}>Cancel</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity
-              style={[styles.modalButton, styles.deleteButton, { backgroundColor: theme.error }]}
+            <TouchableOpacity 
+              style={[{ 
+                backgroundColor: '#ff4444',
+                paddingVertical: 12,
+                paddingHorizontal: 20,
+                borderRadius: 8,
+                flex: 1,
+                alignItems: 'center'
+              }]}
               onPress={confirmDeleteUser}
             >
-              <Text style={[styles.buttonText, { color: '#fff' }]}>Delete</Text>
+              <Text style={{ color: 'white', fontWeight: 'bold' }}>Delete</Text>
             </TouchableOpacity>
           </View>
         </View>

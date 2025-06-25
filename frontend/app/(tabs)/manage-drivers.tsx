@@ -712,15 +712,24 @@ export default function ManageDriversScreen() {
           animationType="fade"
           onRequestClose={() => setShowConfirmModal(false)}
         >
-          <View style={styles.modalOverlay}>
+          <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
             <View style={[styles.confirmModalContainer, { 
               backgroundColor: theme.card, 
               borderColor: theme.border,
+              padding: 20,
+              width: '90%',
+              maxWidth: 400,
+              borderRadius: 16,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+              elevation: 5
             }]}>
               <View style={styles.modalHeader}>
                 <View style={{flexDirection: 'row', alignItems: 'center'}}>
                   <FontAwesome5 name="exclamation-triangle" size={20} color="#FF9800" style={{marginRight: 10}} />
-                  <Text style={[styles.modalTitle, { color: theme.text }]}>
+                  <Text style={[styles.modalTitle, { color: theme.text, fontSize: 20 }]}>
                     Remove Driver
                   </Text>
                 </View>
@@ -776,7 +785,7 @@ export default function ManageDriversScreen() {
                         borderRadius: 5,
                         padding: 10,
                         color: theme.text,
-                        backgroundColor: theme.inputBackground
+                        backgroundColor: theme.inputBackground || (isDarkMode ? '#333' : '#f8f8f8')
                       }]}
                       value={disableReason}
                       onChangeText={setDisableReason}
@@ -798,6 +807,7 @@ export default function ManageDriversScreen() {
                     flex: 1,
                     marginRight: 10,
                     alignItems: 'center',
+                    justifyContent: 'center',
                     borderWidth: 1,
                     borderColor: isDarkMode ? '#444' : '#ddd'
                   }]}
@@ -813,7 +823,8 @@ export default function ManageDriversScreen() {
                     paddingHorizontal: 20,
                     borderRadius: 8,
                     flex: 1,
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }]}
                   onPress={() => {
                     if (driverToRemove) {
