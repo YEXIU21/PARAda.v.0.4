@@ -431,7 +431,7 @@ export default function UserManagementScreen() {
           <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{item.email}</Text>
           
           <View style={styles.userMetaContainer}>
-            <View style={[styles.roleBadge, { backgroundColor: `${getRoleBadgeColor(item.role)}15` }]}>
+            <View style={[styles.roleBadge, { backgroundColor: `${getRoleBadgeColor(item.role)}15`, flexDirection: 'row', alignItems: 'center' }]}>
               <FontAwesome5 
                 name={
                   item.role === 'admin' ? 'crown' : 
@@ -528,8 +528,16 @@ export default function UserManagementScreen() {
               <View style={styles.userInfoContainer}>
                 <Text style={[styles.userName, { color: theme.text }]}>{selectedUser.username}</Text>
                 <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{selectedUser.email}</Text>
-                <View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(selectedUser.role) }]}>
-                  <Text style={styles.roleBadgeText}>{selectedUser.role}</Text>
+                <View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(selectedUser.role), flexDirection: 'row', alignItems: 'center' }]}>
+                  <FontAwesome5 
+                    name={
+                      selectedUser.role === 'admin' ? 'crown' : 
+                      selectedUser.role === 'driver' ? 'car' : 'user'
+                    } 
+                    size={12} 
+                    color="#FFFFFF" 
+                  />
+                  <Text style={styles.roleBadgeText}>{selectedUser.role.charAt(0).toUpperCase() + selectedUser.role.slice(1)}</Text>
                 </View>
               </View>
               
@@ -875,11 +883,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignSelf: 'flex-start',
     marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   roleBadgeText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+    marginLeft: 4,
   },
   roleText: {
     fontSize: 12,
