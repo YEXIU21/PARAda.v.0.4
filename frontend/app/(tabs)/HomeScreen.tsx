@@ -12,8 +12,7 @@ import {
   Modal,
   Image,
   Platform,
-  TouchableWithoutFeedback,
-  SafeAreaView
+  TouchableWithoutFeedback
 } from 'react-native';
 import MapView, { Marker, Polyline } from '../../components/MapView';
 import * as Location from 'expo-location';
@@ -394,12 +393,16 @@ export default function HomeScreen() {
         // Load saved subscription plans
         try {
           const plans = await getSubscriptionPlans();
-          if (plans) {
+          if (plans && plans.length > 0) {
             setSubscriptionPlans(plans);
+          } else {
+            console.log('No subscription plans returned, using defaults');
+            setSubscriptionPlans(defaultSubscriptionPlans);
           }
         } catch (plansError) {
           console.error('Error loading subscription plans:', plansError);
           // Continue with default plans if API fails
+          setSubscriptionPlans(defaultSubscriptionPlans);
         }
         
         // For admin and driver users, automatically grant subscription access
@@ -421,8 +424,13 @@ export default function HomeScreen() {
           setIsPendingApproval(false); // Ensure this is false for verified users
         
           // Get list of accessible vehicle types
-          const accessibleTypes = getAccessibleVehicleTypes(user);
-          console.log('User has access to these vehicle types:', accessibleTypes);
+          try {
+            const accessibleTypes = getAccessibleVehicleTypes(user);
+            console.log('User has access to these vehicle types:', accessibleTypes);
+          } catch (accessError) {
+            console.error('Error getting accessible vehicle types:', accessError);
+            // Continue with default access
+          }
         
           setIsLoading(false);
           clearTimeout(timeout);
@@ -431,7 +439,12 @@ export default function HomeScreen() {
         
         // Check if user has any local subscription data first
         // This ensures we show pending approval state immediately after login
-        await checkLocalPendingSubscription();
+        try {
+          await checkLocalPendingSubscription();
+        } catch (localCheckError) {
+          console.error('Error checking local subscription:', localCheckError);
+          // Continue with API check on error
+        }
         
         // For non-admin users, check subscription from backend
         try {
@@ -537,6 +550,10 @@ export default function HomeScreen() {
                     } else if (parsedSub.referenceNumber) {
                       setIsPendingApproval(true);
                       setHasSubscription(false);
+                    } else {
+                      // No valid data in stored subscription
+                      setIsPendingApproval(false);
+                      setHasSubscription(false);
                     }
                   } else {
                     console.log('No local subscription data found, proceeding without subscription');
@@ -566,13 +583,20 @@ export default function HomeScreen() {
           if (userRole === 'admin' || userRole === 'driver' || 
               (user?.subscription && user.subscription.verified)) {
             const routeData = await routeApi.getRoutes({ active: true });
-            if (routeData) {
+            if (routeData && routeData.length > 0) {
               setRoutes(routeData);
+            } else {
+              // Fall back to default routes if no data
+              setRoutes(defaultRoutes);
             }
+          } else {
+            // Set default routes for users without access
+            setRoutes(defaultRoutes);
           }
         } catch (routeError) {
           console.error('Error loading routes:', routeError);
           // Continue with default routes if API fails
+          setRoutes(defaultRoutes);
         }
         
         // Load nearby vehicles using real data if location is available
@@ -605,6 +629,16 @@ export default function HomeScreen() {
         setIsLoading(false);
       } catch (error) {
         console.error('Error loading data:', error);
+        // Ensure we set default values for critical state variables
+        setSubscriptionPlans(defaultSubscriptionPlans);
+        setVehicles(defaultVehicles);
+        setRoutes(defaultRoutes);
+        setIsPendingApproval(false);
+        if (user?.role === 'admin' || user?.role === 'driver') {
+          setHasSubscription(true);
+        } else {
+          setHasSubscription(false);
+        }
         setIsLoading(false);
       }
     };
@@ -612,11 +646,19 @@ export default function HomeScreen() {
     loadData();
     
     // Set up socket connection
-    initializeSocket();
+    try {
+      initializeSocket();
+    } catch (socketError) {
+      console.error('Error initializing socket:', socketError);
+    }
     
     return () => {
       // Clean up socket connection
-      disconnectSocket();
+      try {
+        disconnectSocket();
+      } catch (socketError) {
+        console.error('Error disconnecting socket:', socketError);
+      }
     };
   }, [user, location]);
 
@@ -1039,7 +1081,7 @@ export default function HomeScreen() {
       const rideId = 'placeholder-ride-id';
       startRideStatusListener(rideId);
       
-      // Set ride status to requested
+      // Set ride status to waiting
       setMyRideStatus({
         status: 'waiting',
         destination: selectedDestination
@@ -1545,164 +1587,21 @@ export default function HomeScreen() {
         visible={showSubscriptionModal}
         onRequestClose={() => setShowSubscriptionModal(false)}
       >
-        <SafeAreaView style={{flex: 1, backgroundColor: theme.background}}>
-          <LinearGradient
-            colors={theme.gradientColors}
-            style={{
-              paddingTop: 40,
-              paddingBottom: 20,
-              paddingHorizontal: 20
-            }}
-          >
-            <View style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <Text style={{
-                fontSize: 24,
-                fontWeight: 'bold',
-                color: '#fff'
-              }}>Choose a Subscription</Text>
-              <TouchableOpacity 
-                onPress={() => setShowSubscriptionModal(false)}
-                style={{
-                  padding: 5
-                }}
-              >
-                <FontAwesome5 name="times" size={16} color="white" />
-              </TouchableOpacity>
-            </View>
-          </LinearGradient>
-          
-          <ScrollView style={{flex: 1, padding: 20}}>
-            {subscriptionPlans.map((plan) => (
-              <View 
-                key={plan.id}
-                style={{
-                  borderRadius: 10,
-                  marginBottom: 20,
-                  padding: 20,
-                  borderWidth: 1,
-                  borderColor: plan.recommended ? theme.primary : theme.border,
-                  backgroundColor: theme.card,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 2
-                }}
-              >
-                {plan.recommended && (
-                  <View style={{
-                    position: 'absolute',
-                    top: -12,
-                    right: 20,
-                    paddingHorizontal: 12,
-                    paddingVertical: 5,
-                    borderRadius: 20,
-                    backgroundColor: theme.primary
-                  }}>
-                    <Text style={{
-                      color: 'white',
-                      fontWeight: 'bold',
-                      fontSize: 12
-                    }}>BEST VALUE</Text>
-                  </View>
-                )}
-                <Text style={{
-                  fontSize: 20,
-                  fontWeight: 'bold',
-                  marginBottom: 5,
-                  color: theme.text
-                }}>{plan.name}</Text>
-                <Text style={{
-                  fontSize: 24,
-                  fontWeight: 'bold',
-                  marginBottom: 5,
-                  color: theme.primary
-                }}>
-                  {typeof plan.price === 'string' 
-                    ? plan.price 
-                    : `₱${plan.price}/${typeof plan.duration === 'string' && plan.duration.toLowerCase().includes('yearly') ? 'year' : 'month'}`
-                  }
-                </Text>
-                <Text style={{
-                  fontSize: 14,
-                  marginBottom: 15,
-                  color: theme.textSecondary
-                }}>{plan.duration}</Text>
-                
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center'
-                }}>
-                  <FontAwesome5 name="money-bill-wave" size={14} color={theme.textSecondary} />
-                  <Text style={{
-                    marginLeft: 8,
-                    fontSize: 14,
-                    color: theme.textSecondary
-                  }}>
-                    Payment via GCash
-                  </Text>
-                </View>
-                
-                <View style={{
-                  height: 1,
-                  marginVertical: 15,
-                  backgroundColor: theme.border
-                }} />
-                
-                <View style={{
-                  marginTop: 5,
-                  marginBottom: 15
-                }}>
-                  <Text style={{
-                    fontSize: 18,
-                    fontWeight: 'bold',
-                    marginBottom: 10,
-                    color: theme.text
-                  }}>Features:</Text>
-                  {plan.features.map((feature, index) => (
-                    <View key={index} style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      marginBottom: 8
-                    }}>
-                      <FontAwesome5 
-                        name="check-circle" 
-                        size={16} 
-                        color={theme.primary} 
-                        style={{marginRight: 10}}
-                      />
-                      <Text style={{
-                        flex: 1,
-                        color: theme.text
-                      }}>{feature}</Text>
-                    </View>
-                  ))}
-                </View>
-                
-                <TouchableOpacity 
-                  style={{
-                    backgroundColor: theme.primary,
-                    paddingVertical: 12,
-                    borderRadius: 8,
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  onPress={() => subscribeToService(plan.id as SubscriptionId)}
-                >
-                  <Text style={{
-                    color: 'white',
-                    fontWeight: 'bold',
-                    fontSize: 16
-                  }}>Subscribe with GCash</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-        </SafeAreaView>
+        <SubscriptionView 
+          subscriptionPlans={subscriptionPlans}
+          onSubscribe={subscribeToService}
+          onClose={() => setShowSubscriptionModal(false)}
+          theme={{
+            background: theme.background,
+            card: theme.card,
+            text: theme.text,
+            textSecondary: theme.textSecondary,
+            border: theme.border,
+            primary: theme.primary,
+            gradientColors: theme.gradientColors as [string, string]
+          }}
+          isDarkMode={isDarkMode}
+        />
       </Modal>
       
       {/* GCash payment modal */}
