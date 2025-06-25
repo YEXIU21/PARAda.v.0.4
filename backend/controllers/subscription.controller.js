@@ -318,9 +318,14 @@ exports.cancelSubscription = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user._id;
+    const isAdmin = req.user.role === 'admin';
+    
+    console.log(`Cancel subscription request: ID=${id}, User=${userId}, IsAdmin=${isAdmin}`);
     
     // Cancel subscription using the service
-    const subscription = await subscriptionService.cancelSubscription(id, userId, req.user.role === 'admin');
+    const subscription = await subscriptionService.cancelSubscription(id, userId, isAdmin);
+    
+    console.log(`Subscription cancelled successfully: ${subscription._id}`);
     
     // Emit real-time event
     socketService.emitToAdmins('subscription:cancelled', subscription);

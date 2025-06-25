@@ -377,30 +377,38 @@ exports.approveSubscriptionByReference = async (userId, referenceNumber, adminId
  * Cancel a subscription
  * @param {string} subscriptionId - Subscription ID
  * @param {string} userId - User ID
+ * @param {boolean} isAdmin - Whether the user is an admin
  * @returns {Promise<Object>} - Cancelled subscription
  */
-exports.cancelSubscription = async (subscriptionId, userId) => {
-  // Find the subscription
-    const subscription = await Subscription.findOne({
-    _id: subscriptionId,
-    userId
-    });
-    
-    if (!subscription) {
+exports.cancelSubscription = async (subscriptionId, userId, isAdmin = false) => {
+  // Find the subscription - if admin, don't filter by userId
+  const query = { _id: subscriptionId };
+  if (!isAdmin) {
+    query.userId = userId;
+  }
+  
+  console.log(`Searching for subscription with query:`, query);
+  const subscription = await Subscription.findOne(query);
+  
+  if (!subscription) {
+    console.log(`Subscription not found with ID: ${subscriptionId}`);
     throw new Error('Subscription not found');
-    }
+  }
 
+  console.log(`Found subscription: ${subscription._id}, updating status`);
+  
   // Update subscription status
   subscription.isActive = false;
   subscription.autoRenew = false;
   subscription.cancelledAt = new Date();
   
   const savedSubscription = await subscription.save();
+  console.log(`Subscription updated successfully: ${savedSubscription._id}`);
 
-    // Create notification for user
+  // Create notification for the subscription owner (not necessarily the canceller)
   try {
     await NotificationService.createUserNotification(
-      userId,
+      subscription.userId,
       'Subscription Cancelled',
       `Your ${subscription.type} subscription has been cancelled.`,
       'payment',
