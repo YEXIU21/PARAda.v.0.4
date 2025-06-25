@@ -570,30 +570,19 @@ export default function AdminScreen() {
   };
 
   const handleFunctionPress = (id) => {
-    // Handle function press based on ID
+    console.log(`Function pressed: ${id}`);
+    
+    // Handle specific function actions
     if (id === 'subscriptions') {
-      setShowSubscriptionModal(true);
-    } else if (id === 'notifications') {
-      // Navigate to notifications screen
-      router.push('/(tabs)/notifications');
-    } else if (id === 'map') {
-      // Navigate to map screen
-      router.push('/(tabs)/map');
-    } else if (id === 'users') {
-      // Navigate to user management screen
-      router.push('/(tabs)/user-management');
-    } else if (id === 'drivers') {
-      // Navigate to driver management screen
-      router.push('/(tabs)/manage-drivers');
-    } else if (id === 'routes') {
-      // Navigate to route management screen
-      router.push('/(tabs)/manage-routes');
-    } else if (id === 'settings') {
-      // Navigate to system settings screen
-      router.push('/(tabs)/system-settings');
-    } else if (id === 'reports') {
-      // Navigate to reports screen
-      router.push('/(tabs)/reports');
+      // Navigate to the admin-subscribers page instead of showing a modal
+      router.push('/admin-subscribers');
+      return;
+    }
+    
+    // Navigate to the appropriate screen if defined
+    const selectedFunction = adminFunctions.find(f => f.id === id);
+    if (selectedFunction && selectedFunction.screen) {
+      router.push(`/${selectedFunction.screen}`);
     }
   };
 
@@ -944,7 +933,7 @@ export default function AdminScreen() {
             />
           </View>
           <View style={styles.headerTextContainer}>
-        <Text style={styles.headerTitle}>Admin Dashboard</Text>
+            <Text style={styles.headerTitle}>Admin Dashboard</Text>
             <Text style={styles.headerSubtitle}>Real-Time Transportation Tracking</Text>
           </View>
         </View>
@@ -1028,87 +1017,109 @@ export default function AdminScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f9f9f9',
   },
   header: {
     paddingTop: 40,
     paddingBottom: 20,
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    elevation: 4,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 24,
     width: '100%',
   },
   logoContainer: {
-    marginRight: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 50,
+    height: 50,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 3,
   },
   logo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
   },
   headerTextContainer: {
-    flex: 1,
+    flexDirection: 'column',
+    marginLeft: 10,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#fff',
+    marginBottom: 0,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+    color: '#fff',
+    opacity: 0.9,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    padding: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 15,
+    color: '#333',
+    marginBottom: 16,
+    marginTop: 16,
   },
   statsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   statCard: {
-    width: '48%',
-    padding: 15,
+    backgroundColor: '#fff',
     borderRadius: 12,
-    marginBottom: 15,
-    elevation: 2,
+    padding: 16,
+    marginBottom: 12,
+    width: '48%',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+    elevation: 2,
   },
   iconCircle: {
-    marginBottom: 10,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 5,
+    color: '#333',
+    marginBottom: 6,
   },
   statTitle: {
     fontSize: 14,
-    opacity: 0.7,
+    color: '#666',
+    textAlign: 'center',
   },
   functionsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   functionCard: {
     backgroundColor: '#fff',
