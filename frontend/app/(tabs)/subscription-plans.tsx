@@ -8,10 +8,15 @@ import {
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import AdminSubscriptionPlansManager from '../../components/AdminSubscriptionPlansManager';
+import PassengerSubscriptionPlans from '../../components/PassengerSubscriptionPlans';
+import { useAuth } from '../../context/AuthContext';
 
 export default function SubscriptionPlansScreen() {
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
+  const { user } = useAuth();
+  
+  const isAdmin = user?.role === 'admin';
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -23,19 +28,36 @@ export default function SubscriptionPlansScreen() {
       </LinearGradient>
       
       <View style={styles.content}>
-        <AdminSubscriptionPlansManager 
-          theme={{
-            background: theme.background,
-            card: theme.card,
-            text: theme.text,
-            textSecondary: theme.textSecondary,
-            border: theme.border,
-            primary: theme.primary,
-            error: theme.error,
-            success: theme.success,
-            warning: theme.warning
-          }} 
-        />
+        {isAdmin ? (
+          <AdminSubscriptionPlansManager 
+            theme={{
+              background: theme.background,
+              card: theme.card,
+              text: theme.text,
+              textSecondary: theme.textSecondary,
+              border: theme.border,
+              primary: theme.primary,
+              error: theme.error,
+              success: theme.success,
+              warning: theme.warning
+            }} 
+          />
+        ) : (
+          <PassengerSubscriptionPlans 
+            theme={{
+              background: theme.background,
+              card: theme.card,
+              text: theme.text,
+              textSecondary: theme.textSecondary,
+              border: theme.border,
+              primary: theme.primary,
+              error: theme.error,
+              success: theme.success,
+              warning: theme.warning,
+              gradientColors: theme.gradientColors as [string, string]
+            }} 
+          />
+        )}
       </View>
     </SafeAreaView>
   );

@@ -1038,9 +1038,9 @@ export default function HomeScreen() {
       const rideId = 'placeholder-ride-id';
       startRideStatusListener(rideId);
       
-      // Set ride status to requested
+      // Set ride status to waiting (which is a valid PassengerStatus)
       setMyRideStatus({
-        status: 'requested',
+        status: 'waiting',
         destination: selectedDestination
       });
     } catch (error) {
@@ -1221,7 +1221,7 @@ export default function HomeScreen() {
       {/* No subscription overlay - Only show for users who don't have a subscription or pending verification */}
       {user?.role === 'passenger' && !hasSubscription && (
         <NoSubscriptionOverlay 
-          onSelectVehiclePress={() => showSubscriptionOptions()}
+          onSelectVehiclePress={() => router.push('/(tabs)/subscription-plans')}
           isDarkMode={isDarkMode}
           isPendingApproval={isPendingApproval}
           theme={{
@@ -1315,7 +1315,7 @@ export default function HomeScreen() {
           {user?.role === 'passenger' && !hasSubscription && (
             <TouchableOpacity
               style={homeScreenStyles.passengerBadge}
-              onPress={() => showSubscriptionOptions()}
+              onPress={() => router.push('/(tabs)/subscription-plans')}
             >
               <FontAwesome5 
                 name={user?.accountType === 'student' ? 'graduation-cap' : 'user-friends'} 
