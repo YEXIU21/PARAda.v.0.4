@@ -12,11 +12,33 @@ import { getAuthToken } from './auth.api';
  */
 export const getSubscriptionPlans = async () => {
   try {
+    console.log('Fetching subscription plans from public API');
     const response = await axios.get(`${BASE_URL}${ENDPOINTS.SUBSCRIPTION.PLANS}`);
-    return response.data.plans;
+    
+    // Make sure we return the same data structure as admin API
+    if (response.data && response.data.plans && Array.isArray(response.data.plans)) {
+      console.log('Successfully fetched subscription plans from public API:', response.data.plans);
+      
+      // Ensure the plans have the same structure as admin plans
+      const normalizedPlans = response.data.plans.map(plan => ({
+        id: plan.id || plan._id || `plan-${Math.random().toString(36).substr(2, 9)}`,
+        name: plan.name || 'Unnamed Plan',
+        price: typeof plan.price === 'string' ? parseFloat(plan.price) : (plan.price || 0),
+        duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : (plan.duration || 30),
+        features: Array.isArray(plan.features) ? plan.features : [],
+        recommended: plan.recommended || false
+      }));
+      
+      return normalizedPlans;
+    }
+    
+    // If the data structure is unexpected, return an empty array
+    console.warn('Unexpected data structure from subscription plans API:', response.data);
+    return [];
   } catch (error) {
     console.error('Error fetching subscription plans:', error);
-    throw error;
+    // Return empty array instead of throwing to prevent crashes
+    return [];
   }
 };
 
