@@ -55,7 +55,7 @@ const NotificationSchema = new Schema({
   expiresAt: {
     type: Date,
     default: null,
-    index: { expires: 0 } // TTL index
+    index: { expires: '0s' } // TTL index - delete document when current time > expiresAt
   }
 }, {
   timestamps: true

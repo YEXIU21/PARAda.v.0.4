@@ -38,6 +38,11 @@ const socketService = require('./services/socket.service');
 // Import keep-alive utility
 const { setupKeepAlive } = require('./utils/keep-alive');
 
+// Import scheduler for cleanup tasks
+const schedule = require('node-schedule');
+const { exec } = require('child_process');
+const path = require('path');
+
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -177,6 +182,24 @@ connectDB()
         setupKeepAlive();
         console.log('Keep-alive mechanism activated to prevent server from spinning down');
       }
+      
+      // Schedule daily cleanup of old notifications at midnight
+      schedule.scheduleJob('0 0 * * *', () => {
+        console.log('Running scheduled cleanup of old notifications...');
+        const scriptPath = path.join(__dirname, 'scripts', 'cleanup-old-notifications.js');
+        exec(`node ${scriptPath}`, (error, stdout, stderr) => {
+          if (error) {
+            console.error(`Error running cleanup script: ${error.message}`);
+            return;
+          }
+          if (stderr) {
+            console.error(`Cleanup script stderr: ${stderr}`);
+            return;
+          }
+          console.log(`Cleanup script output: ${stdout}`);
+        });
+      });
+      console.log('Scheduled daily cleanup of old notifications at midnight');
     } else {
       console.log('Running in serverless environment, skipping server.listen()');
     }

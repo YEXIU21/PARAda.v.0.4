@@ -40,6 +40,9 @@ exports.createNotification = async (notificationData) => {
     // Set expiration if expiresIn is provided in data
     if (data && data.expiresIn && typeof data.expiresIn === 'number') {
       notification.setExpiration(data.expiresIn);
+    } else {
+      // Default expiration: 2 days (48 hours)
+      notification.setExpiration(2);
     }
     
     return notification.save();

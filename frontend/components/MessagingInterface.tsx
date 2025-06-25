@@ -522,18 +522,21 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
   };
   
   // Calculate time remaining until message expires
-  const getExpiryTimeRemaining = (createdAt: string, expiresInDays: number = 1) => {
+  const getExpiryTimeRemaining = (createdAt: string, expiresInDays: number = 2) => {
     const createdDate = new Date(createdAt);
-    const expiryDate = new Date(createdDate);
+    const expiryDate = new Date(createdAt);
     expiryDate.setDate(expiryDate.getDate() + expiresInDays);
     
+    // Calculate time difference
     const now = new Date();
     const diffMs = expiryDate.getTime() - now.getTime();
     
+    // If already expired
     if (diffMs <= 0) {
       return 'Expired';
     }
     
+    // Calculate hours and minutes
     const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
     
@@ -761,9 +764,11 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
       </Text>
       
       <View style={styles.messageFooter}>
-        <Text style={[styles.expiryText, { color: theme.error }]}>
-          {getExpiryTimeRemaining(item.createdAt, item.data?.expiresIn || 1)}
-        </Text>
+        {item.data?.expiresIn && (
+          <Text style={[styles.messageExpiry, { color: theme.textSecondary }]}>
+            {getExpiryTimeRemaining(item.createdAt, item.data?.expiresIn || 2)}
+          </Text>
+        )}
         
         <TouchableOpacity
           style={styles.deleteButton}
@@ -810,8 +815,8 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
               {selectedMessage?.message}
             </Text>
             
-            <Text style={[styles.expiryText, { color: theme.error, marginTop: 20 }]}>
-              {selectedMessage ? getExpiryTimeRemaining(selectedMessage.createdAt, selectedMessage.data?.expiresIn || 1) : ''}
+            <Text style={[styles.messageExpiry, { color: theme.error, marginTop: 20 }]}>
+              {selectedMessage ? getExpiryTimeRemaining(selectedMessage.createdAt, selectedMessage.data?.expiresIn || 2) : ''}
             </Text>
           </View>
           
@@ -1075,7 +1080,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
-  expiryText: {
+  messageExpiry: {
     fontSize: 12,
   },
   deleteButton: {
