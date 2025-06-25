@@ -393,16 +393,12 @@ export default function HomeScreen() {
         // Load saved subscription plans
         try {
           const plans = await getSubscriptionPlans();
-          if (plans && plans.length > 0) {
+          if (plans) {
             setSubscriptionPlans(plans);
-          } else {
-            console.log('No subscription plans returned, using defaults');
-            setSubscriptionPlans(defaultSubscriptionPlans);
           }
         } catch (plansError) {
           console.error('Error loading subscription plans:', plansError);
           // Continue with default plans if API fails
-          setSubscriptionPlans(defaultSubscriptionPlans);
         }
         
         // For admin and driver users, automatically grant subscription access
@@ -424,13 +420,8 @@ export default function HomeScreen() {
           setIsPendingApproval(false); // Ensure this is false for verified users
         
           // Get list of accessible vehicle types
-          try {
-            const accessibleTypes = getAccessibleVehicleTypes(user);
-            console.log('User has access to these vehicle types:', accessibleTypes);
-          } catch (accessError) {
-            console.error('Error getting accessible vehicle types:', accessError);
-            // Continue with default access
-          }
+          const accessibleTypes = getAccessibleVehicleTypes(user);
+          console.log('User has access to these vehicle types:', accessibleTypes);
         
           setIsLoading(false);
           clearTimeout(timeout);
@@ -439,12 +430,7 @@ export default function HomeScreen() {
         
         // Check if user has any local subscription data first
         // This ensures we show pending approval state immediately after login
-        try {
-          await checkLocalPendingSubscription();
-        } catch (localCheckError) {
-          console.error('Error checking local subscription:', localCheckError);
-          // Continue with API check on error
-        }
+        await checkLocalPendingSubscription();
         
         // For non-admin users, check subscription from backend
         try {
@@ -550,10 +536,6 @@ export default function HomeScreen() {
                     } else if (parsedSub.referenceNumber) {
                       setIsPendingApproval(true);
                       setHasSubscription(false);
-                    } else {
-                      // No valid data in stored subscription
-                      setIsPendingApproval(false);
-                      setHasSubscription(false);
                     }
                   } else {
                     console.log('No local subscription data found, proceeding without subscription');
@@ -583,20 +565,13 @@ export default function HomeScreen() {
           if (userRole === 'admin' || userRole === 'driver' || 
               (user?.subscription && user.subscription.verified)) {
             const routeData = await routeApi.getRoutes({ active: true });
-            if (routeData && routeData.length > 0) {
+            if (routeData) {
               setRoutes(routeData);
-            } else {
-              // Fall back to default routes if no data
-              setRoutes(defaultRoutes);
             }
-          } else {
-            // Set default routes for users without access
-            setRoutes(defaultRoutes);
           }
         } catch (routeError) {
           console.error('Error loading routes:', routeError);
           // Continue with default routes if API fails
-          setRoutes(defaultRoutes);
         }
         
         // Load nearby vehicles using real data if location is available
@@ -629,16 +604,6 @@ export default function HomeScreen() {
         setIsLoading(false);
       } catch (error) {
         console.error('Error loading data:', error);
-        // Ensure we set default values for critical state variables
-        setSubscriptionPlans(defaultSubscriptionPlans);
-        setVehicles(defaultVehicles);
-        setRoutes(defaultRoutes);
-        setIsPendingApproval(false);
-        if (user?.role === 'admin' || user?.role === 'driver') {
-          setHasSubscription(true);
-        } else {
-          setHasSubscription(false);
-        }
         setIsLoading(false);
       }
     };
@@ -646,19 +611,11 @@ export default function HomeScreen() {
     loadData();
     
     // Set up socket connection
-    try {
-      initializeSocket();
-    } catch (socketError) {
-      console.error('Error initializing socket:', socketError);
-    }
+    initializeSocket();
     
     return () => {
       // Clean up socket connection
-      try {
-        disconnectSocket();
-      } catch (socketError) {
-        console.error('Error disconnecting socket:', socketError);
-      }
+      disconnectSocket();
     };
   }, [user, location]);
 
@@ -1081,9 +1038,9 @@ export default function HomeScreen() {
       const rideId = 'placeholder-ride-id';
       startRideStatusListener(rideId);
       
-      // Set ride status to waiting
+      // Set ride status to requested
       setMyRideStatus({
-        status: 'waiting',
+        status: 'requested',
         destination: selectedDestination
       });
     } catch (error) {
