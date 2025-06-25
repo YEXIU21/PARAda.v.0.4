@@ -3,19 +3,15 @@ import {
   View, 
   Text, 
   StyleSheet,
-  SafeAreaView,
-  TouchableOpacity
+  SafeAreaView
 } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import AdminSubscriptionPlansManager from '../../components/AdminSubscriptionPlansManager';
-import { useRouter } from 'expo-router';
 
 export default function SubscriptionPlansScreen() {
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
-  const router = useRouter();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -41,13 +37,6 @@ export default function SubscriptionPlansScreen() {
           }} 
         />
       </View>
-      
-      <TouchableOpacity 
-        style={[styles.backButton, { backgroundColor: theme.primary }]}
-        onPress={() => router.push('/admin')}
-      >
-        <FontAwesome5 name="arrow-left" size={20} color="#FFFFFF" />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -71,16 +60,5 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
   }
 }); 
