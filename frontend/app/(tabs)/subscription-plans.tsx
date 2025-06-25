@@ -4,15 +4,16 @@ import {
   Text, 
   StyleSheet,
   SafeAreaView,
-  ActivityIndicator
+  ActivityIndicator,
+  ScrollView
 } from 'react-native';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import AdminSubscriptionPlansManager from '../../components/AdminSubscriptionPlansManager';
 import { useAuth } from '../../context/AuthContext';
-import SubscriptionView from '../../components/SubscriptionView';
 import { getSubscriptionPlans } from '../../services/api/subscription.api';
-import { Subscription, defaultSubscriptionPlans } from '../../constants/SubscriptionPlans';
+import { Subscription, defaultSubscriptionPlans, SubscriptionId } from '../../constants/SubscriptionPlans';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 export default function SubscriptionPlansScreen() {
   const { isDarkMode } = useTheme();
@@ -91,24 +92,64 @@ export default function SubscriptionPlansScreen() {
       );
     }
 
-    // For passengers (including students), show the subscription view
+    // For passengers (including students), show subscription plans directly
     // Always ensure we have plans to display, even if there was an error
+    const plansToDisplay = subscriptionPlans.length > 0 ? subscriptionPlans : defaultSubscriptionPlans;
+    
     return (
-      <SubscriptionView
-        subscriptionPlans={subscriptionPlans.length > 0 ? subscriptionPlans : defaultSubscriptionPlans}
-        onSubscribe={handleSubscribe}
-        onClose={() => {}}
-        theme={{
-          background: theme.background,
-          card: theme.card,
-          text: theme.text,
-          textSecondary: theme.textSecondary,
-          border: theme.border,
-          primary: theme.primary,
-          gradientColors: theme.gradientColors as [string, string]
-        }}
-        isDarkMode={isDarkMode}
-      />
+      <ScrollView style={styles.plansContainer}>
+        {plansToDisplay.map((plan) => (
+          <View 
+            key={plan.id}
+            style={[
+              styles.subscriptionCard,
+              { 
+                backgroundColor: theme.card, 
+                borderColor: plan.recommended ? theme.primary : theme.border 
+              },
+              plan.recommended && styles.recommendedSubscription
+            ]}
+          >
+            {plan.recommended && (
+              <View style={[styles.recommendedBadge, { backgroundColor: theme.primary }]}>
+                <Text style={styles.recommendedText}>BEST VALUE</Text>
+              </View>
+            )}
+            <Text style={[styles.subscriptionName, { color: theme.text }]}>{plan.name}</Text>
+            <Text style={[styles.subscriptionPrice, { color: theme.primary }]}>
+              {typeof plan.price === 'string' 
+                ? plan.price 
+                : `₱${plan.price}/${typeof plan.duration === 'string' && plan.duration.toLowerCase().includes('yearly') ? 'year' : 'month'}`
+              }
+            </Text>
+            <Text style={[styles.subscriptionDuration, { color: theme.textSecondary }]}>{plan.duration}</Text>
+            
+            <View style={styles.paymentMethodIndicator}>
+              <FontAwesome5 name="money-bill-wave" size={14} color={theme.textSecondary} />
+              <Text style={[styles.paymentMethodText, { color: theme.textSecondary }]}>
+                Payment via GCash
+              </Text>
+            </View>
+            
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            
+            <View style={styles.featuresListContainer}>
+              <Text style={[styles.featuresListTitle, { color: theme.text }]}>Features:</Text>
+              {plan.features.map((feature, index) => (
+                <View key={index} style={styles.featureListItem}>
+                  <FontAwesome5 
+                    name="check-circle" 
+                    size={16} 
+                    color={theme.primary} 
+                    style={styles.featureIcon}
+                  />
+                  <Text style={[styles.featureListText, { color: theme.text }]}>{feature}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
     );
   };
 
@@ -166,5 +207,82 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 16,
     textAlign: 'center',
+  },
+  plansContainer: {
+    flex: 1,
+    padding: 20,
+  },
+  subscriptionCard: {
+    borderRadius: 10,
+    marginBottom: 20,
+    padding: 20,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  recommendedSubscription: {
+    borderWidth: 2,
+  },
+  recommendedBadge: {
+    position: 'absolute',
+    top: -12,
+    right: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  recommendedText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  subscriptionName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  subscriptionPrice: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  subscriptionDuration: {
+    fontSize: 14,
+    marginBottom: 15,
+  },
+  divider: {
+    height: 1,
+    marginVertical: 15,
+  },
+  featuresListContainer: {
+    marginTop: 5,
+    marginBottom: 15,
+  },
+  featuresListTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  featureListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  featureIcon: {
+    marginRight: 10,
+  },
+  featureListText: {
+    flex: 1,
+  },
+  paymentMethodIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  paymentMethodText: {
+    marginLeft: 8,
+    fontSize: 14,
   }
 }); 

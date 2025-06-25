@@ -1040,7 +1040,7 @@ export default function HomeScreen() {
       
       // Set ride status to requested
       setMyRideStatus({
-        status: 'requested',
+        status: 'waiting',
         destination: selectedDestination
       });
     } catch (error) {
