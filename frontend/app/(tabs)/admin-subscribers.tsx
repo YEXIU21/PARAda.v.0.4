@@ -275,24 +275,22 @@ export default function AdminSubscribersScreen() {
       </LinearGradient>
       
       <View style={styles.content}>
-        {/* Search and Filter Section - Only show for subscriptions tabs */}
-        {activeTab !== 'plans' && (
-          <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
-            <FontAwesome5 name="search" size={16} color={theme.textSecondary} style={styles.searchIcon} />
-            <TextInput
-              style={[styles.searchInput, { color: theme.text }]}
-              placeholder="Search by name, email or reference..."
-              placeholderTextColor={theme.textSecondary}
-              value={searchText}
-              onChangeText={setSearchText}
-            />
-            {searchText !== '' && (
-              <TouchableOpacity onPress={() => setSearchText('')}>
-                <FontAwesome5 name="times-circle" size={16} color={theme.textSecondary} />
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+        {/* Search and Filter Section */}
+        <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
+          <FontAwesome5 name="search" size={16} color={theme.textSecondary} style={styles.searchIcon} />
+          <TextInput
+            style={[styles.searchInput, { color: theme.text }]}
+            placeholder="Search by name, email or reference..."
+            placeholderTextColor={theme.textSecondary}
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+          {searchText !== '' && (
+            <TouchableOpacity onPress={() => setSearchText('')}>
+              <FontAwesome5 name="times-circle" size={16} color={theme.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
         
         {/* Tabs Section */}
         <View style={styles.header}>
