@@ -7,9 +7,9 @@ const http = require('http');
 /**
  * Pings the server at regular intervals to keep it alive
  * @param {string} url - The URL to ping (default: the server's own health endpoint)
- * @param {number} interval - The interval in milliseconds (default: 10 minutes)
+ * @param {number} interval - The interval in milliseconds (default: 14 minutes)
  */
-const setupKeepAlive = (url, interval = 10 * 60 * 1000) => {
+const setupKeepAlive = (url, interval = 14 * 60 * 1000) => {
   // Default to the server's own health endpoint if no URL is provided
   const pingUrl = url || (process.env.RENDER_EXTERNAL_URL ? 
     `${process.env.RENDER_EXTERNAL_URL}/health` : 
