@@ -299,6 +299,7 @@ exports.verifySubscription = async (subscriptionId, approved, adminId) => {
 exports.getPendingSubscriptions = async () => {
   try {
     // Find all subscriptions with pending status
+    // Explicitly exclude rejected subscriptions
     const pendingSubscriptions = await Subscription.find({
       'verification.status': 'pending',
       'verification.verified': false,
