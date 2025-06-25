@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { getSubscriptionPlans } from '../services/api/subscription.api';
-import { getAdminSubscriptionPlans } from '../services/api/admin.api';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
@@ -141,7 +140,7 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
         console.error('Error reading from AsyncStorage:', storageError);
       }
       
-      // Try to get plans from public API first as it's more likely to succeed
+      // Try to get plans from public API
       try {
         const publicPlans = await getSubscriptionPlans();
         const validPublicPlans = validateAndNormalizePlans(publicPlans);
@@ -160,38 +159,13 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
           setIsLoading(false);
           return; // Exit if we got plans from public API
         }
-        
-        // If public API didn't return valid plans, try admin API
-        try {
-          console.log('Public API did not return valid plans, trying admin API');
-          const adminPlans = await getAdminSubscriptionPlans();
-          const validAdminPlans = validateAndNormalizePlans(adminPlans);
-          
-          if (validAdminPlans.length > 0) {
-            console.log('Successfully fetched subscription plans from admin API:', validAdminPlans);
-            setSubscriptionPlans(validAdminPlans);
-            
-            // Cache the plans for offline use
-            try {
-              await AsyncStorage.setItem('subscriptionPlans', JSON.stringify(validAdminPlans));
-            } catch (cacheError) {
-              console.error('Error caching subscription plans:', cacheError);
-            }
-            
-            setIsLoading(false);
-            return; // Exit if we got plans from admin API
-          }
-        } catch (adminApiError) {
-          console.error('Error fetching from admin API:', adminApiError);
-          // Continue with default plans if admin API fails
-        }
       } catch (publicApiError) {
         console.error('Error fetching from public API:', publicApiError);
         // Continue with default plans if public API fails
       }
       
-      // If neither API returned valid plans, use default plans
-      console.log('Neither API returned valid plans, using default plans');
+      // If API didn't return valid plans, use default plans
+      console.log('API did not return valid plans, using default plans');
       setSubscriptionPlans(defaultSubscriptionPlans);
       
     } catch (err: any) {
