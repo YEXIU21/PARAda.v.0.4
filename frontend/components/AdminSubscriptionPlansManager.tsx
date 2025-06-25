@@ -53,6 +53,8 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null);
   const [formData, setFormData] = useState<SubscriptionPlan>({
     id: '',
     name: '',
@@ -225,50 +227,48 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     setModalVisible(true);
   };
 
-  const handleDeletePlan = async (planId: string) => {
-    // Use Alert.alert to confirm deletion
-    Alert.alert(
-      'Confirm Deletion',
-      'Are you sure you want to delete this subscription plan? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setIsLoading(true);
-              console.log(`Deleting plan with ID: ${planId}`);
-              
-              // Call the API to delete the plan
-              const result = await deleteSubscriptionPlan(planId);
-              console.log('Delete result:', result);
-              
-              // Refresh the plans list
-              await fetchSubscriptionPlans();
-              
-              // Show success message
-              Alert.alert(
-                'Success',
-                'Subscription plan deleted successfully',
-                [{ text: 'OK' }]
-              );
-            } catch (error: any) {
-              console.error('Error deleting plan:', error);
-              
-              // Show error message
-              Alert.alert(
-                'Error',
-                error.message || 'Failed to delete subscription plan',
-                [{ text: 'OK' }]
-              );
-            } finally {
-              setIsLoading(false);
-            }
-          }
-        }
-      ]
-    );
+  const handleDeletePlan = (planId: string) => {
+    // Set the plan ID to delete and show the confirmation modal
+    setPlanToDelete(planId);
+    setDeleteModalVisible(true);
+  };
+  
+  const confirmDeletePlan = async () => {
+    if (!planToDelete) return;
+    
+    try {
+      setIsLoading(true);
+      console.log(`Deleting plan with ID: ${planToDelete}`);
+      
+      // Call the API to delete the plan
+      const result = await deleteSubscriptionPlan(planToDelete);
+      console.log('Delete result:', result);
+      
+      // Refresh the plans list
+      await fetchSubscriptionPlans();
+      
+      // Close the modal
+      setDeleteModalVisible(false);
+      setPlanToDelete(null);
+      
+      // Show success message
+      Alert.alert(
+        'Success',
+        'Subscription plan deleted successfully',
+        [{ text: 'OK' }]
+      );
+    } catch (error: any) {
+      console.error('Error deleting plan:', error);
+      
+      // Show error message
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to delete subscription plan',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAddFeature = () => {
@@ -719,6 +719,52 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
           </View>
         </View>
       </Modal>
+      
+      {/* Delete Confirmation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={deleteModalVisible}
+        onRequestClose={() => setDeleteModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                Confirm Deletion
+              </Text>
+              <TouchableOpacity onPress={() => setDeleteModalVisible(false)}>
+                <FontAwesome5 name="times" size={20} color={theme.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.confirmDeleteContent}>
+              <FontAwesome5 name="exclamation-triangle" size={40} color={theme.warning} style={styles.warningIcon} />
+              <Text style={[styles.confirmDeleteText, { color: theme.text }]}>
+                Are you sure you want to delete this subscription plan?
+              </Text>
+              <Text style={[styles.confirmDeleteSubtext, { color: theme.textSecondary }]}>
+                This action cannot be undone.
+              </Text>
+            </View>
+            
+            <View style={styles.formActions}>
+              <TouchableOpacity
+                style={[styles.cancelButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                onPress={() => setDeleteModalVisible(false)}
+              >
+                <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.deleteConfirmButton, { backgroundColor: theme.error }]}
+                onPress={confirmDeletePlan}
+              >
+                <Text style={styles.deleteConfirmButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -1098,6 +1144,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 4,
+  },
+  confirmDeleteContent: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  warningIcon: {
+    marginBottom: 16,
+  },
+  confirmDeleteText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  confirmDeleteSubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  deleteConfirmButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  deleteConfirmButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });
 
