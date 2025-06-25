@@ -316,15 +316,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await axios.post(`${API_URL}/api/auth/register`, registrationData);
       
       if (response.status === 201 && response.data.user) {
-        // Before auto-login, ensure we mark this as a new registration
-        // to prevent any subscription data from being loaded
         console.log('Registration successful - setting up for new user login');
         
         // Set a flag to indicate this is a brand new registration
         await AsyncStorage.setItem('isNewRegistration', 'true');
         
         // Auto-login after registration
+        console.log('Attempting automatic login after registration');
         const loginSuccess = await login(email, password);
+        
+        if (loginSuccess) {
+          console.log('Automatic login successful');
+        } else {
+          console.error('Automatic login failed after successful registration');
+        }
         
         // After login completes, clear the flag
         await AsyncStorage.removeItem('isNewRegistration');
@@ -341,7 +346,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
         }
         
-        return loginSuccess;
+        return true; // Return true if registration was successful, even if auto-login failed
       }
       
       return false;

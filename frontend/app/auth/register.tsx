@@ -106,16 +106,21 @@ export default function RegisterScreen() {
       if (isStudent && isDiscountEnabled) {
         // Show discount information
         Alert.alert(
-          "Student Discount Applied!",
+          "Registration Successful!",
           `Your account has been created with a ${discountPercent}% student discount on all subscription plans. Enjoy your ride!`,
-            [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
+          [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
         );
-        } else {
-          router.replace('/(tabs)');
-        }
       } else {
-        setError('Registration failed. Please try again.');
+        // Show success alert for regular users
+        Alert.alert(
+          "Registration Successful!",
+          "Your account has been created successfully. Welcome to PARAda!",
+          [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
+        );
       }
+    } else {
+      setError('Registration failed. Please try again.');
+    }
     } catch (err) {
       console.error('Registration error:', err);
       if (axios.isAxiosError(err)) {
