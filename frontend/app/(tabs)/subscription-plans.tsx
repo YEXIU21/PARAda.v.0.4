@@ -4,8 +4,7 @@ import {
   Text, 
   StyleSheet,
   SafeAreaView,
-  TouchableOpacity,
-  Image
+  TouchableOpacity
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
@@ -24,25 +23,7 @@ export default function SubscriptionPlansScreen() {
         colors={theme.gradientColors as [string, string]}
         style={styles.header}
       >
-        <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.push('/admin')}
-          >
-            <FontAwesome5 name="arrow-left" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>Subscription Plans</Text>
-            <Text style={styles.headerSubtitle}>Manage subscription offerings</Text>
-          </View>
-          <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../assets/images/PARAda-Logo.png')} 
-              style={styles.logo} 
-              resizeMode="contain"
-            />
-          </View>
-        </View>
+        <Text style={styles.headerTitle}>Subscription Plans</Text>
       </LinearGradient>
       
       <View style={styles.content}>
@@ -60,6 +41,13 @@ export default function SubscriptionPlansScreen() {
           }} 
         />
       </View>
+      
+      <TouchableOpacity 
+        style={[styles.backButton, { backgroundColor: theme.primary }]}
+        onPress={() => router.push('/admin')}
+      >
+        <FontAwesome5 name="arrow-left" size={20} color="#FFFFFF" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -71,55 +59,28 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: 40,
     paddingBottom: 20,
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    width: '100%',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTextContainer: {
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 0,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: '#fff',
-    opacity: 0.9,
-  },
-  logoContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 40,
-    height: 40,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 3,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
-  logo: {
-    width: 34,
-    height: 34,
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
   },
   content: {
     flex: 1,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   }
 }); 
