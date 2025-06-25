@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { getSubscriptionPlans } from '../services/api/subscription.api';
+import { getAdminSubscriptionPlans } from '../services/api/admin.api';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
@@ -95,39 +96,84 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
       setIsLoading(true);
       setError(null);
       
-      // Try to get plans from API
+      // Try to get plans from admin API first (this will ensure we get the same plans as the admin sees)
       try {
-        const plans = await getSubscriptionPlans();
+        const adminPlans = await getAdminSubscriptionPlans();
         
         // Ensure plans is an array before trying to use it
-        if (plans && Array.isArray(plans) && plans.length > 0) {
-          console.log('Successfully fetched subscription plans from API:', plans);
+        if (adminPlans && Array.isArray(adminPlans) && adminPlans.length > 0) {
+          console.log('Successfully fetched subscription plans from admin API:', adminPlans);
           
           // Validate that each plan has the required fields
-          const validPlans = plans.filter(plan => 
+          const validPlans = adminPlans.filter(plan => 
             plan && 
             typeof plan === 'object' && 
             plan.id && 
             plan.name && 
-            typeof plan.price === 'number' && 
-            typeof plan.duration === 'number' && 
+            (typeof plan.price === 'number' || typeof plan.price === 'string') && 
+            (typeof plan.duration === 'number' || typeof plan.duration === 'string') && 
             Array.isArray(plan.features)
           );
           
           if (validPlans.length > 0) {
-            setSubscriptionPlans(validPlans);
-          } else {
-            console.log('API returned invalid plans, using default plans');
-            setSubscriptionPlans(defaultSubscriptionPlans);
+            // Convert string prices to numbers if needed
+            const normalizedPlans = validPlans.map(plan => ({
+              ...plan,
+              price: typeof plan.price === 'string' ? parseFloat(plan.price) : plan.price,
+              duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : plan.duration
+            }));
+            
+            setSubscriptionPlans(normalizedPlans);
+            
+            // Cache the plans for offline use
+            try {
+              await AsyncStorage.setItem('subscriptionPlans', JSON.stringify(normalizedPlans));
+            } catch (cacheError) {
+              console.error('Error caching subscription plans:', cacheError);
+            }
+            
+            return; // Exit early if we successfully got plans from admin API
           }
-        } else {
-          console.log('API returned empty or invalid plans, using default plans');
-          // If API returns empty array, use default plans
-          setSubscriptionPlans(defaultSubscriptionPlans);
         }
+        
+        // If admin API didn't return valid plans, fall back to public API
+        console.log('Admin API did not return valid plans, trying public API');
+        const publicPlans = await getSubscriptionPlans();
+        
+        if (publicPlans && Array.isArray(publicPlans) && publicPlans.length > 0) {
+          console.log('Successfully fetched subscription plans from public API:', publicPlans);
+          
+          // Validate that each plan has the required fields
+          const validPlans = publicPlans.filter(plan => 
+            plan && 
+            typeof plan === 'object' && 
+            plan.id && 
+            plan.name && 
+            (typeof plan.price === 'number' || typeof plan.price === 'string') && 
+            (typeof plan.duration === 'number' || typeof plan.duration === 'string') && 
+            Array.isArray(plan.features)
+          );
+          
+          if (validPlans.length > 0) {
+            // Convert string prices to numbers if needed
+            const normalizedPlans = validPlans.map(plan => ({
+              ...plan,
+              price: typeof plan.price === 'string' ? parseFloat(plan.price) : plan.price,
+              duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : plan.duration
+            }));
+            
+            setSubscriptionPlans(normalizedPlans);
+            return; // Exit if we got plans from public API
+          }
+        }
+        
+        // If neither API returned valid plans, use default plans
+        console.log('Neither API returned valid plans, using default plans');
+        setSubscriptionPlans(defaultSubscriptionPlans);
+        
       } catch (apiError) {
-        console.error('Error fetching from API, using default plans:', apiError);
-        // If API call fails, use default plans
+        console.error('Error fetching from APIs, using default plans:', apiError);
+        // If API calls fail, use default plans
         setSubscriptionPlans(defaultSubscriptionPlans);
         
         // Try to get cached plans from AsyncStorage
