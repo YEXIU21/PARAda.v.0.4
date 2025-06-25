@@ -22,6 +22,9 @@ import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { getUsers, sendMessageToPassenger } from '../../services/api/admin.api';
 import { sendDirectMessage } from '../../services/api/chat.api';
 import { useFocusEffect } from '@react-navigation/native';
+import axios from 'axios';
+import { BASE_URL } from '../../services/api/endpoints';
+import { getAuthToken } from '../../services/api/auth.api';
 
 // Define UserRole type
 type UserRole = 'admin' | 'driver' | 'passenger';
@@ -47,6 +50,7 @@ export default function UserManagementScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [messageText, setMessageText] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -114,23 +118,35 @@ export default function UserManagementScreen() {
   });
   
   const handleDeleteUser = (userId: string) => {
-    Alert.alert(
-      'Delete User',
-      'Are you sure you want to delete this user?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: async () => {
-            // TODO: Implement API call to delete user
-            // For now, just update the local state
-            setUsers(users.filter(user => user._id !== userId));
-            Alert.alert('Success', 'User has been deleted successfully');
-          }
+    // Find the user to delete
+    const userToDelete = users.find(user => user._id === userId);
+    if (userToDelete) {
+      setSelectedUser(userToDelete);
+      setShowDeleteModal(true);
+    }
+  };
+  
+  const confirmDeleteUser = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      const token = await getAuthToken();
+      const response = await axios.delete(`${BASE_URL}/api/users/${selectedUser._id}`, {
+        headers: {
+          'x-access-token': token
         }
-      ]
-    );
+      });
+      
+      if (response.status === 200) {
+        setUsers(users.filter(user => user._id !== selectedUser._id));
+        setShowDeleteModal(false);
+        setSelectedUser(null);
+        Alert.alert('Success', 'User has been deleted successfully');
+      }
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      Alert.alert('Error', 'Failed to delete user. Please try again.');
+    }
   };
   
   const handleVerifyUser = (userId: string) => {
@@ -142,15 +158,27 @@ export default function UserManagementScreen() {
     Alert.alert('Success', 'User has been verified');
   };
   
-  const handleChangeRole = (userId: string, newRole: UserRole) => {
-    // TODO: Implement API call to change user role
-    // For now, just update the local state
-    setUsers(users.map(user => 
-      user._id === userId ? { ...user, role: newRole } : user
-    ));
-    setShowRoleModal(false);
-    setSelectedUser(null);
-    Alert.alert('Success', `User role has been changed to ${newRole}`);
+  const handleChangeRole = async (userId: string, newRole: UserRole) => {
+    try {
+      const token = await getAuthToken();
+      const response = await axios.put(`${BASE_URL}/api/users/${userId}/role`, { role: newRole }, {
+        headers: {
+          'x-access-token': token
+        }
+      });
+      
+      if (response.status === 200) {
+        setUsers(users.map(user => 
+          user._id === userId ? { ...user, role: newRole } : user
+        ));
+        setShowRoleModal(false);
+        setSelectedUser(null);
+        Alert.alert('Success', `User role has been changed to ${newRole}`);
+      }
+    } catch (err) {
+      console.error('Error changing user role:', err);
+      Alert.alert('Error', 'Failed to change user role. Please try again.');
+    }
   };
   
   const handleSendMessage = async () => {
@@ -479,6 +507,61 @@ export default function UserManagementScreen() {
     </View>
   );
   
+  // Render delete confirmation modal
+  const renderDeleteModal = () => (
+    <Modal
+      visible={showDeleteModal}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={() => setShowDeleteModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+          <Text style={[styles.modalTitle, { color: theme.text }]}>Delete User</Text>
+          
+          {selectedUser && (
+            <View style={styles.deleteConfirmContent}>
+              <Text style={[styles.deleteConfirmText, { color: theme.text }]}>
+                Are you sure you want to delete the user:
+              </Text>
+              
+              <View style={styles.userInfoContainer}>
+                <Text style={[styles.userName, { color: theme.text }]}>{selectedUser.username}</Text>
+                <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{selectedUser.email}</Text>
+                <View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(selectedUser.role) }]}>
+                  <Text style={styles.roleBadgeText}>{selectedUser.role}</Text>
+                </View>
+              </View>
+              
+              <Text style={[styles.deleteWarning, { color: theme.error }]}>
+                This action cannot be undone. All user data will be permanently deleted.
+              </Text>
+            </View>
+          )}
+          
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.cancelButton, { borderColor: theme.border }]}
+              onPress={() => {
+                setShowDeleteModal(false);
+                setSelectedUser(null);
+              }}
+            >
+              <Text style={[styles.buttonText, { color: theme.text }]}>Cancel</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.modalButton, styles.deleteButton, { backgroundColor: theme.error }]}
+              onPress={confirmDeleteUser}
+            >
+              <Text style={[styles.buttonText, { color: '#fff' }]}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+  
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <LinearGradient
@@ -651,6 +734,7 @@ export default function UserManagementScreen() {
       </Modal>
       
       {renderMessageModal()}
+      {renderDeleteModal()}
     </SafeAreaView>
   );
 }
@@ -881,10 +965,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   cancelButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   cancelButtonText: {
     color: '#555',
@@ -980,5 +1061,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
-  }
+  },
+  deleteConfirmContent: {
+    marginBottom: 20,
+  },
+  deleteConfirmText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  userInfoContainer: {
+    marginBottom: 8,
+  },
+  deleteWarning: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 120,
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
+  buttonText: {
+    fontWeight: '500',
+  },
+  deleteButton: {
+    backgroundColor: '#FF3B30',
+    borderColor: '#FF3B30',
+  },
 }); 

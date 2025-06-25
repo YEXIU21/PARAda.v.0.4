@@ -110,4 +110,21 @@ router.put(
   userController.changePassword
 );
 
+/**
+ * @route PUT /api/users/:userId/role
+ * @desc Change user role (admin only)
+ * @access Private/Admin
+ */
+router.put(
+  '/:userId/role',
+  [
+    authMiddleware.verifyToken,
+    authMiddleware.isAdmin,
+    body('role')
+      .isIn(['admin', 'driver', 'passenger'])
+      .withMessage('Invalid role')
+  ],
+  userController.changeUserRole
+);
+
 module.exports = router; 

@@ -309,4 +309,55 @@ exports.changePassword = async (req, res) => {
       error: error.message
     });
   }
+};
+
+/**
+ * Change user role (admin only)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} - Response with success message or error
+ */
+exports.changeUserRole = async (req, res) => {
+  try {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        message: 'Validation error', 
+        errors: errors.array() 
+      });
+    }
+    
+    const { userId } = req.params;
+    const { role } = req.body;
+    
+    // Find user
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+    
+    // Update role
+    user.role = role;
+    await user.save();
+    
+    return res.status(200).json({
+      message: 'User role updated successfully',
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Error changing user role:', error);
+    return res.status(500).json({
+      message: 'Error changing user role',
+      error: error.message
+    });
+  }
 }; 
