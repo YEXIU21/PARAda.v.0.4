@@ -43,7 +43,7 @@ interface Subscription {
   };
 }
 
-export default function AdminSubscribersScreen() {
+export default function SubscribersManagementScreen() {
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
   
@@ -209,14 +209,16 @@ export default function AdminSubscribersScreen() {
   };
 
   // Filter subscriptions based on search text
-  const filteredSubscriptions = subscriptions.filter(subscription => {
+  const filteredSubscriptions = subscriptions.filter((subscription) => {
+    if (!searchText) return true;
+    
+    const searchLower = searchText.toLowerCase();
     const username = subscription.userId?.username?.toLowerCase() || '';
     const email = subscription.userId?.email?.toLowerCase() || '';
     const reference = subscription.paymentDetails?.referenceNumber?.toLowerCase() || '';
-    const searchLower = searchText.toLowerCase();
     
-    return username.includes(searchLower) || 
-           email.includes(searchLower) || 
+    return username.includes(searchLower) ||
+           email.includes(searchLower) ||
            reference.includes(searchLower);
   });
 
@@ -227,7 +229,7 @@ export default function AdminSubscribersScreen() {
           colors={theme.gradientColors as [string, string]}
           style={styles.headerGradient}
         >
-          <Text style={styles.headerTitle}>Subscription Management</Text>
+          <Text style={styles.headerTitle}>Subscribers Management</Text>
         </LinearGradient>
         
         <View style={styles.content}>
@@ -247,7 +249,7 @@ export default function AdminSubscribersScreen() {
           colors={theme.gradientColors as [string, string]}
           style={styles.headerGradient}
         >
-          <Text style={styles.headerTitle}>Subscription Management</Text>
+          <Text style={styles.headerTitle}>Subscribers Management</Text>
         </LinearGradient>
         
         <View style={styles.content}>
@@ -272,7 +274,7 @@ export default function AdminSubscribersScreen() {
         colors={theme.gradientColors as [string, string]}
         style={styles.headerGradient}
       >
-        <Text style={styles.headerTitle}>Subscription Management</Text>
+        <Text style={styles.headerTitle}>Subscribers Management</Text>
       </LinearGradient>
       
       <View style={styles.content}>
