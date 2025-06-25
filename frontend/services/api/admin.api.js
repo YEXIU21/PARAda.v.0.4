@@ -578,8 +578,24 @@ export const createSubscriptionPlan = async (planData) => {
   try {
     console.log('Creating subscription plan with data:', planData);
     
-    // Use the apiRequest helper to ensure consistent URL handling
-    const response = await apiRequest('POST', '/api/admin/subscription-plans', planData);
+    // Get token directly
+    const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+    
+    // Use direct axios call with explicit URL
+    const url = `${BASE_URL}/api/admin/subscription-plans`;
+    console.log('Using URL for create:', url);
+    
+    const response = await axios({
+      method: 'POST',
+      url: url,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-access-token': token 
+      },
+      data: planData
+    });
     
     console.log('Create plan response:', response.data);
     return response.data.plan;
@@ -610,8 +626,24 @@ export const updateSubscriptionPlan = async (planId, planData) => {
   try {
     console.log(`Updating subscription plan ${planId} with data:`, planData);
     
-    // Use the apiRequest helper to ensure consistent URL handling
-    const response = await apiRequest('PUT', `/api/admin/subscription-plans/${planId}`, planData);
+    // Get token directly
+    const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+    
+    // Use direct axios call with explicit URL
+    const url = `${BASE_URL}/api/admin/subscription-plans/${planId}`;
+    console.log('Using URL:', url);
+    
+    const response = await axios({
+      method: 'PUT',
+      url: url,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-access-token': token 
+      },
+      data: planData
+    });
     
     console.log('Update plan response:', response.data);
     return response.data.plan;
@@ -641,8 +673,23 @@ export const deleteSubscriptionPlan = async (planId) => {
   try {
     console.log(`Deleting subscription plan: ${planId}`);
     
-    // Use the apiRequest helper to ensure consistent URL handling
-    const response = await apiRequest('DELETE', `/api/admin/subscription-plans/${planId}`);
+    // Get token directly
+    const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+    
+    // Use direct axios call with explicit URL
+    const url = `${BASE_URL}/api/admin/subscription-plans/${planId}`;
+    console.log('Using URL for delete:', url);
+    
+    const response = await axios({
+      method: 'DELETE',
+      url: url,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-access-token': token 
+      }
+    });
     
     console.log('Delete plan response:', response.data);
     return response.data;
