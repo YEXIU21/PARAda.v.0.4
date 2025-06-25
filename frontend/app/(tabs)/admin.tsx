@@ -374,7 +374,8 @@ export default function AdminScreen() {
   const handleFunctionPress = (id) => {
     // Handle function press based on ID
     if (id === 'subscriptions') {
-      setShowSubscriptionModal(true);
+      // Navigate to subscription plans management screen
+      router.push('/(tabs)/admin-subscribers');
     } else if (id === 'notifications') {
       // Navigate to notifications screen
       router.push('/(tabs)/notifications');
