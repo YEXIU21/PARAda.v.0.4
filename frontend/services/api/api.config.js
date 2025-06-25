@@ -3,6 +3,8 @@
  * Central configuration for API calls
  */
 import ENV from '../../constants/environment';
+import axios from 'axios';
+import { getAuthToken } from './auth.api';
 
 // The base URL for all API calls - ensure it's a valid URL without trailing slash
 export const BASE_URL = (() => {
@@ -35,6 +37,37 @@ export const AXIOS_CONFIG = {
   timeout: 10000, // 10 seconds timeout
   withCredentials: false, // Don't send cookies with cross-origin requests
   headers: DEFAULT_HEADERS
+};
+
+/**
+ * Make an API request with authentication
+ * @param {string} method - HTTP method (GET, POST, PUT, DELETE)
+ * @param {string} endpoint - API endpoint (should start with a slash)
+ * @param {Object} data - Request data (for POST, PUT)
+ * @returns {Promise<Object>} - API response
+ */
+export const apiRequest = async (method, endpoint, data = null) => {
+  try {
+    const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+    
+    const url = `${BASE_URL}${endpoint}`;
+    
+    const config = {
+      method,
+      url,
+      headers: { 
+        ...DEFAULT_HEADERS,
+        'x-access-token': token 
+      },
+      ...(data && { data })
+    };
+    
+    return await axios(config);
+  } catch (error) {
+    console.error(`API request error (${method} ${endpoint}):`, error);
+    throw error;
+  }
 };
 
 // API endpoints - ensure all paths start with a slash
@@ -83,6 +116,7 @@ export const ENDPOINTS = {
     USERS: '/api/admin/users',
     DRIVERS: '/api/admin/drivers',
     ROUTES: '/api/admin/routes',
-    STATISTICS: '/api/admin/statistics'
+    STATISTICS: '/api/admin/statistics',
+    STUDENT_DISCOUNT: '/api/admin/student-discount'
   }
 }; 
