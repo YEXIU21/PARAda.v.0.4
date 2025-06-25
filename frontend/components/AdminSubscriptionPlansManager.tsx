@@ -190,8 +190,14 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
   const handleCreatePlan = () => {
     setIsCreatingPlan(true);
     setEditingPlan(null);
+    
+    // Generate a unique ID for the new plan
+    const timestamp = new Date().getTime();
+    const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const uniqueId = `plan_${timestamp}_${randomSuffix}`;
+    
     setFormData({
-      id: '',
+      id: uniqueId,
       name: '',
       price: 0,
       duration: 30,
@@ -201,37 +207,68 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
   };
 
   const handleEditPlan = (plan: SubscriptionPlan) => {
+    console.log('Editing plan:', plan);
     setIsCreatingPlan(false);
     setEditingPlan(plan);
-    setFormData({ ...plan });
+    
+    // Make a deep copy of the plan to avoid reference issues
+    const planCopy = {
+      id: plan.id || '',
+      name: plan.name || '',
+      price: typeof plan.price === 'number' ? plan.price : 0,
+      duration: typeof plan.duration === 'number' ? plan.duration : 30,
+      features: Array.isArray(plan.features) ? [...plan.features] : [],
+      recommended: Boolean(plan.recommended)
+    };
+    
+    setFormData(planCopy);
     setModalVisible(true);
   };
 
   const handleDeletePlan = async (planId: string) => {
-    try {
-      Alert.alert(
-        'Confirm Deletion',
-        'Are you sure you want to delete this subscription plan? This action cannot be undone.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async () => {
+    // Use Alert.alert to confirm deletion
+    Alert.alert(
+      'Confirm Deletion',
+      'Are you sure you want to delete this subscription plan? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
               setIsLoading(true);
-              await deleteSubscriptionPlan(planId);
+              console.log(`Deleting plan with ID: ${planId}`);
+              
+              // Call the API to delete the plan
+              const result = await deleteSubscriptionPlan(planId);
+              console.log('Delete result:', result);
+              
+              // Refresh the plans list
               await fetchSubscriptionPlans();
-              Alert.alert('Success', 'Subscription plan deleted successfully');
+              
+              // Show success message
+              Alert.alert(
+                'Success',
+                'Subscription plan deleted successfully',
+                [{ text: 'OK' }]
+              );
+            } catch (error: any) {
+              console.error('Error deleting plan:', error);
+              
+              // Show error message
+              Alert.alert(
+                'Error',
+                error.message || 'Failed to delete subscription plan',
+                [{ text: 'OK' }]
+              );
+            } finally {
+              setIsLoading(false);
             }
           }
-        ]
-      );
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete subscription plan');
-      Alert.alert('Error', 'Failed to delete subscription plan');
-    } finally {
-      setIsLoading(false);
-    }
+        }
+      ]
+    );
   };
 
   const handleAddFeature = () => {
@@ -256,25 +293,75 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     try {
       // Validate form data
       if (!formData.id || !formData.name || formData.price <= 0 || formData.duration <= 0) {
-        Alert.alert('Validation Error', 'Please fill in all required fields');
+        Alert.alert(
+          'Validation Error',
+          'Please fill in all required fields with valid values',
+          [{ text: 'OK' }]
+        );
         return;
       }
 
-      setIsLoading(true);
-      
-      if (isCreatingPlan) {
-        await createSubscriptionPlan(formData);
-        Alert.alert('Success', 'Subscription plan created successfully');
-      } else {
-        await updateSubscriptionPlan(formData.id, formData);
-        Alert.alert('Success', 'Subscription plan updated successfully');
+      // Ensure features is an array
+      if (!Array.isArray(formData.features)) {
+        formData.features = [];
       }
+
+      setIsLoading(true);
+      console.log(`${isCreatingPlan ? 'Creating' : 'Updating'} subscription plan:`, formData);
       
-      await fetchSubscriptionPlans();
-      setModalVisible(false);
+      try {
+        if (isCreatingPlan) {
+          // Create new plan
+          const result = await createSubscriptionPlan(formData);
+          console.log('Create result:', result);
+          
+          Alert.alert(
+            'Success',
+            'Subscription plan created successfully',
+            [{ text: 'OK' }]
+          );
+        } else {
+          // Update existing plan
+          const result = await updateSubscriptionPlan(formData.id, formData);
+          console.log('Update result:', result);
+          
+          Alert.alert(
+            'Success',
+            'Subscription plan updated successfully',
+            [{ text: 'OK' }]
+          );
+        }
+        
+        // Refresh the plans list
+        await fetchSubscriptionPlans();
+        
+        // Close the modal
+        setModalVisible(false);
+      } catch (apiError: any) {
+        console.error('API error:', apiError);
+        
+        let errorMessage = 'Failed to save subscription plan';
+        if (apiError.response && apiError.response.data && apiError.response.data.message) {
+          errorMessage = apiError.response.data.message;
+        } else if (apiError.message) {
+          errorMessage = apiError.message;
+        }
+        
+        Alert.alert(
+          'Error',
+          errorMessage,
+          [{ text: 'OK' }]
+        );
+      }
     } catch (err: any) {
+      console.error('Error in handleSave:', err);
       setError(err.message || 'Failed to save subscription plan');
-      Alert.alert('Error', 'Failed to save subscription plan');
+      
+      Alert.alert(
+        'Error',
+        err.message || 'Failed to save subscription plan',
+        [{ text: 'OK' }]
+      );
     } finally {
       setIsLoading(false);
     }
