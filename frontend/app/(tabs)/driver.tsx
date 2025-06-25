@@ -1293,6 +1293,21 @@ export default function DriverScreen() {
                         AsyncStorage.setItem('driverRoutes', JSON.stringify(updatedRoutes))
                           .then(() => {
                             console.log('Route status updated in AsyncStorage');
+                            
+                            // If we have a socket connection, notify about trip start
+                            import('../../services/socket/location.socket')
+                              .then(locationSocketModule => {
+                                if (driverId) {
+                                  locationSocketModule.sendTripUpdate({
+                                    driverId,
+                                    routeId: selectedRouteDetails.routeNumber,
+                                    status: 'in_progress',
+                                    location: userLocation
+                                  });
+                                }
+                              })
+                              .catch(err => console.error('Error importing location socket module:', err));
+                            
                             // Close the modal
                             setShowRouteDetailsModal(false);
                             setSelectedRouteDetails(null);
@@ -1332,6 +1347,21 @@ export default function DriverScreen() {
                         AsyncStorage.setItem('driverRoutes', JSON.stringify(updatedRoutes))
                           .then(() => {
                             console.log('Route status updated in AsyncStorage');
+                            
+                            // If we have a socket connection, notify about route completion
+                            import('../../services/socket/location.socket')
+                              .then(locationSocketModule => {
+                                if (driverId) {
+                                  locationSocketModule.sendTripUpdate({
+                                    driverId,
+                                    routeId: selectedRouteDetails.routeNumber,
+                                    status: 'completed',
+                                    location: userLocation
+                                  });
+                                }
+                              })
+                              .catch(err => console.error('Error importing location socket module:', err));
+                            
                             // Close the modal
                             setShowRouteDetailsModal(false);
                             setSelectedRouteDetails(null);
@@ -1816,7 +1846,12 @@ export default function DriverScreen() {
                                   // If we have a socket connection, notify about trip start
                                   const locationSocketModule = await import('../../services/socket/location.socket');
                                   if (driverId) {
-                                    locationSocketModule.sendDriverLocation(driverId, userLocation || { latitude: 0, longitude: 0 }, route.routeNumber);
+                                    locationSocketModule.sendTripUpdate({
+                                      driverId,
+                                      routeId: route.routeNumber,
+                                      status: 'in_progress',
+                                      location: userLocation
+                                    });
                                     
                                     // Also update via API to ensure trip status is recorded
                                     try {

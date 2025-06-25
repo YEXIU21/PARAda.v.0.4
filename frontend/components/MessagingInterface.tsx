@@ -512,17 +512,16 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
     );
   };
   
-  // Format date to readable format
+  // Format date string for display
   const formatDate = (dateString: string) => {
     try {
-      const date = new Date(dateString);
-      return formatDistanceToNow(date, { addSuffix: true });
-    } catch (err) {
-      return dateString;
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (error) {
+      return 'Unknown date';
     }
   };
   
-  // Calculate time until message expires
+  // Calculate time remaining until message expires
   const getExpiryTimeRemaining = (createdAt: string, expiresInDays: number = 1) => {
     const createdDate = new Date(createdAt);
     const expiryDate = new Date(createdDate);
@@ -574,6 +573,23 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
       
       // Use socket to send the reply
       const socket = getSocket();
+      
+      // Check if socket exists and is connected
+      if (!socket) {
+        console.error('Socket not initialized for sending reply');
+        queueReplyForLater(replyData);
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!socket.connected) {
+        console.error('Socket exists but not connected for sending reply');
+        queueReplyForLater(replyData);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Socket is connected, proceed with sending
       if (socket && socket.connected) {
         // Emit the event with acknowledgment callback
         const eventName = user?.role === 'driver' ? 'driver_reply' : 'passenger_reply';
@@ -581,12 +597,16 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
         try {
           // Use a promise to handle the socket emit with callback
           await new Promise((resolve, reject) => {
+            console.log(`Emitting ${eventName} event with data:`, replyData);
+            
             socket.emit(eventName, replyData, (response) => {
+              console.log(`Received response for ${eventName}:`, response);
               if (response && response.success) {
                 console.log(`Reply sent successfully via socket (${eventName})`);
                 resolve(response);
               } else {
-                reject(new Error('Failed to send reply'));
+                console.error('Server returned error:', response);
+                reject(new Error(response?.message || 'Failed to send reply'));
               }
             });
             
@@ -616,97 +636,16 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
         } catch (socketError) {
           console.error('Socket error when sending reply:', socketError);
           
-          // Store the reply locally to be sent when socket reconnects
-          try {
-            const pendingReplies = await AsyncStorage.getItem('pendingReplies');
-            let replies = pendingReplies ? JSON.parse(pendingReplies) : [];
-            
-            // Add this reply to the pending list
-            replies.push({
-              ...replyData,
-              timestamp: new Date().toISOString(),
-              eventName
-            });
-            
-            // Save back to AsyncStorage
-            await AsyncStorage.setItem('pendingReplies', JSON.stringify(replies));
-            
-            // Show detailed message to user
-            Alert.alert(
-              'Reply Queued',
-              `You appear to be offline. Your reply will be sent when you reconnect.\n\nQueued Message: "${replyText.substring(0, 50)}${replyText.length > 50 ? '...' : ''}"`,
-              [
-                { 
-                  text: 'OK', 
-                  onPress: () => {
-                    // Reset state
-                    setReplyText('');
-                    setShowReplyModal(false);
-                    setSelectedMessage(null);
-                  } 
-                }
-              ]
-            );
-          } catch (storageError) {
-            console.error('Error storing pending reply:', storageError);
-            
-            Alert.alert(
-              'Error',
-              'Failed to send or store reply. Please try again later.',
-              [{ text: 'OK' }]
-            );
-          }
+          // Store the reply for later sending
+          queueReplyForLater(replyData);
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       } else {
         // Socket not connected
         console.error('Socket not connected for sending reply');
         
-        // Store the reply locally to be sent when socket reconnects
-        try {
-          const pendingReplies = await AsyncStorage.getItem('pendingReplies');
-          let replies = pendingReplies ? JSON.parse(pendingReplies) : [];
-          
-          // Determine event name based on user role
-          const eventName = user?.role === 'driver' ? 'driver_reply' : 'passenger_reply';
-          
-          // Add this reply to the pending list
-          replies.push({
-            ...replyData,
-            timestamp: new Date().toISOString(),
-            eventName
-          });
-          
-          // Save back to AsyncStorage
-          await AsyncStorage.setItem('pendingReplies', JSON.stringify(replies));
-          
-          // Show detailed message to user
-          Alert.alert(
-            'Reply Queued',
-            `You appear to be offline. Your reply will be sent when you reconnect.\n\nQueued Message: "${replyText.substring(0, 50)}${replyText.length > 50 ? '...' : ''}"`,
-            [
-              { 
-                text: 'OK', 
-                onPress: () => {
-                  // Reset state
-                  setReplyText('');
-                  setShowReplyModal(false);
-                  setSelectedMessage(null);
-                } 
-              }
-            ]
-          );
-        } catch (storageError) {
-          console.error('Error storing pending reply:', storageError);
-          
-          Alert.alert(
-            'Error',
-            'Failed to send or store reply. Please try again later.',
-            [{ text: 'OK' }]
-          );
-        }
-        
+        // Store the reply for later sending
+        queueReplyForLater(replyData);
         setIsLoading(false);
       }
     } catch (error) {
@@ -720,6 +659,52 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
       );
       
       setIsLoading(false);
+    }
+  };
+  
+  // Queue a reply for later sending when socket reconnects
+  const queueReplyForLater = async (replyData: any) => {
+    try {
+      const pendingReplies = await AsyncStorage.getItem('pendingReplies');
+      let replies = pendingReplies ? JSON.parse(pendingReplies) : [];
+      
+      // Determine event name based on user role
+      const eventName = user?.role === 'driver' ? 'driver_reply' : 'passenger_reply';
+      
+      // Add this reply to the pending list
+      replies.push({
+        ...replyData,
+        timestamp: new Date().toISOString(),
+        eventName
+      });
+      
+      // Save back to AsyncStorage
+      await AsyncStorage.setItem('pendingReplies', JSON.stringify(replies));
+      
+      // Show detailed message to user
+      Alert.alert(
+        'Reply Queued',
+        `You appear to be offline. Your reply will be sent when you reconnect.\n\nQueued Message: "${replyText.substring(0, 50)}${replyText.length > 50 ? '...' : ''}"`,
+        [
+          { 
+            text: 'OK', 
+            onPress: () => {
+              // Reset state
+              setReplyText('');
+              setShowReplyModal(false);
+              setSelectedMessage(null);
+            } 
+          }
+        ]
+      );
+    } catch (storageError) {
+      console.error('Error storing pending reply:', storageError);
+      
+      Alert.alert(
+        'Error',
+        'Failed to store reply for later sending. Please try again.',
+        [{ text: 'OK' }]
+      );
     }
   };
   

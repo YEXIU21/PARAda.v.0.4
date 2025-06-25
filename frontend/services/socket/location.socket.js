@@ -469,6 +469,54 @@ export const sendPassengerLocation = async (location, passengerId, rideId = null
 };
 
 /**
+ * Send trip update
+ * @param {Object} data - Trip update data
+ * @param {string} data.driverId - Driver ID
+ * @param {string} data.routeId - Route ID
+ * @param {string} data.status - Trip status
+ * @param {Object|null} data.location - Location coordinates or null
+ * @returns {Promise<boolean>} - Success indicator
+ */
+export const sendTripUpdate = async (data) => {
+  const payload = {
+    ...data,
+    timestamp: new Date().toISOString()
+  };
+  
+  let sent = false;
+  
+  // Try to send via socket if available
+  if (socket && socket.connected) {
+    socket.emit('trip_update', payload);
+    sent = true;
+    console.log('Sent trip update via socket:', payload);
+  } else {
+    // Try to ensure socket is initialized
+    const isReady = await ensureSocketInitialized('trip_update', payload);
+    
+    if (isReady && socket && socket.connected) {
+      socket.emit('trip_update', payload);
+      sent = true;
+      console.log('Sent trip update via socket (after init):', payload);
+    } else {
+      console.log('Socket not available for trip update, using HTTP fallback');
+      
+      // Use HTTP fallback
+      const success = await sendLocationViaHttp(`/api/drivers/${data.driverId}/trip`, payload);
+      if (success) {
+        sent = true;
+        console.log('Sent trip update via HTTP fallback');
+      } else {
+        console.log('Failed to send trip update via HTTP, queuing for later');
+        messageQueue.push({ event: 'trip_update', data: payload });
+      }
+    }
+  }
+  
+  return sent;
+};
+
+/**
  * Get driver location by ID
  * @param {string} driverId - Driver ID
  * @returns {Object|null} - Driver location or null if not found
