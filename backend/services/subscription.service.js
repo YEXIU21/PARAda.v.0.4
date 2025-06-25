@@ -5,12 +5,13 @@
 const Subscription = require('../models/subscription.model');
 const User = require('../models/user.model');
 const NotificationService = require('./notification.service');
+const SubscriptionPlan = require('../models/subscription-plan.model');
 
-// Subscription plans
-const subscriptionPlans = [
-      { 
-        id: 'basic', 
-        name: 'Basic', 
+// Initial subscription plans - will be replaced by database plans
+let subscriptionPlans = [
+  { 
+    id: 'basic', 
+    name: 'Basic', 
     price: 99,
     duration: 30, // days
     features: [
@@ -18,10 +19,10 @@ const subscriptionPlans = [
       'Route planning',
       'Ride history'
     ]
-      },
-      { 
-        id: 'premium', 
-        name: 'Premium', 
+  },
+  { 
+    id: 'premium', 
+    name: 'Premium', 
     price: 199,
     duration: 30, // days
     features: [
@@ -31,11 +32,11 @@ const subscriptionPlans = [
       'Priority support',
       'Ad-free experience'
     ],
-        recommended: true
-      },
-      { 
-        id: 'annual', 
-        name: 'Annual', 
+    recommended: true
+  },
+  { 
+    id: 'annual', 
+    name: 'Annual', 
     price: 999,
     duration: 365, // days
     features: [
@@ -44,26 +45,128 @@ const subscriptionPlans = [
       'Schedule alarms',
       'Trip history'
     ]
-  },
-  {
-    id: 'student',
-    name: 'Student',
-    price: 49,
-    duration: 30, // days
-    features: [
-      'Real-time tracking',
-      'Route planning',
-      'Ride history',
-      'Student discount'
-    ]
-      }
-    ];
+  }
+];
+
+// Student discount percentage
+const STUDENT_DISCOUNT_PERCENT = 20;
+
+/**
+ * Refresh subscription plans from database
+ * @returns {Promise<Array>} - Updated subscription plans
+ */
+exports.refreshSubscriptionPlans = async () => {
+  try {
+    // Fetch plans from database
+    const dbPlans = await SubscriptionPlan.find().sort({ price: 1 });
+    
+    if (dbPlans && dbPlans.length > 0) {
+      // Convert database plans to service format
+      subscriptionPlans = dbPlans.map(plan => ({
+        id: plan.planId,
+        name: plan.name,
+        price: plan.price,
+        duration: plan.duration,
+        features: plan.features,
+        recommended: plan.recommended
+      }));
+      
+      console.log(`Refreshed ${subscriptionPlans.length} subscription plans from database`);
+    } else {
+      // If no plans in database, initialize database with default plans
+      console.log('No subscription plans found in database, initializing with defaults...');
+      
+      // Create default plans in database
+      const defaultPlans = [
+        {
+          planId: 'basic',
+          name: 'Basic',
+          price: 99,
+          duration: 30,
+          features: [
+            'Real-time tracking',
+            'Route planning',
+            'Ride history'
+          ]
+        },
+        {
+          planId: 'premium',
+          name: 'Premium',
+          price: 199,
+          duration: 30,
+          features: [
+            'Real-time tracking',
+            'Route planning',
+            'Ride history',
+            'Priority support',
+            'Ad-free experience'
+          ],
+          recommended: true
+        },
+        {
+          planId: 'annual',
+          name: 'Annual',
+          price: 999,
+          duration: 365,
+          features: [
+            'All Premium features',
+            '24/7 support',
+            'Schedule alarms',
+            'Trip history'
+          ]
+        }
+      ];
+      
+      // Save default plans to database
+      await Promise.all(defaultPlans.map(async (plan) => {
+        const newPlan = new SubscriptionPlan(plan);
+        await newPlan.save();
+      }));
+      
+      console.log('Default subscription plans created in database');
+    }
+    
+    return subscriptionPlans;
+  } catch (error) {
+    console.error('Error refreshing subscription plans:', error);
+    return subscriptionPlans; // Return current plans if refresh fails
+  }
+};
+
+/**
+ * Get count of active subscriptions by plan ID
+ * @param {string} planId - Plan ID
+ * @returns {Promise<number>} - Count of active subscriptions
+ */
+exports.getActiveSubscriptionsByPlanId = async (planId) => {
+  try {
+    const now = new Date();
+    const count = await Subscription.countDocuments({
+      planId,
+      isActive: true,
+      'verification.verified': true,
+      expiryDate: { $gt: now }
+    });
+    
+    return count;
+  } catch (error) {
+    console.error('Error counting active subscriptions by plan ID:', error);
+    throw error;
+  }
+};
 
 /**
  * Get all subscription plans
  * @returns {Array} - List of subscription plans
  */
-exports.getSubscriptionPlans = () => {
+exports.getSubscriptionPlans = async () => {
+  // Try to refresh plans first
+  try {
+    await this.refreshSubscriptionPlans();
+  } catch (error) {
+    console.error('Error refreshing subscription plans:', error);
+  }
+  
   return subscriptionPlans;
 };
 
@@ -72,8 +175,41 @@ exports.getSubscriptionPlans = () => {
  * @param {string} planId - Plan ID
  * @returns {Object|null} - Subscription plan or null if not found
  */
-exports.getSubscriptionPlanById = (planId) => {
+exports.getSubscriptionPlanById = async (planId) => {
+  // Try to refresh plans first
+  try {
+    await this.refreshSubscriptionPlans();
+  } catch (error) {
+    console.error('Error refreshing subscription plans:', error);
+  }
+  
   return subscriptionPlans.find(plan => plan.id === planId) || null;
+};
+
+/**
+ * Get subscription plan with student discount applied
+ * @param {string} planId - Plan ID
+ * @param {boolean} isStudent - Whether the user is a student
+ * @returns {Object|null} - Subscription plan with discount or null if not found
+ */
+exports.getSubscriptionPlanWithDiscount = async (planId, isStudent) => {
+  const plan = await this.getSubscriptionPlanById(planId);
+  
+  if (!plan) {
+    return null;
+  }
+  
+  // Clone the plan to avoid modifying the original
+  const planWithDiscount = { ...plan };
+  
+  // Apply student discount if applicable
+  if (isStudent) {
+    planWithDiscount.originalPrice = planWithDiscount.price;
+    planWithDiscount.price = Math.round(planWithDiscount.price * (1 - STUDENT_DISCOUNT_PERCENT / 100));
+    planWithDiscount.discountPercent = STUDENT_DISCOUNT_PERCENT;
+  }
+  
+  return planWithDiscount;
 };
 
 /**
@@ -86,11 +222,14 @@ exports.createSubscription = async (subscriptionData, user) => {
   // Allow both 'plan' and 'planId' parameters for backward compatibility
   const planId = subscriptionData.planId || subscriptionData.plan;
   
-  // Find the plan
-  const selectedPlan = this.getSubscriptionPlanById(planId);
+  // Check if user is a student
+  const isStudent = user.accountType === 'student';
+  
+  // Find the plan with discount applied if student
+  const selectedPlan = await this.getSubscriptionPlanWithDiscount(planId, isStudent);
   if (!selectedPlan) {
-      throw new Error('Invalid subscription plan');
-    }
+    throw new Error('Invalid subscription plan');
+  }
 
   // Calculate expiry date
   const expiryDate = new Date();
@@ -100,32 +239,35 @@ exports.createSubscription = async (subscriptionData, user) => {
   // Use 'all' to allow access to all vehicle types
   const vehicleType = subscriptionData.type || 'all';
 
-    // Create subscription
-    const subscription = new Subscription({
+  // Calculate final price based on student status
+  const finalPrice = isStudent ? selectedPlan.price : selectedPlan.price;
+
+  // Create subscription
+  const subscription = new Subscription({
     userId: user._id,
     planId: selectedPlan.id,
     type: vehicleType,
-      startDate: new Date(),
+    startDate: new Date(),
     expiryDate,
-      paymentDetails: {
-      amount: selectedPlan.price,
+    paymentDetails: {
+      amount: finalPrice,
       referenceNumber: subscriptionData.referenceNumber,
-        paymentDate: new Date(),
+      paymentDate: new Date(),
       paymentMethod: subscriptionData.paymentMethod || 'gcash',
-      studentDiscount: subscriptionData.studentDiscount || {
-        applied: user.accountType === 'student',
-        percentage: user.accountType === 'student' ? 20 : 0
+      studentDiscount: {
+        applied: isStudent,
+        percentage: isStudent ? STUDENT_DISCOUNT_PERCENT : 0
       }
-      },
+    },
     isActive: false, // Will be set to true after verification
     autoRenew: subscriptionData.autoRenew || false,
-      verification: {
-        verified: false,
-        status: 'pending'
-      }
-    });
+    verification: {
+      verified: false,
+      status: 'pending'
+    }
+  });
 
-    const savedSubscription = await subscription.save();
+  const savedSubscription = await subscription.save();
 
   // Also update the user's subscription field so it persists across sessions
   // This way we can show the "pending" status even after logout/login
@@ -156,7 +298,7 @@ exports.createSubscription = async (subscriptionData, user) => {
     // Don't fail the subscription creation if notification fails
   }
 
-    // Create notification for user
+  // Create notification for user
   try {
     await NotificationService.createUserNotification(
       user._id,
@@ -299,7 +441,6 @@ exports.verifySubscription = async (subscriptionId, approved, adminId) => {
 exports.getPendingSubscriptions = async () => {
   try {
     // Find all subscriptions with pending status
-    // Explicitly exclude rejected subscriptions
     const pendingSubscriptions = await Subscription.find({
       'verification.status': 'pending',
       'verification.verified': false,

@@ -75,5 +75,14 @@ export const ENDPOINTS = {
     UNREAD: '/api/notifications/unread',
     READ: (id) => `/api/notifications/${id}/read`,
     READ_ALL: '/api/notifications/read-all'
+  },
+  
+  // Admin endpoints
+  ADMIN: {
+    SUBSCRIPTION_PLANS: '/api/admin/subscription-plans',
+    USERS: '/api/admin/users',
+    DRIVERS: '/api/admin/drivers',
+    ROUTES: '/api/admin/routes',
+    STATISTICS: '/api/admin/statistics'
   }
 }; 

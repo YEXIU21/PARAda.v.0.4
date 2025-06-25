@@ -8,6 +8,12 @@ const authMiddleware = require('../middleware/auth.middleware');
 // Import controller (will create later)
 const adminController = require('../controllers/admin.controller');
 
+// Import subscription plans routes
+const subscriptionPlansRoutes = require('./admin.subscription-plans.routes');
+
+// Use subscription plans routes
+router.use('/subscription-plans', subscriptionPlansRoutes);
+
 /**
  * @route GET /api/admin/dashboard
  * @desc Get admin dashboard data

@@ -566,4 +566,70 @@ export const cancelSubscription = async (subscriptionId) => {
     
     throw error;
   }
+};
+
+/**
+ * Create a new subscription plan
+ * @param {Object} planData - Subscription plan data
+ * @returns {Promise<Object>} - Created subscription plan
+ */
+export const createSubscriptionPlan = async (planData) => {
+  try {
+    const token = await getAuthToken();
+    const response = await axios.post(
+      `${BASE_URL}${ENDPOINTS.ADMIN.SUBSCRIPTION_PLANS}`,
+      planData,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    return response.data.plan;
+  } catch (error) {
+    console.error('Error creating subscription plan:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update a subscription plan
+ * @param {string} planId - Plan ID
+ * @param {Object} planData - Updated subscription plan data
+ * @returns {Promise<Object>} - Updated subscription plan
+ */
+export const updateSubscriptionPlan = async (planId, planData) => {
+  try {
+    const token = await getAuthToken();
+    const response = await axios.put(
+      `${BASE_URL}${ENDPOINTS.ADMIN.SUBSCRIPTION_PLANS}/${planId}`,
+      planData,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    return response.data.plan;
+  } catch (error) {
+    console.error('Error updating subscription plan:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a subscription plan
+ * @param {string} planId - Plan ID
+ * @returns {Promise<Object>} - Response data
+ */
+export const deleteSubscriptionPlan = async (planId) => {
+  try {
+    const token = await getAuthToken();
+    const response = await axios.delete(
+      `${BASE_URL}${ENDPOINTS.ADMIN.SUBSCRIPTION_PLANS}/${planId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting subscription plan:', error);
+    throw error;
+  }
 }; 

@@ -13,7 +13,7 @@ export interface Subscription {
   discountPercent?: number;
 }
 
-export type SubscriptionId = 'basic' | 'premium' | 'annual' | 'student';
+export type SubscriptionId = 'basic' | 'premium' | 'annual';
 
 export const defaultSubscriptionPlans: Subscription[] = [
   { 
