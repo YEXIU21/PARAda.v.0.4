@@ -4,7 +4,8 @@ import {
   Text, 
   StyleSheet,
   SafeAreaView,
-  ActivityIndicator
+  ActivityIndicator,
+  TouchableOpacity
 } from 'react-native';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,6 +13,7 @@ import AdminSubscriptionPlansManager from '../../components/AdminSubscriptionPla
 import { useAuth } from '../../context/AuthContext';
 import SubscriptionView from '../../components/SubscriptionView';
 import { getSubscriptionPlans } from '../../services/api/subscription.api';
+import { getAdminSubscriptionPlans } from '../../services/api/admin.api';
 import { Subscription, defaultSubscriptionPlans } from '../../constants/SubscriptionPlans';
 
 export default function SubscriptionPlansScreen() {
@@ -30,7 +32,17 @@ export default function SubscriptionPlansScreen() {
     try {
       setIsLoading(true);
       setError(null);
-      const plans = await getSubscriptionPlans();
+      
+      let plans;
+      
+      // Use the appropriate API endpoint based on user role
+      if (user?.role === 'admin') {
+        // Admin users should use the admin-specific endpoint
+        plans = await getAdminSubscriptionPlans();
+      } else {
+        // Regular users (passengers) use the public endpoint
+        plans = await getSubscriptionPlans();
+      }
       
       // Only update plans if we got a valid response with at least one plan
       if (plans && Array.isArray(plans) && plans.length > 0) {
@@ -70,6 +82,12 @@ export default function SubscriptionPlansScreen() {
         return (
           <View style={styles.errorContainer}>
             <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
+            <TouchableOpacity 
+              style={[styles.retryButton, { backgroundColor: theme.primary }]} 
+              onPress={fetchSubscriptionPlans}
+            >
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
           </View>
         );
       }
@@ -166,5 +184,15 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 16,
     textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 4,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   }
 }); 
