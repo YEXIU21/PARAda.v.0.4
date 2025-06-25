@@ -4,7 +4,8 @@ import {
   Text, 
   StyleSheet,
   SafeAreaView,
-  TouchableOpacity
+  TouchableOpacity,
+  Image
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
@@ -21,17 +22,26 @@ export default function SubscriptionPlansScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <LinearGradient
         colors={theme.gradientColors as [string, string]}
-        style={styles.headerGradient}
+        style={styles.header}
       >
         <View style={styles.headerContent}>
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => router.push('/admin')}
           >
             <FontAwesome5 name="arrow-left" size={20} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Subscription Plans</Text>
-          <View style={styles.placeholder} />
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>Subscription Plans</Text>
+            <Text style={styles.headerSubtitle}>Manage subscription offerings</Text>
+          </View>
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../assets/images/PARAda-Logo.png')} 
+              style={styles.logo} 
+              resizeMode="contain"
+            />
+          </View>
         </View>
       </LinearGradient>
       
@@ -58,28 +68,56 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerGradient: {
+  header: {
     paddingTop: 40,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    paddingBottom: 20,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    width: '100%',
     justifyContent: 'space-between',
   },
   backButton: {
     padding: 8,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+  headerTextContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
   },
-  placeholder: {
-    width: 36,
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 0,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#fff',
+    opacity: 0.9,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 40,
+    height: 40,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 3,
+  },
+  logo: {
+    width: 34,
+    height: 34,
   },
   content: {
     flex: 1,
