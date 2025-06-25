@@ -218,9 +218,11 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
   }
 
   // Ensure we have plans to display
+  // Only use real subscription plans from the API, not the default plans
+  // This ensures that if admin created only one plan, only one plan will be shown
   const plansToDisplay = Array.isArray(subscriptionPlans) && subscriptionPlans.length > 0 
     ? subscriptionPlans 
-    : defaultSubscriptionPlans;
+    : [];
 
   // Show error banner if there's an error, but we still have plans to display
   const showErrorBanner = error !== null && subscriptionPlans.length > 0;
@@ -247,7 +249,24 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
         Select a plan that fits your transportation needs
       </Text>
 
-      {plansToDisplay.map((plan) => (
+      {plansToDisplay.length === 0 ? (
+        <View style={[styles.noPlansContainer, { borderColor: theme.border }]}>
+          <FontAwesome5 name="info-circle" size={40} color={theme.textSecondary} style={styles.noPlansIcon} />
+          <Text style={[styles.noPlansText, { color: theme.text }]}>
+            No subscription plans are currently available.
+          </Text>
+          <Text style={[styles.noPlansSubtext, { color: theme.textSecondary }]}>
+            Please check back later or contact support for assistance.
+          </Text>
+          <TouchableOpacity 
+            style={[styles.refreshButton, { backgroundColor: theme.primary }]}
+            onPress={fetchSubscriptionPlans}
+          >
+            <Text style={styles.refreshButtonText}>Refresh</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        plansToDisplay.map((plan) => (
         <View 
           key={plan.id} 
           style={[
@@ -294,7 +313,7 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
             </LinearGradient>
           </TouchableOpacity>
         </View>
-      ))}
+      )))}
     </ScrollView>
   );
 };
@@ -446,6 +465,38 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  noPlansContainer: {
+    marginTop: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noPlansIcon: {
+    marginBottom: 16,
+  },
+  noPlansText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  noPlansSubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  refreshButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  refreshButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
