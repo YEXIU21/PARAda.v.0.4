@@ -98,11 +98,30 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
       // Try to get plans from API
       try {
         const plans = await getSubscriptionPlans();
-        if (plans && plans.length > 0) {
+        
+        // Ensure plans is an array before trying to use it
+        if (plans && Array.isArray(plans) && plans.length > 0) {
           console.log('Successfully fetched subscription plans from API:', plans);
-          setSubscriptionPlans(plans);
+          
+          // Validate that each plan has the required fields
+          const validPlans = plans.filter(plan => 
+            plan && 
+            typeof plan === 'object' && 
+            plan.id && 
+            plan.name && 
+            typeof plan.price === 'number' && 
+            typeof plan.duration === 'number' && 
+            Array.isArray(plan.features)
+          );
+          
+          if (validPlans.length > 0) {
+            setSubscriptionPlans(validPlans);
+          } else {
+            console.log('API returned invalid plans, using default plans');
+            setSubscriptionPlans(defaultSubscriptionPlans);
+          }
         } else {
-          console.log('API returned empty plans, using default plans');
+          console.log('API returned empty or invalid plans, using default plans');
           // If API returns empty array, use default plans
           setSubscriptionPlans(defaultSubscriptionPlans);
         }
@@ -116,7 +135,7 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
           const cachedPlans = await AsyncStorage.getItem('subscriptionPlans');
           if (cachedPlans) {
             const parsedPlans = JSON.parse(cachedPlans);
-            if (parsedPlans && parsedPlans.length > 0) {
+            if (Array.isArray(parsedPlans) && parsedPlans.length > 0) {
               console.log('Using cached subscription plans');
               setSubscriptionPlans(parsedPlans);
             }
@@ -159,17 +178,10 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
     );
   }
 
-  if (error) {
-    return (
-      <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
-        <FontAwesome5 name="exclamation-circle" size={40} color={theme.error} />
-        <Text style={[styles.errorText, { color: theme.error }]}>Error loading subscription plans</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchSubscriptionPlans}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  // Ensure we have plans to display
+  const plansToDisplay = Array.isArray(subscriptionPlans) && subscriptionPlans.length > 0 
+    ? subscriptionPlans 
+    : defaultSubscriptionPlans;
 
   return (
     <ScrollView 
@@ -181,7 +193,7 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
         Select a plan that fits your transportation needs
       </Text>
 
-      {subscriptionPlans.map((plan) => (
+      {plansToDisplay.map((plan) => (
         <View 
           key={plan.id} 
           style={[
@@ -209,7 +221,9 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
           </View>
           
           <View style={styles.featuresContainer}>
-            {plan.features.map((feature, index) => renderFeature(feature, index))}
+            {Array.isArray(plan.features) ? plan.features.map((feature, index) => renderFeature(feature, index)) : (
+              <Text style={[styles.noFeaturesText, { color: theme.textSecondary }]}>No features available</Text>
+            )}
           </View>
           
           <TouchableOpacity
@@ -314,6 +328,10 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 14,
+  },
+  noFeaturesText: {
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   subscribeButton: {
     borderRadius: 8,
