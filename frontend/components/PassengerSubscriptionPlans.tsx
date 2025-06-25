@@ -91,105 +91,109 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
     fetchSubscriptionPlans();
   }, []);
 
+  // Function to validate and normalize subscription plans
+  const validateAndNormalizePlans = (plans: any[]): SubscriptionPlan[] => {
+    if (!plans || !Array.isArray(plans) || plans.length === 0) {
+      return [];
+    }
+    
+    // Validate that each plan has the required fields
+    const validPlans = plans.filter(plan => 
+      plan && 
+      typeof plan === 'object' && 
+      plan.id && 
+      plan.name && 
+      (typeof plan.price === 'number' || typeof plan.price === 'string') && 
+      (typeof plan.duration === 'number' || typeof plan.duration === 'string') && 
+      Array.isArray(plan.features)
+    );
+    
+    if (validPlans.length === 0) {
+      return [];
+    }
+    
+    // Convert string prices to numbers if needed
+    return validPlans.map(plan => ({
+      ...plan,
+      price: typeof plan.price === 'string' ? parseFloat(plan.price) : plan.price,
+      duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : plan.duration
+    }));
+  };
+
   const fetchSubscriptionPlans = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // Try to get plans from admin API first (this will ensure we get the same plans as the admin sees)
+      // Try to get cached plans first for immediate display
       try {
-        const adminPlans = await getAdminSubscriptionPlans();
+        const cachedPlans = await AsyncStorage.getItem('subscriptionPlans');
+        if (cachedPlans) {
+          const parsedPlans = JSON.parse(cachedPlans);
+          const validCachedPlans = validateAndNormalizePlans(parsedPlans);
+          if (validCachedPlans.length > 0) {
+            console.log('Using cached subscription plans while fetching fresh data');
+            setSubscriptionPlans(validCachedPlans);
+            // Don't set isLoading to false yet, continue fetching fresh data
+          }
+        }
+      } catch (storageError) {
+        console.error('Error reading from AsyncStorage:', storageError);
+      }
+      
+      // Try to get plans from public API first as it's more likely to succeed
+      try {
+        const publicPlans = await getSubscriptionPlans();
+        const validPublicPlans = validateAndNormalizePlans(publicPlans);
         
-        // Ensure plans is an array before trying to use it
-        if (adminPlans && Array.isArray(adminPlans) && adminPlans.length > 0) {
-          console.log('Successfully fetched subscription plans from admin API:', adminPlans);
+        if (validPublicPlans.length > 0) {
+          console.log('Successfully fetched subscription plans from public API:', validPublicPlans);
+          setSubscriptionPlans(validPublicPlans);
           
-          // Validate that each plan has the required fields
-          const validPlans = adminPlans.filter(plan => 
-            plan && 
-            typeof plan === 'object' && 
-            plan.id && 
-            plan.name && 
-            (typeof plan.price === 'number' || typeof plan.price === 'string') && 
-            (typeof plan.duration === 'number' || typeof plan.duration === 'string') && 
-            Array.isArray(plan.features)
-          );
+          // Cache the plans for offline use
+          try {
+            await AsyncStorage.setItem('subscriptionPlans', JSON.stringify(validPublicPlans));
+          } catch (cacheError) {
+            console.error('Error caching subscription plans:', cacheError);
+          }
           
-          if (validPlans.length > 0) {
-            // Convert string prices to numbers if needed
-            const normalizedPlans = validPlans.map(plan => ({
-              ...plan,
-              price: typeof plan.price === 'string' ? parseFloat(plan.price) : plan.price,
-              duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : plan.duration
-            }));
-            
-            setSubscriptionPlans(normalizedPlans);
+          setIsLoading(false);
+          return; // Exit if we got plans from public API
+        }
+        
+        // If public API didn't return valid plans, try admin API
+        try {
+          console.log('Public API did not return valid plans, trying admin API');
+          const adminPlans = await getAdminSubscriptionPlans();
+          const validAdminPlans = validateAndNormalizePlans(adminPlans);
+          
+          if (validAdminPlans.length > 0) {
+            console.log('Successfully fetched subscription plans from admin API:', validAdminPlans);
+            setSubscriptionPlans(validAdminPlans);
             
             // Cache the plans for offline use
             try {
-              await AsyncStorage.setItem('subscriptionPlans', JSON.stringify(normalizedPlans));
+              await AsyncStorage.setItem('subscriptionPlans', JSON.stringify(validAdminPlans));
             } catch (cacheError) {
               console.error('Error caching subscription plans:', cacheError);
             }
             
-            return; // Exit early if we successfully got plans from admin API
+            setIsLoading(false);
+            return; // Exit if we got plans from admin API
           }
+        } catch (adminApiError) {
+          console.error('Error fetching from admin API:', adminApiError);
+          // Continue with default plans if admin API fails
         }
-        
-        // If admin API didn't return valid plans, fall back to public API
-        console.log('Admin API did not return valid plans, trying public API');
-        const publicPlans = await getSubscriptionPlans();
-        
-        if (publicPlans && Array.isArray(publicPlans) && publicPlans.length > 0) {
-          console.log('Successfully fetched subscription plans from public API:', publicPlans);
-          
-          // Validate that each plan has the required fields
-          const validPlans = publicPlans.filter(plan => 
-            plan && 
-            typeof plan === 'object' && 
-            plan.id && 
-            plan.name && 
-            (typeof plan.price === 'number' || typeof plan.price === 'string') && 
-            (typeof plan.duration === 'number' || typeof plan.duration === 'string') && 
-            Array.isArray(plan.features)
-          );
-          
-          if (validPlans.length > 0) {
-            // Convert string prices to numbers if needed
-            const normalizedPlans = validPlans.map(plan => ({
-              ...plan,
-              price: typeof plan.price === 'string' ? parseFloat(plan.price) : plan.price,
-              duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : plan.duration
-            }));
-            
-            setSubscriptionPlans(normalizedPlans);
-            return; // Exit if we got plans from public API
-          }
-        }
-        
-        // If neither API returned valid plans, use default plans
-        console.log('Neither API returned valid plans, using default plans');
-        setSubscriptionPlans(defaultSubscriptionPlans);
-        
-      } catch (apiError) {
-        console.error('Error fetching from APIs, using default plans:', apiError);
-        // If API calls fail, use default plans
-        setSubscriptionPlans(defaultSubscriptionPlans);
-        
-        // Try to get cached plans from AsyncStorage
-        try {
-          const cachedPlans = await AsyncStorage.getItem('subscriptionPlans');
-          if (cachedPlans) {
-            const parsedPlans = JSON.parse(cachedPlans);
-            if (Array.isArray(parsedPlans) && parsedPlans.length > 0) {
-              console.log('Using cached subscription plans');
-              setSubscriptionPlans(parsedPlans);
-            }
-          }
-        } catch (storageError) {
-          console.error('Error reading from AsyncStorage:', storageError);
-        }
+      } catch (publicApiError) {
+        console.error('Error fetching from public API:', publicApiError);
+        // Continue with default plans if public API fails
       }
+      
+      // If neither API returned valid plans, use default plans
+      console.log('Neither API returned valid plans, using default plans');
+      setSubscriptionPlans(defaultSubscriptionPlans);
+      
     } catch (err: any) {
       setError(err.message || 'Failed to load subscription plans');
       console.error('Error in fetchSubscriptionPlans:', err);
@@ -215,11 +219,26 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
     </View>
   );
 
-  if (isLoading) {
+  if (isLoading && subscriptionPlans.length === 0) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={theme.primary} />
         <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading subscription plans...</Text>
+      </View>
+    );
+  }
+  
+  if (error && subscriptionPlans.length === 0) {
+    return (
+      <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
+        <FontAwesome5 name="exclamation-circle" size={50} color={theme.error} />
+        <Text style={[styles.errorText, { color: theme.text }]}>{error}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={fetchSubscriptionPlans}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -229,11 +248,26 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
     ? subscriptionPlans 
     : defaultSubscriptionPlans;
 
+  // Show error banner if there's an error, but we still have plans to display
+  const showErrorBanner = error !== null && subscriptionPlans.length > 0;
+
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.contentContainer}
     >
+      {showErrorBanner && (
+        <View style={[styles.errorBanner, { backgroundColor: theme.error + '20', borderColor: theme.error }]}>
+          <FontAwesome5 name="exclamation-circle" size={16} color={theme.error} style={styles.errorIcon} />
+          <Text style={[styles.errorBannerText, { color: theme.error }]}>
+            {error || 'Could not refresh plans. Using cached data.'}
+          </Text>
+          <TouchableOpacity onPress={fetchSubscriptionPlans}>
+            <FontAwesome5 name="sync" size={16} color={theme.error} />
+          </TouchableOpacity>
+        </View>
+      )}
+      
       <Text style={[styles.title, { color: theme.text }]}>Choose Your Subscription Plan</Text>
       <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
         Select a plan that fits your transportation needs
@@ -413,6 +447,23 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     marginBottom: 20,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 16
+  },
+  errorIcon: {
+    marginRight: 8
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500'
   },
   retryButton: {
     backgroundColor: '#4B6BFE',

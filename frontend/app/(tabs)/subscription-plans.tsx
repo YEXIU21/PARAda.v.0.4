@@ -80,20 +80,28 @@ export default function SubscriptionPlansScreen() {
               }} 
             />
           ) : (
-            <PassengerSubscriptionPlans 
-              theme={{
-                background: theme.background,
-                card: theme.card,
-                text: theme.text,
-                textSecondary: theme.textSecondary,
-                border: theme.border,
-                primary: theme.primary,
-                error: theme.error,
-                success: theme.success,
-                warning: theme.warning,
-                gradientColors: theme.gradientColors as [string, string]
-              }} 
-            />
+            <ErrorBoundary
+              onReset={() => {
+                // Force refresh the component
+                setIsLoading(true);
+                setTimeout(() => setIsLoading(false), 300);
+              }}
+            >
+              <PassengerSubscriptionPlans 
+                theme={{
+                  background: theme.background,
+                  card: theme.card,
+                  text: theme.text,
+                  textSecondary: theme.textSecondary,
+                  border: theme.border,
+                  primary: theme.primary,
+                  error: theme.error,
+                  success: theme.success,
+                  warning: theme.warning,
+                  gradientColors: theme.gradientColors as [string, string]
+                }} 
+              />
+            </ErrorBoundary>
           )}
         </ErrorBoundary>
       </View>
