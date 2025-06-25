@@ -4,7 +4,7 @@
  */
 const express = require('express');
 const router = express.Router();
-const { isAdmin } = require('../middleware/admin.middleware');
+const adminMiddleware = require('../middleware/admin.middleware');
 const adminSubscriptionPlansRoutes = require('./admin.subscription-plans.routes');
 const adminStudentDiscountRoutes = require('./admin.student-discount.routes');
 const authMiddleware = require('../middleware/auth.middleware');
@@ -16,7 +16,7 @@ const adminController = require('../controllers/admin.controller');
 router.use(authMiddleware.verifyToken);
 
 // Apply admin middleware to all routes
-router.use(isAdmin);
+router.use(adminMiddleware);
 
 // Use specific route handlers
 router.use('/subscription-plans', adminSubscriptionPlansRoutes);
