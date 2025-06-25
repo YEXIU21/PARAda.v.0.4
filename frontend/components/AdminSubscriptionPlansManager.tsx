@@ -73,15 +73,63 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     fetchStudentDiscountSettings();
   }, []);
 
+  // Default subscription plans to use as fallback
+  const defaultPlans: SubscriptionPlan[] = [
+    {
+      id: 'basic',
+      name: 'Basic',
+      price: 99,
+      duration: 30,
+      features: ['Real-time tracking', 'Schedule access', 'Traffic updates']
+    },
+    {
+      id: 'premium',
+      name: 'Premium',
+      price: 199,
+      duration: 30,
+      features: ['All Basic features', 'Priority notifications', 'Offline maps', 'No advertisements'],
+      recommended: true
+    },
+    {
+      id: 'annual',
+      name: 'Annual',
+      price: 999,
+      duration: 365,
+      features: ['All Premium features', '24/7 support', 'Schedule alarms', 'Trip history']
+    }
+  ];
+
   const fetchSubscriptionPlans = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const plans = await getAdminSubscriptionPlans();
-      setSubscriptionPlans(plans);
+      
+      try {
+        // Try to get plans from API
+        const plans = await getAdminSubscriptionPlans();
+        
+        if (plans && Array.isArray(plans) && plans.length > 0) {
+          console.log('Successfully loaded subscription plans from API:', plans);
+          setSubscriptionPlans(plans);
+        } else {
+          console.log('API returned empty plans array, using default plans');
+          setSubscriptionPlans(defaultPlans);
+        }
+      } catch (apiError) {
+        console.error('Error fetching from API, using default plans:', apiError);
+        
+        // If API call fails, use default plans
+        setSubscriptionPlans(defaultPlans);
+        
+        // Show a user-friendly error message
+        setError('Could not connect to server. Using default plans.');
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load subscription plans');
-      console.error('Error loading subscription plans:', err);
+      console.error('Error in fetchSubscriptionPlans:', err);
+      
+      // Ensure we always have plans to display
+      setSubscriptionPlans(defaultPlans);
     } finally {
       setIsLoading(false);
     }
@@ -89,11 +137,32 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
 
   const fetchStudentDiscountSettings = async () => {
     try {
-      const settings = await getStudentDiscountSettings();
-      setIsStudentDiscountEnabled(settings.isEnabled);
-      setDiscountPercent(settings.discountPercent);
+      try {
+        const settings = await getStudentDiscountSettings();
+        
+        if (settings && typeof settings.isEnabled === 'boolean' && typeof settings.discountPercent === 'number') {
+          console.log('Successfully loaded student discount settings from API:', settings);
+          setIsStudentDiscountEnabled(settings.isEnabled);
+          setDiscountPercent(settings.discountPercent);
+        } else {
+          console.log('API returned invalid settings, using defaults');
+          // Use default values
+          setIsStudentDiscountEnabled(true);
+          setDiscountPercent(20);
+        }
+      } catch (apiError) {
+        console.error('Error fetching student discount settings from API:', apiError);
+        
+        // Use default values
+        setIsStudentDiscountEnabled(true);
+        setDiscountPercent(20);
+      }
     } catch (err: any) {
-      console.error('Error loading student discount settings:', err);
+      console.error('Error in fetchStudentDiscountSettings:', err);
+      
+      // Use default values
+      setIsStudentDiscountEnabled(true);
+      setDiscountPercent(20);
     }
   };
 
@@ -224,23 +293,22 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     );
   }
 
-  if (error && subscriptionPlans.length === 0) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <FontAwesome5 name="exclamation-circle" size={50} color={theme.error} />
-        <Text style={[styles.errorText, { color: theme.text }]}>{error}</Text>
-        <TouchableOpacity
-          style={[styles.retryButton, { backgroundColor: theme.primary }]}
-          onPress={fetchSubscriptionPlans}
-        >
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  // Show error banner if there's an error, but still show plans if we have them
+  const showErrorBanner = error !== null;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Error banner */}
+      {showErrorBanner && (
+        <View style={[styles.errorBanner, { backgroundColor: theme.error + '20', borderColor: theme.error }]}>
+          <FontAwesome5 name="exclamation-circle" size={16} color={theme.error} style={styles.errorIcon} />
+          <Text style={[styles.errorBannerText, { color: theme.error }]}>{error}</Text>
+          <TouchableOpacity onPress={fetchSubscriptionPlans}>
+            <FontAwesome5 name="sync" size={16} color={theme.error} />
+          </TouchableOpacity>
+        </View>
+      )}
+      
       {/* Header with actions */}
       <View style={styles.actionsHeader}>
         <TouchableOpacity
@@ -668,6 +736,23 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: 'center',
     marginBottom: 16
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 16
+  },
+  errorIcon: {
+    marginRight: 8
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500'
   },
   retryButton: {
     paddingHorizontal: 16,
