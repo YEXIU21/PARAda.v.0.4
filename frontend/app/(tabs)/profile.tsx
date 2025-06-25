@@ -629,7 +629,7 @@ export default function ProfileScreen() {
                     
                     <TouchableOpacity 
                       style={styles.subscribeButton}
-                      onPress={() => router.push('/')}
+                      onPress={() => router.push('/(tabs)/subscription-plans')}
                     >
                       <Text style={styles.subscribeButtonText}>View Plans</Text>
                     </TouchableOpacity>
