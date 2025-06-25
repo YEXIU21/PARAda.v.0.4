@@ -99,7 +99,7 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     }
   ];
 
-  const fetchSubscriptionPlans = async () => {
+  const fetchSubscriptionPlans = async (retryCount = 0) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -108,28 +108,49 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
         // Try to get plans from API
         const plans = await getAdminSubscriptionPlans();
         
-        if (plans && Array.isArray(plans) && plans.length > 0) {
+        if (plans && Array.isArray(plans)) {
           console.log('Successfully loaded subscription plans from API:', plans);
           setSubscriptionPlans(plans);
+          
+          // If we got an empty array, show a message but don't use default plans
+          if (plans.length === 0) {
+            setError('No subscription plans found. Create a new plan to get started.');
+          }
         } else {
-          console.log('API returned empty plans array, using default plans');
-          setSubscriptionPlans(defaultPlans);
+          // Invalid response format
+          throw new Error('Invalid response format from server');
         }
-      } catch (apiError) {
-        console.error('Error fetching from API, using default plans:', apiError);
+      } catch (apiError: any) {
+        console.error('Error fetching from API:', apiError);
         
-        // If API call fails, use default plans
-        setSubscriptionPlans(defaultPlans);
+        // Retry up to 2 times with exponential backoff
+        if (retryCount < 2) {
+          console.log(`Retrying API call (attempt ${retryCount + 1})...`);
+          setTimeout(() => {
+            fetchSubscriptionPlans(retryCount + 1);
+          }, 1000 * Math.pow(2, retryCount)); // 1s, 2s
+          return;
+        }
         
-        // Show a user-friendly error message
-        setError('Could not connect to server. Using default plans.');
+        // After retries, show error but don't use default plans
+        if (apiError.response) {
+          // Server responded with an error
+          if (apiError.response.status === 401 || apiError.response.status === 403) {
+            setError('Authentication error. Please log in again.');
+          } else {
+            setError(`Server error: ${apiError.response.data.message || apiError.response.statusText}`);
+          }
+        } else if (apiError.request) {
+          // No response received
+          setError('Network error. Please check your connection.');
+        } else {
+          // Something else went wrong
+          setError(apiError.message || 'Failed to load subscription plans');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load subscription plans');
       console.error('Error in fetchSubscriptionPlans:', err);
-      
-      // Ensure we always have plans to display
-      setSubscriptionPlans(defaultPlans);
     } finally {
       setIsLoading(false);
     }
@@ -303,7 +324,7 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
         <View style={[styles.errorBanner, { backgroundColor: theme.error + '20', borderColor: theme.error }]}>
           <FontAwesome5 name="exclamation-circle" size={16} color={theme.error} style={styles.errorIcon} />
           <Text style={[styles.errorBannerText, { color: theme.error }]}>{error}</Text>
-          <TouchableOpacity onPress={fetchSubscriptionPlans}>
+          <TouchableOpacity onPress={() => fetchSubscriptionPlans()}>
             <FontAwesome5 name="sync" size={16} color={theme.error} />
           </TouchableOpacity>
         </View>
@@ -410,10 +431,28 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
         </View>
       )}
 
-      <FlatList
-        data={subscriptionPlans}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+      {subscriptionPlans.length === 0 ? (
+        <View style={[styles.noPlansContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <FontAwesome5 name="info-circle" size={40} color={theme.textSecondary} style={styles.noPlansIcon} />
+          <Text style={[styles.noPlansText, { color: theme.text }]}>
+            No subscription plans found
+          </Text>
+          <Text style={[styles.noPlansSubtext, { color: theme.textSecondary }]}>
+            Create a new plan to get started
+          </Text>
+          <TouchableOpacity
+            style={[styles.createPlanButton, { backgroundColor: theme.primary }]}
+            onPress={handleCreatePlan}
+          >
+            <FontAwesome5 name="plus" size={14} color="#FFF" style={styles.createButtonIcon} />
+            <Text style={styles.createButtonText}>Create Plan</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={subscriptionPlans}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
           <View style={[styles.planCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
             {item.recommended && (
               <View style={[styles.recommendedBadge, { backgroundColor: theme.primary }]}>
@@ -459,6 +498,7 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
           </View>
         )}
       />
+      )}
 
       {/* Plan Edit/Create Modal */}
       <Modal
@@ -942,6 +982,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
+  },
+  noPlansContainer: {
+    marginTop: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noPlansIcon: {
+    marginBottom: 16,
+  },
+  noPlansText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  noPlansSubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  createPlanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 4,
   },
 });
 
