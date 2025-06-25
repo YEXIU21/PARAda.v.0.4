@@ -16,7 +16,7 @@ const subscriptionPlanController = require('../controllers/subscription-plan.con
  */
 router.get(
   '/',
-  [authMiddleware, adminMiddleware],
+  [authMiddleware.verifyToken, adminMiddleware],
   subscriptionPlanController.getAllPlans
 );
 
@@ -27,7 +27,7 @@ router.get(
  */
 router.get(
   '/:id',
-  [authMiddleware, adminMiddleware],
+  [authMiddleware.verifyToken, adminMiddleware],
   subscriptionPlanController.getPlanById
 );
 
@@ -39,7 +39,7 @@ router.get(
 router.post(
   '/',
   [
-    authMiddleware,
+    authMiddleware.verifyToken,
     adminMiddleware,
     body('id').notEmpty().withMessage('Plan ID is required'),
     body('name').notEmpty().withMessage('Plan name is required'),
@@ -58,7 +58,7 @@ router.post(
 router.put(
   '/:id',
   [
-    authMiddleware,
+    authMiddleware.verifyToken,
     adminMiddleware,
     body('name').notEmpty().withMessage('Plan name is required'),
     body('price').isNumeric().withMessage('Price must be a number'),
@@ -75,7 +75,7 @@ router.put(
  */
 router.delete(
   '/:id',
-  [authMiddleware, adminMiddleware],
+  [authMiddleware.verifyToken, adminMiddleware],
   subscriptionPlanController.deletePlan
 );
 

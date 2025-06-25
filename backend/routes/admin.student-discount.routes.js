@@ -6,10 +6,12 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const studentDiscountController = require('../controllers/student-discount.controller');
-const { isAdmin } = require('../middleware/admin.middleware');
+const authMiddleware = require('../middleware/auth.middleware');
+const adminMiddleware = require('../middleware/admin.middleware');
 
 // Middleware to ensure user is authenticated and is an admin
-router.use(isAdmin);
+router.use(authMiddleware.verifyToken);
+router.use(adminMiddleware);
 
 // GET /api/admin/student-discount
 // Get student discount settings
