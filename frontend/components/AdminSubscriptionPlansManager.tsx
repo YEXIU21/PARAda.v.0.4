@@ -65,6 +65,7 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
   const [isStudentDiscountEnabled, setIsStudentDiscountEnabled] = useState(true);
   const [discountPercent, setDiscountPercent] = useState(20);
   const [isSavingDiscount, setIsSavingDiscount] = useState(false);
+  const [showDiscountSettings, setShowDiscountSettings] = useState(false);
 
   useEffect(() => {
     fetchSubscriptionPlans();
@@ -239,79 +240,8 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Student Discount Settings Section */}
-      <View style={[styles.discountCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <View style={styles.header}>
-          <FontAwesome5 name="graduation-cap" size={20} color={theme.primary} style={styles.icon} />
-          <Text style={[styles.title, { color: theme.text }]}>Student Discount Settings</Text>
-        </View>
-        
-        <View style={styles.settingRow}>
-          <Text style={[styles.settingLabel, { color: theme.text }]}>Enable Student Discount</Text>
-          <Switch
-            value={isStudentDiscountEnabled}
-            onValueChange={setIsStudentDiscountEnabled}
-            trackColor={{ false: '#767577', true: theme.primary + '80' }}
-            thumbColor={isStudentDiscountEnabled ? theme.primary : '#f4f3f4'}
-          />
-        </View>
-        
-        <View style={styles.settingRow}>
-          <Text style={[styles.settingLabel, { color: theme.text }]}>Discount Percentage</Text>
-          <View style={styles.percentInputContainer}>
-            <TextInput
-              style={[
-                styles.percentInput,
-                { 
-                  color: theme.text,
-                  borderColor: theme.border,
-                  backgroundColor: theme.background
-                }
-              ]}
-              value={discountPercent.toString()}
-              onChangeText={(text) => {
-                const value = parseInt(text);
-                if (!isNaN(value)) {
-                  setDiscountPercent(value);
-                }
-              }}
-              keyboardType="numeric"
-              maxLength={3}
-              editable={isStudentDiscountEnabled}
-            />
-            <Text style={[styles.percentSymbol, { color: theme.text }]}>%</Text>
-          </View>
-        </View>
-        
-        <View style={styles.description}>
-          <Text style={[styles.descriptionText, { color: theme.textSecondary }]}>
-            Student discount is automatically applied to all subscription plans for users with a student account type.
-          </Text>
-        </View>
-        
-        <TouchableOpacity
-          style={[
-            styles.saveDiscountButton,
-            { backgroundColor: theme.primary },
-            isSavingDiscount && { opacity: 0.7 }
-          ]}
-          onPress={handleSaveDiscountSettings}
-          disabled={isSavingDiscount}
-        >
-          {isSavingDiscount ? (
-            <ActivityIndicator size="small" color="#FFF" />
-          ) : (
-            <>
-              <FontAwesome5 name="save" size={16} color="#FFF" style={styles.saveIcon} />
-              <Text style={styles.saveButtonText}>Save Discount Settings</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Subscription Plans Section */}
-      <View style={styles.plansHeader}>
-        <Text style={[styles.title, { color: theme.text }]}>Subscription Plans</Text>
+      {/* Header with actions */}
+      <View style={styles.actionsHeader}>
         <TouchableOpacity
           style={[styles.createButton, { backgroundColor: theme.primary }]}
           onPress={handleCreatePlan}
@@ -319,7 +249,91 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
           <FontAwesome5 name="plus" size={14} color="#FFF" style={styles.createButtonIcon} />
           <Text style={styles.createButtonText}>Create Plan</Text>
         </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.discountSettingsButton, { backgroundColor: theme.success + '20' }]}
+          onPress={() => setShowDiscountSettings(!showDiscountSettings)}
+        >
+          <FontAwesome5 name="graduation-cap" size={14} color={theme.success} style={styles.discountButtonIcon} />
+          <Text style={[styles.discountButtonText, { color: theme.success }]}>
+            {showDiscountSettings ? 'Hide Discount Settings' : 'Student Discount Settings'}
+          </Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Student Discount Settings Section - Collapsible */}
+      {showDiscountSettings && (
+        <View style={[styles.discountCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <View style={styles.discountHeader}>
+            <FontAwesome5 name="graduation-cap" size={18} color={theme.primary} style={styles.icon} />
+            <Text style={[styles.discountTitle, { color: theme.text }]}>Student Discount Settings</Text>
+          </View>
+          
+          <View style={styles.discountContent}>
+            <View style={styles.settingRow}>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Enable Student Discount</Text>
+              <Switch
+                value={isStudentDiscountEnabled}
+                onValueChange={setIsStudentDiscountEnabled}
+                trackColor={{ false: '#767577', true: theme.primary + '80' }}
+                thumbColor={isStudentDiscountEnabled ? theme.primary : '#f4f3f4'}
+              />
+            </View>
+            
+            {isStudentDiscountEnabled && (
+              <View style={styles.settingRow}>
+                <Text style={[styles.settingLabel, { color: theme.text }]}>Discount Percentage</Text>
+                <View style={styles.percentInputContainer}>
+                  <TextInput
+                    style={[
+                      styles.percentInput,
+                      { 
+                        color: theme.text,
+                        borderColor: theme.border,
+                        backgroundColor: theme.background
+                      }
+                    ]}
+                    value={discountPercent.toString()}
+                    onChangeText={(text) => {
+                      const value = parseInt(text);
+                      if (!isNaN(value)) {
+                        setDiscountPercent(value);
+                      }
+                    }}
+                    keyboardType="numeric"
+                    maxLength={3}
+                  />
+                  <Text style={[styles.percentSymbol, { color: theme.text }]}>%</Text>
+                </View>
+              </View>
+            )}
+            
+            <TouchableOpacity
+              style={[
+                styles.saveDiscountButton,
+                { backgroundColor: theme.primary },
+                isSavingDiscount && { opacity: 0.7 }
+              ]}
+              onPress={handleSaveDiscountSettings}
+              disabled={isSavingDiscount}
+            >
+              {isSavingDiscount ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <>
+                  <FontAwesome5 name="save" size={14} color="#FFF" style={styles.saveIcon} />
+                  <Text style={styles.saveButtonText}>Save Settings</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Subscription Plans List */}
+      <Text style={[styles.sectionTitle, { color: theme.text, marginTop: showDiscountSettings ? 16 : 0 }]}>
+        Available Plans
+      </Text>
 
       {isLoading && (
         <View style={styles.loadingOverlay}>
@@ -518,24 +532,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16
-  },
-  plansHeader: {
+  actionsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 20,
     marginBottom: 16
-  },
-  icon: {
-    marginRight: 12
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold'
   },
   createButton: {
     flexDirection: 'row',
@@ -550,6 +551,24 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: '#FFFFFF',
     fontWeight: 'bold'
+  },
+  discountSettingsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 4
+  },
+  discountButtonIcon: {
+    marginRight: 6
+  },
+  discountButtonText: {
+    fontWeight: '500'
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -661,18 +680,34 @@ const styles = StyleSheet.create({
   // Student discount styles
   discountCard: {
     borderRadius: 8,
-    padding: 16,
+    padding: 12,
     borderWidth: 1,
-    marginBottom: 20
+    marginBottom: 16
+  },
+  discountHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12
+  },
+  discountTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8
+  },
+  discountContent: {
+    paddingHorizontal: 4
+  },
+  icon: {
+    marginRight: 4
   },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16
+    marginBottom: 12
   },
   settingLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500'
   },
   percentInputContainer: {
@@ -681,7 +716,7 @@ const styles = StyleSheet.create({
   },
   percentInput: {
     width: 60,
-    height: 40,
+    height: 36,
     borderWidth: 1,
     borderRadius: 4,
     paddingHorizontal: 8,
@@ -689,23 +724,16 @@ const styles = StyleSheet.create({
   },
   percentSymbol: {
     marginLeft: 8,
-    fontSize: 16,
-    fontWeight: '500'
-  },
-  description: {
-    marginTop: 8,
-    marginBottom: 20
-  },
-  descriptionText: {
     fontSize: 14,
-    lineHeight: 20
+    fontWeight: '500'
   },
   saveDiscountButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-    borderRadius: 4
+    padding: 10,
+    borderRadius: 4,
+    marginTop: 4
   },
   saveIcon: {
     marginRight: 8
@@ -713,7 +741,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#FFF',
     fontWeight: 'bold',
-    fontSize: 16
+    fontSize: 14
   },
   modalOverlay: {
     flex: 1,

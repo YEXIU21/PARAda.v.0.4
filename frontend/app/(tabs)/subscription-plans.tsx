@@ -3,16 +3,19 @@ import {
   View, 
   Text, 
   StyleSheet,
-  SafeAreaView
+  SafeAreaView,
+  TouchableOpacity
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import AdminSubscriptionPlansManager from '../../components/AdminSubscriptionPlansManager';
+import { useRouter } from 'expo-router';
 
 export default function SubscriptionPlansScreen() {
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
+  const router = useRouter();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -20,7 +23,16 @@ export default function SubscriptionPlansScreen() {
         colors={theme.gradientColors as [string, string]}
         style={styles.headerGradient}
       >
-        <Text style={styles.headerTitle}>Subscription Plans Management</Text>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <FontAwesome5 name="arrow-left" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Subscription Plans</Text>
+          <View style={styles.placeholder} />
+        </View>
       </LinearGradient>
       
       <View style={styles.content}>
@@ -53,10 +65,21 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    padding: 8,
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  placeholder: {
+    width: 36,
   },
   content: {
     flex: 1,
