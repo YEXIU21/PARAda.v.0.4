@@ -19,7 +19,8 @@ import {
   createSubscriptionPlan, 
   deleteSubscriptionPlan,
   getStudentDiscountSettings,
-  updateStudentDiscountSettings
+  updateStudentDiscountSettings,
+  getAdminSubscriptionPlans
 } from '../services/api/admin.api';
 
 interface SubscriptionPlan {
@@ -76,7 +77,7 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     try {
       setIsLoading(true);
       setError(null);
-      const plans = await getSubscriptionPlans();
+      const plans = await getAdminSubscriptionPlans();
       setSubscriptionPlans(plans);
     } catch (err: any) {
       setError(err.message || 'Failed to load subscription plans');

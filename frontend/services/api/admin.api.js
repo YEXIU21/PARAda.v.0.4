@@ -664,4 +664,18 @@ export const updateStudentDiscountSettings = async (settings) => {
     console.error('Error updating student discount settings:', error);
     throw error;
   }
+};
+
+/**
+ * Get all subscription plans (admin version)
+ * @returns {Promise<Array>} - List of subscription plans
+ */
+export const getAdminSubscriptionPlans = async () => {
+  try {
+    const response = await apiRequest('GET', '/api/admin/subscription-plans');
+    return response.data.plans;
+  } catch (error) {
+    console.error('Error fetching admin subscription plans:', error);
+    throw error;
+  }
 }; 
