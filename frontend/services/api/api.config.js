@@ -28,8 +28,8 @@ export const BASE_URL = (() => {
 // Default headers for API calls
 export const DEFAULT_HEADERS = {
   'Content-Type': 'application/json',
-  'Accept': 'application/json',
-  'Origin': typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+  'Accept': 'application/json'
+  // Removed Origin header as it's causing "Refused to set unsafe header" errors
 };
 
 // Axios configuration options
