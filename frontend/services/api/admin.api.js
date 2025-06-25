@@ -576,16 +576,12 @@ export const cancelSubscription = async (subscriptionId) => {
  */
 export const createSubscriptionPlan = async (planData) => {
   try {
-    const token = await getAuthToken();
-    if (!token) throw new Error('Authentication required');
+    console.log('Creating subscription plan with data:', planData);
     
-    const response = await axios.post(
-      `${BASE_URL}${ENDPOINTS.ADMIN.SUBSCRIPTION_PLANS}`,
-      planData,
-      {
-        headers: { 'x-access-token': token }
-      }
-    );
+    // Use the apiRequest helper to ensure consistent URL handling
+    const response = await apiRequest('POST', '/api/admin/subscription-plans', planData);
+    
+    console.log('Create plan response:', response.data);
     return response.data.plan;
   } catch (error) {
     console.error('Error creating subscription plan:', error);
@@ -612,16 +608,12 @@ export const createSubscriptionPlan = async (planData) => {
  */
 export const updateSubscriptionPlan = async (planId, planData) => {
   try {
-    const token = await getAuthToken();
-    if (!token) throw new Error('Authentication required');
+    console.log(`Updating subscription plan ${planId} with data:`, planData);
     
-    const response = await axios.put(
-      `${BASE_URL}${ENDPOINTS.ADMIN.SUBSCRIPTION_PLANS}/${planId}`,
-      planData,
-      {
-        headers: { 'x-access-token': token }
-      }
-    );
+    // Use the apiRequest helper to ensure consistent URL handling
+    const response = await apiRequest('PUT', `/api/admin/subscription-plans/${planId}`, planData);
+    
+    console.log('Update plan response:', response.data);
     return response.data.plan;
   } catch (error) {
     console.error('Error updating subscription plan:', error);
@@ -647,15 +639,12 @@ export const updateSubscriptionPlan = async (planId, planData) => {
  */
 export const deleteSubscriptionPlan = async (planId) => {
   try {
-    const token = await getAuthToken();
-    if (!token) throw new Error('Authentication required');
+    console.log(`Deleting subscription plan: ${planId}`);
     
-    const response = await axios.delete(
-      `${BASE_URL}${ENDPOINTS.ADMIN.SUBSCRIPTION_PLANS}/${planId}`,
-      {
-        headers: { 'x-access-token': token }
-      }
-    );
+    // Use the apiRequest helper to ensure consistent URL handling
+    const response = await apiRequest('DELETE', `/api/admin/subscription-plans/${planId}`);
+    
+    console.log('Delete plan response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error deleting subscription plan:', error);
