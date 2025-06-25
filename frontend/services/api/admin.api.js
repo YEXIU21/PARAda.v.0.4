@@ -641,7 +641,7 @@ export const deleteSubscriptionPlan = async (planId) => {
  */
 export const getStudentDiscountSettings = async () => {
   try {
-    const response = await apiRequest('GET', '/admin/student-discount');
+    const response = await apiRequest('GET', '/api/admin/student-discount');
     return response.data.settings;
   } catch (error) {
     console.error('Error fetching student discount settings:', error);
@@ -658,7 +658,7 @@ export const getStudentDiscountSettings = async () => {
  */
 export const updateStudentDiscountSettings = async (settings) => {
   try {
-    const response = await apiRequest('PUT', '/admin/student-discount', settings);
+    const response = await apiRequest('PUT', '/api/admin/student-discount', settings);
     return response.data.settings;
   } catch (error) {
     console.error('Error updating student discount settings:', error);
