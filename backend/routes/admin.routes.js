@@ -12,6 +12,9 @@ const authMiddleware = require('../middleware/auth.middleware');
 // Import controller (will create later)
 const adminController = require('../controllers/admin.controller');
 
+// Apply auth middleware to all routes
+router.use(authMiddleware.verifyToken);
+
 // Apply admin middleware to all routes
 router.use(isAdmin);
 
@@ -26,10 +29,6 @@ router.use('/student-discount', adminStudentDiscountRoutes);
  */
 router.get(
   '/dashboard',
-  [
-    authMiddleware.verifyToken,
-    authMiddleware.isAdmin
-  ],
   adminController.getDashboardData
 );
 
@@ -40,10 +39,6 @@ router.get(
  */
 router.get(
   '/users',
-  [
-    authMiddleware.verifyToken,
-    authMiddleware.isAdmin
-  ],
   adminController.getUsers
 );
 
@@ -54,10 +49,6 @@ router.get(
  */
 router.get(
   '/drivers',
-  [
-    authMiddleware.verifyToken,
-    authMiddleware.isAdmin
-  ],
   adminController.getDrivers
 );
 
@@ -68,10 +59,6 @@ router.get(
  */
 router.get(
   '/rides',
-  [
-    authMiddleware.verifyToken,
-    authMiddleware.isAdmin
-  ],
   adminController.getRides
 );
 
@@ -82,10 +69,6 @@ router.get(
  */
 router.get(
   '/subscriptions',
-  [
-    authMiddleware.verifyToken,
-    authMiddleware.isAdmin
-  ],
   adminController.getSubscriptions
 );
 
@@ -96,10 +79,6 @@ router.get(
  */
 router.get(
   '/reports',
-  [
-    authMiddleware.verifyToken,
-    authMiddleware.isAdmin
-  ],
   adminController.getReports
 );
 
@@ -110,10 +89,6 @@ router.get(
  */
 router.delete(
   '/drivers/:driverId',
-  [
-    authMiddleware.verifyToken,
-    authMiddleware.isAdmin
-  ],
   adminController.removeDriver
 );
 
@@ -124,10 +99,6 @@ router.delete(
  */
 router.post(
   '/drivers/:driverId/verify',
-  [
-    authMiddleware.verifyToken,
-    authMiddleware.isAdmin
-  ],
   adminController.verifyDriver
 );
 
