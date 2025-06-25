@@ -54,10 +54,39 @@ const server = http.createServer(app);
 const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSION;
 // Render.com is not a serverless environment, so we should run the server normally
 
-// Rate limiting
-const limiter = rateLimit({
+// Rate limiting - Configure based on environment
+const isProd = process.env.NODE_ENV === 'production';
+
+// Strict limiter for auth routes
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: isProd ? 50 : 200, // Stricter limit, but increased for both prod and dev
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 429,
+    message: 'Too many login attempts, please try again after 15 minutes',
+    retryAfter: 15 * 60 // seconds
+  }
+});
+
+// General limiter for other API routes
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isProd ? 300 : 1000, // More lenient limits
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 429,
+    message: 'Too many requests, please try again after 15 minutes',
+    retryAfter: 15 * 60 // seconds
+  }
+});
+
+// Very lenient limiter for public routes
+const publicLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: isProd ? 500 : 2000, // Very lenient limits
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -106,7 +135,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
-app.use('/api', limiter);
+
+// Apply rate limiters to specific routes
+app.use('/api/auth', authLimiter); // Strict limits for auth routes
+app.use('/api/admin', authLimiter); // Strict limits for admin routes
+app.use('/api/health', publicLimiter); // Very lenient for health checks
+app.use('/api', apiLimiter); // General limit for all other API routes
 
 // Set up routes
 app.use('/api/auth', authRoutes);
