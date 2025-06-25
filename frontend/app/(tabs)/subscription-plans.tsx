@@ -37,7 +37,7 @@ export default function SubscriptionPlansScreen() {
           colors={theme.gradientColors as [string, string]}
           style={styles.header}
         >
-          <Text style={styles.headerTitle}>Subscription Plans</Text>
+          <Text style={styles.headerTitle}>{isAdmin ? 'Manage Subscription Plans' : 'Subscription Plans'}</Text>
         </LinearGradient>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.primary} />
@@ -53,7 +53,7 @@ export default function SubscriptionPlansScreen() {
         colors={theme.gradientColors as [string, string]}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>Subscription Plans</Text>
+        <Text style={styles.headerTitle}>{isAdmin ? 'Manage Subscription Plans' : 'Subscription Plans'}</Text>
       </LinearGradient>
       
       <View style={styles.content}>

@@ -273,7 +273,7 @@ export default function AdminDashboard({
             <TouchableOpacity
               style={[styles.tab]}
               onPress={() => {
-                router.push('/admin-subscribers');
+                router.push('/(tabs)/subscribers-management');
               }}
             >
               <FontAwesome5

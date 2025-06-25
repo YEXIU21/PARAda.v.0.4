@@ -48,7 +48,7 @@ export default function TabLayout() {
         <Tabs.Screen name="driver" />
         <Tabs.Screen name="profile" />
         <Tabs.Screen name="explore" />
-        <Tabs.Screen name="admin-subscribers" />
+        <Tabs.Screen name="subscribers-management" />
         <Tabs.Screen name="manage-drivers" />
         <Tabs.Screen name="manage-routes" />
         <Tabs.Screen name="user-management" />

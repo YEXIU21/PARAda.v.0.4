@@ -121,7 +121,7 @@ const adminFunctions: AdminFunction[] = [
   { id: 'drivers', title: 'Manage Drivers', icon: 'id-card', color: '#4B6BFE', screen: 'manage-drivers' },
   { id: 'routes', title: 'Manage Routes', icon: 'route', color: '#34A853', screen: 'manage-routes' },
   { id: 'users', title: 'User Management', icon: 'users', color: '#FF9500', screen: 'user-management' },
-  { id: 'subscriptions', title: 'Subscription Plans', icon: 'tags', color: '#8E44AD', screen: 'subscription-plans' },
+  { id: 'subscriptions', title: 'Manage Subscription Plans', icon: 'tags', color: '#8E44AD', screen: 'subscription-plans' },
   { id: 'settings', title: 'System Settings', icon: 'cogs', color: '#FF3B30', screen: 'system-settings' },
   { id: 'reports', title: 'Reports', icon: 'chart-bar', color: '#5856D6', screen: 'reports' },
   { id: 'notifications', title: 'Notifications', icon: 'bell', color: '#FF9500', screen: 'notifications' },
