@@ -43,7 +43,7 @@ interface Subscription {
   };
 }
 
-export default function SubscribersManagementScreen() {
+export default function AdminSubscribersScreen() {
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
   
@@ -227,7 +227,7 @@ export default function SubscribersManagementScreen() {
           colors={theme.gradientColors as [string, string]}
           style={styles.headerGradient}
         >
-          <Text style={styles.headerTitle}>Subscribers Management</Text>
+          <Text style={styles.headerTitle}>Subscription Management</Text>
         </LinearGradient>
         
         <View style={styles.content}>
@@ -247,7 +247,7 @@ export default function SubscribersManagementScreen() {
           colors={theme.gradientColors as [string, string]}
           style={styles.headerGradient}
         >
-          <Text style={styles.headerTitle}>Subscribers Management</Text>
+          <Text style={styles.headerTitle}>Subscription Management</Text>
         </LinearGradient>
         
         <View style={styles.content}>
@@ -272,7 +272,7 @@ export default function SubscribersManagementScreen() {
         colors={theme.gradientColors as [string, string]}
         style={styles.headerGradient}
       >
-        <Text style={styles.headerTitle}>Subscribers Management</Text>
+        <Text style={styles.headerTitle}>Subscription Management</Text>
       </LinearGradient>
       
       <View style={styles.content}>
@@ -406,71 +406,93 @@ export default function SubscribersManagementScreen() {
                 </View>
 
                 {subscription.paymentDetails && (
-                  <View style={styles.paymentInfo}>
-                    <FontAwesome5 name="money-bill" size={16} color={theme.primary} style={styles.icon} />
-                    <View>
-                      <Text style={[styles.paymentMethod, { color: theme.text }]}>
-                        {subscription.paymentDetails.method?.toUpperCase() || 'Unknown Method'}
-                      </Text>
-                      <Text style={[styles.paymentReference, { color: theme.textSecondary }]}>
-                        Ref: {subscription.paymentDetails.referenceNumber || 'N/A'}
-                      </Text>
-                    </View>
+                  <View style={styles.userInfo}>
+                    <FontAwesome5
+                      name="money-check-alt"
+                      size={16}
+                      color={theme.primary}
+                      style={styles.icon}
+                    />
+                    <Text style={[styles.paymentDetails, { color: theme.textSecondary }]}>
+                      Ref: {subscription.paymentDetails.referenceNumber || 'N/A'} | ₱
+                      {(subscription.paymentDetails.amount || 0).toLocaleString()}
+                    </Text>
                   </View>
                 )}
 
-                <View style={styles.statusContainer}>
-                  <View style={styles.statusInfo}>
-                    <FontAwesome5 
-                      name={activeTab === 'active' ? 'calendar-check' : 'clock'} 
-                      size={16} 
-                      color={activeTab === 'active' ? theme.success : theme.warning} 
-                      style={styles.icon} 
-                    />
-                    <Text 
-                      style={[
-                        styles.statusText, 
-                        { 
-                          color: activeTab === 'active' ? theme.success : theme.warning 
-                        }
-                      ]}
-                    >
-                      {activeTab === 'active' ? 'Active until:' : 'Awaiting Approval'}
-                    </Text>
-                  </View>
-                  
-                  {activeTab === 'active' && subscription.expiryDate && (
-                    <Text style={[styles.expiryDate, { color: theme.text }]}>
-                      {formatDate(subscription.expiryDate)}
-                    </Text>
-                  )}
+                <View style={styles.userInfo}>
+                  <FontAwesome5
+                    name="calendar-alt"
+                    size={16}
+                    color={theme.primary}
+                    style={styles.icon}
+                  />
+                  <Text style={[styles.expiryDate, { color: theme.textSecondary }]}>
+                    Expires: {formatDate(subscription.expiryDate)}
+                  </Text>
                 </View>
 
-                <View style={styles.actionButtons}>
-                  {activeTab === 'pending' ? (
+                <View style={styles.statusContainer}>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      {
+                        backgroundColor: subscription.isActive
+                          ? theme.success + '20'
+                          : theme.warning + '20',
+                      },
+                    ]}
+                  >
+                    <FontAwesome5 
+                      name={subscription.isActive ? "check-circle" : "clock"} 
+                      size={12} 
+                      color={subscription.isActive ? theme.success : theme.warning} 
+                      style={{marginRight: 6}}
+                    />
+                    <Text
+                      style={[
+                        styles.statusText,
+                        {
+                          color: subscription.isActive ? theme.success : theme.warning,
+                        },
+                      ]}
+                    >
+                      {subscription.isActive ? 'Active' : 'Pending'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[styles.actionButtons, { borderTopColor: theme.border }]}>
+                  {!subscription.isActive ? (
                     <>
                       <TouchableOpacity
-                        style={[styles.actionButton, styles.approveButton]}
+                        style={[styles.verifyButton, { borderColor: theme.success }]}
                         onPress={() => handleVerifySubscription(subscription._id)}
                       >
-                        <FontAwesome5 name="check" size={14} color="white" style={styles.actionIcon} />
-                        <Text style={styles.actionButtonText}>Approve</Text>
+                        <FontAwesome5 name="check" size={14} color={theme.success} />
+                        <Text style={[styles.verifyText, { color: theme.success }]}>Verify</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={[styles.actionButton, styles.rejectButton]}
+                        style={[styles.rejectButton, { borderColor: theme.warning }]}
                         onPress={() => handleRejectSubscription(subscription._id)}
                       >
-                        <FontAwesome5 name="times" size={14} color="white" style={styles.actionIcon} />
-                        <Text style={styles.actionButtonText}>Reject</Text>
+                        <FontAwesome5 name="ban" size={14} color={theme.warning} />
+                        <Text style={[styles.rejectText, { color: theme.warning }]}>Reject</Text>
                       </TouchableOpacity>
                     </>
                   ) : (
                     <TouchableOpacity
-                      style={[styles.actionButton, styles.cancelButton]}
+                      style={[
+                        styles.cancelButton, 
+                        { 
+                          backgroundColor: theme.error + '15',
+                          borderColor: theme.error 
+                        }
+                      ]}
                       onPress={() => handleCancelSubscription(subscription._id)}
                     >
-                      <FontAwesome5 name="ban" size={14} color="white" style={styles.actionIcon} />
-                      <Text style={styles.actionButtonText}>Cancel</Text>
+                      <FontAwesome5 name="times" size={14} color={theme.error} />
+                      <Text style={[styles.cancelText, { color: theme.error, fontWeight: 'bold' }]}>Cancel</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -478,47 +500,65 @@ export default function SubscribersManagementScreen() {
             ))
           )}
         </ScrollView>
+
+        {/* Confirmation Modals */}
+        <ConfirmationModal
+          visible={verifyModalVisible}
+          title="Verify Subscription"
+          message="Are you sure you want to verify this subscription? This will grant the user access to subscription features."
+          confirmText="Verify"
+          cancelText="Cancel"
+          confirmColor={theme.success}
+          cancelColor={theme.textSecondary}
+          icon="check-circle"
+          iconColor={theme.success}
+          onConfirm={confirmVerifySubscription}
+          onCancel={() => {
+            setVerifyModalVisible(false);
+            setSelectedSubscriptionId(null);
+          }}
+          isLoading={actionLoading}
+          theme={theme}
+        />
+        
+        <ConfirmationModal
+          visible={rejectModalVisible}
+          title="Reject Subscription"
+          message="Are you sure you want to reject this subscription? The user will be notified that their payment was rejected."
+          confirmText="Reject"
+          cancelText="Cancel"
+          confirmColor={theme.warning}
+          cancelColor={theme.textSecondary}
+          icon="ban"
+          iconColor={theme.warning}
+          onConfirm={confirmRejectSubscription}
+          onCancel={() => {
+            setRejectModalVisible(false);
+            setSelectedSubscriptionId(null);
+          }}
+          isLoading={actionLoading}
+          theme={theme}
+        />
+        
+        <ConfirmationModal
+          visible={cancelModalVisible}
+          title="Cancel Subscription"
+          message="Are you sure you want to cancel this subscription? This will immediately revoke the user's access to subscription features."
+          confirmText="Cancel"
+          cancelText="Go Back"
+          confirmColor={theme.error}
+          cancelColor={theme.textSecondary}
+          icon="times-circle"
+          iconColor={theme.error}
+          onConfirm={confirmCancelSubscription}
+          onCancel={() => {
+            setCancelModalVisible(false);
+            setSelectedSubscriptionId(null);
+          }}
+          isLoading={actionLoading}
+          theme={theme}
+        />
       </View>
-
-      {/* Confirmation Modals */}
-      <ConfirmationModal
-        isVisible={verifyModalVisible}
-        onClose={() => setVerifyModalVisible(false)}
-        onConfirm={confirmVerifySubscription}
-        title="Verify Subscription"
-        message="Are you sure you want to verify this subscription? This will grant the user access to the subscription features."
-        confirmText="Verify"
-        cancelText="Cancel"
-        isLoading={actionLoading}
-        confirmButtonColor="#34A853"
-        theme={theme}
-      />
-
-      <ConfirmationModal
-        isVisible={rejectModalVisible}
-        onClose={() => setRejectModalVisible(false)}
-        onConfirm={confirmRejectSubscription}
-        title="Reject Subscription"
-        message="Are you sure you want to reject this subscription? This will deny the user access to the subscription features."
-        confirmText="Reject"
-        cancelText="Cancel"
-        isLoading={actionLoading}
-        confirmButtonColor="#FF3B30"
-        theme={theme}
-      />
-
-      <ConfirmationModal
-        isVisible={cancelModalVisible}
-        onClose={() => setCancelModalVisible(false)}
-        onConfirm={confirmCancelSubscription}
-        title="Cancel Subscription"
-        message="Are you sure you want to cancel this subscription? This will immediately revoke the user's access to the subscription features."
-        confirmText="Cancel Subscription"
-        cancelText="Keep Active"
-        isLoading={actionLoading}
-        confirmButtonColor="#FF3B30"
-        theme={theme}
-      />
     </SafeAreaView>
   );
 }
@@ -527,121 +567,49 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerGradient: {
-    paddingTop: 40,
-    paddingBottom: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    marginTop: 16,
-    marginBottom: 20,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#4B6BFE',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    padding: 0,
-  },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 16,
   },
   tabsContainer: {
     flexDirection: 'row',
+    marginBottom: 16,
   },
   tab: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginRight: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginLeft: 8,
-  },
-  activeTab: {
-    borderWidth: 0,
   },
   tabIcon: {
     marginRight: 6,
   },
+  activeTab: {
+    backgroundColor: 'rgba(75, 107, 254, 0.1)',
+  },
   tabText: {
-    fontSize: 14,
     fontWeight: '500',
   },
-  subscriptionsList: {
+  scrollView: {
     flex: 1,
   },
-  emptyContainer: {
-    padding: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    marginTop: 10,
-    fontSize: 16,
-    textAlign: 'center',
+  scrollContent: {
+    paddingBottom: 20,
   },
   subscriptionCard: {
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 4,
     elevation: 2,
   },
   cardHeader: {
@@ -651,9 +619,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   planBadge: {
-    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 4,
+    paddingHorizontal: 12,
+    borderRadius: 16,
   },
   planBadgeText: {
     color: 'white',
@@ -674,70 +642,162 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   userName: {
+    fontWeight: 'bold',
     fontSize: 16,
-    fontWeight: '500',
   },
   userEmail: {
     fontSize: 14,
   },
-  paymentInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  paymentMethod: {
+  paymentDetails: {
     fontSize: 14,
-    fontWeight: '500',
   },
-  paymentReference: {
-    fontSize: 12,
+  expiryDate: {
+    fontSize: 14,
   },
   statusContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    marginTop: 4,
+    marginTop: 8,
+    marginBottom: 12,
   },
-  statusInfo: {
+  statusBadge: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
   },
   statusText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  expiryDate: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
   actionButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
   },
-  actionButton: {
+  verifyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  verifyText: {
+    marginLeft: 6,
+    fontWeight: 'bold',
+  },
+  rejectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  rejectText: {
+    marginLeft: 6,
+    fontWeight: 'bold',
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 100,
+  },
+  cancelText: {
+    marginLeft: 8,
+    fontSize: 14,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#4B6BFE',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    padding: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 16,
+  },
+  headerGradient: {
+    paddingTop: 40,
+    paddingBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+    paddingTop: 16,
+  },
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 4,
-    marginLeft: 8,
+    borderRadius: 8,
+    marginBottom: 16,
   },
-  approveButton: {
-    backgroundColor: '#34A853',
+  searchIcon: {
+    marginRight: 8,
   },
-  rejectButton: {
-    backgroundColor: '#FF3B30',
+  searchInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 16,
   },
-  cancelButton: {
-    backgroundColor: '#FF9500',
-  },
-  actionIcon: {
-    marginRight: 6,
-  },
-  actionButtonText: {
-    color: 'white',
-    fontWeight: '500',
-    fontSize: 14,
+  subscriptionsList: {
+    flex: 1,
   },
 }); 
