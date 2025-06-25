@@ -16,6 +16,8 @@ import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { getSubscriptions, verifySubscription, cancelSubscription } from '../../services/api/admin.api';
 import { LinearGradient } from 'expo-linear-gradient';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import AdminSubscriptionPlansManager from '../../components/AdminSubscriptionPlansManager';
+import AdminStudentDiscountManager from '../../components/AdminStudentDiscountManager';
 
 // Define interfaces for API data
 interface Subscription {
@@ -50,7 +52,7 @@ export default function AdminSubscribersScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'active' | 'pending'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'pending' | 'plans' | 'discounts'>('active');
   const [searchText, setSearchText] = useState('');
   
   // Modal states
@@ -61,7 +63,9 @@ export default function AdminSubscribersScreen() {
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    fetchSubscriptions();
+    if (activeTab !== 'plans' && activeTab !== 'discounts') {
+      fetchSubscriptions();
+    }
   }, [activeTab]);
 
   const fetchSubscriptions = async () => {
@@ -211,12 +215,12 @@ export default function AdminSubscribersScreen() {
   const filteredSubscriptions = subscriptions.filter(subscription => {
     const username = subscription.userId?.username?.toLowerCase() || '';
     const email = subscription.userId?.email?.toLowerCase() || '';
-    const refNumber = subscription.paymentDetails?.referenceNumber?.toLowerCase() || '';
+    const reference = subscription.paymentDetails?.referenceNumber?.toLowerCase() || '';
     const searchLower = searchText.toLowerCase();
     
     return username.includes(searchLower) || 
            email.includes(searchLower) || 
-           refNumber.includes(searchLower);
+           reference.includes(searchLower);
   });
 
   if (isLoading && !isRefreshing) {
@@ -275,22 +279,24 @@ export default function AdminSubscribersScreen() {
       </LinearGradient>
       
       <View style={styles.content}>
-        {/* Search and Filter Section */}
-        <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
-          <FontAwesome5 name="search" size={16} color={theme.textSecondary} style={styles.searchIcon} />
-          <TextInput
-            style={[styles.searchInput, { color: theme.text }]}
-            placeholder="Search by name, email or reference..."
-            placeholderTextColor={theme.textSecondary}
-            value={searchText}
-            onChangeText={setSearchText}
-          />
-          {searchText !== '' && (
-            <TouchableOpacity onPress={() => setSearchText('')}>
-              <FontAwesome5 name="times-circle" size={16} color={theme.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
+        {/* Search and Filter Section - Only show for subscriptions tabs */}
+        {activeTab !== 'plans' && activeTab !== 'discounts' && (
+          <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
+            <FontAwesome5 name="search" size={16} color={theme.textSecondary} style={styles.searchIcon} />
+            <TextInput
+              style={[styles.searchInput, { color: theme.text }]}
+              placeholder="Search by name, email or reference..."
+              placeholderTextColor={theme.textSecondary}
+              value={searchText}
+              onChangeText={setSearchText}
+            />
+            {searchText !== '' && (
+              <TouchableOpacity onPress={() => setSearchText('')}>
+                <FontAwesome5 name="times-circle" size={16} color={theme.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
         
         {/* Tabs Section */}
         <View style={styles.header}>
@@ -346,158 +352,238 @@ export default function AdminSubscribersScreen() {
                 Pending
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tab,
+                activeTab === 'plans' && [
+                  styles.activeTab,
+                  { backgroundColor: theme.success + '20' },
+                ],
+              ]}
+              onPress={() => setActiveTab('plans')}
+            >
+              <FontAwesome5 
+                name="tags" 
+                size={14} 
+                color={activeTab === 'plans' ? theme.success : theme.textSecondary} 
+                style={styles.tabIcon}
+              />
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: activeTab === 'plans' ? theme.success : theme.textSecondary },
+                ]}
+              >
+                Plans
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tab,
+                activeTab === 'discounts' && [
+                  styles.activeTab,
+                  { backgroundColor: theme.primary + '20' },
+                ],
+              ]}
+              onPress={() => setActiveTab('discounts')}
+            >
+              <FontAwesome5 
+                name="graduation-cap" 
+                size={14} 
+                color={activeTab === 'discounts' ? theme.primary : theme.textSecondary} 
+                style={styles.tabIcon}
+              />
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: activeTab === 'discounts' ? theme.primary : theme.textSecondary },
+                ]}
+              >
+                Discounts
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Content based on active tab */}
-        <ScrollView
-          style={styles.subscriptionsList}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              colors={[theme.primary]}
-              tintColor={theme.primary}
-            />
-          }
-        >
-          {filteredSubscriptions.length === 0 ? (
-            <View style={[styles.emptyContainer, { backgroundColor: theme.card }]}>
-              <FontAwesome5 name="info-circle" size={40} color={theme.textSecondary} />
-              <Text style={[styles.emptyText, { color: theme.text }]}>
-                {searchText ? 'No matching subscriptions found' : `No ${activeTab} subscriptions found`}
-              </Text>
-            </View>
-          ) : (
-            filteredSubscriptions.map((subscription) => (
-              <View
-                key={subscription._id}
-                style={[styles.subscriptionCard, { backgroundColor: theme.card }]}
-              >
-                <View style={styles.cardHeader}>
-                  <View
-                    style={[
-                      styles.planBadge,
-                      { backgroundColor: getPlanColor(subscription.planId) },
-                    ]}
-                  >
-                    <Text style={styles.planBadgeText}>
-                      {subscription.planId.charAt(0).toUpperCase() + subscription.planId.slice(1)}
+        {activeTab === 'plans' ? (
+          <AdminSubscriptionPlansManager 
+            theme={{
+              background: theme.background,
+              card: theme.card,
+              text: theme.text,
+              textSecondary: theme.textSecondary,
+              border: theme.border,
+              primary: theme.primary,
+              error: theme.error,
+              success: theme.success,
+              warning: theme.warning
+            }} 
+          />
+        ) : activeTab === 'discounts' ? (
+          <AdminStudentDiscountManager 
+            theme={{
+              background: theme.background,
+              card: theme.card,
+              text: theme.text,
+              textSecondary: theme.textSecondary,
+              border: theme.border,
+              primary: theme.primary,
+              error: theme.error,
+              success: theme.success,
+              warning: theme.warning
+            }} 
+          />
+        ) : (
+          <ScrollView
+            style={styles.subscriptionsList}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                colors={[theme.primary]}
+                tintColor={theme.primary}
+              />
+            }
+          >
+            {filteredSubscriptions.length === 0 ? (
+              <View style={[styles.emptyContainer, { backgroundColor: theme.card }]}>
+                <FontAwesome5 name="info-circle" size={40} color={theme.textSecondary} />
+                <Text style={[styles.emptyText, { color: theme.text }]}>
+                  {searchText ? 'No matching subscriptions found' : `No ${activeTab} subscriptions found`}
+                </Text>
+              </View>
+            ) : (
+              filteredSubscriptions.map((subscription) => (
+                <View
+                  key={subscription._id}
+                  style={[styles.subscriptionCard, { backgroundColor: theme.card }]}
+                >
+                  <View style={styles.cardHeader}>
+                    <View
+                      style={[
+                        styles.planBadge,
+                        { backgroundColor: getPlanColor(subscription.planId) },
+                      ]}
+                    >
+                      <Text style={styles.planBadgeText}>
+                        {subscription.planId.charAt(0).toUpperCase() + subscription.planId.slice(1)}
+                      </Text>
+                    </View>
+                    <Text style={[styles.dateText, { color: theme.textSecondary }]}>
+                      {formatDate(subscription.createdAt)}
                     </Text>
                   </View>
-                  <Text style={[styles.dateText, { color: theme.textSecondary }]}>
-                    {formatDate(subscription.createdAt)}
-                  </Text>
-                </View>
 
-                <View style={styles.userInfo}>
-                  <FontAwesome5 name="user" size={16} color={theme.primary} style={styles.icon} />
-                  <Text style={[styles.userName, { color: theme.text }]}>
-                    {subscription.userId?.username || 'Unknown User'}
-                  </Text>
-                </View>
+                  <View style={styles.userInfo}>
+                    <FontAwesome5 name="user" size={16} color={theme.primary} style={styles.icon} />
+                    <Text style={[styles.userName, { color: theme.text }]}>
+                      {subscription.userId?.username || 'Unknown User'}
+                    </Text>
+                  </View>
 
-                <View style={styles.userInfo}>
-                  <FontAwesome5 name="envelope" size={16} color={theme.primary} style={styles.icon} />
-                  <Text style={[styles.userEmail, { color: theme.textSecondary }]}>
-                    {subscription.userId?.email || 'No email'}
-                  </Text>
-                </View>
+                  <View style={styles.userInfo}>
+                    <FontAwesome5 name="envelope" size={16} color={theme.primary} style={styles.icon} />
+                    <Text style={[styles.userEmail, { color: theme.textSecondary }]}>
+                      {subscription.userId?.email || 'No email'}
+                    </Text>
+                  </View>
 
-                {subscription.paymentDetails && (
+                  {subscription.paymentDetails && (
+                    <View style={styles.userInfo}>
+                      <FontAwesome5
+                        name="money-check-alt"
+                        size={16}
+                        color={theme.primary}
+                        style={styles.icon}
+                      />
+                      <Text style={[styles.paymentDetails, { color: theme.textSecondary }]}>
+                        Ref: {subscription.paymentDetails.referenceNumber || 'N/A'} | ₱
+                        {(subscription.paymentDetails.amount || 0).toLocaleString()}
+                      </Text>
+                    </View>
+                  )}
+
                   <View style={styles.userInfo}>
                     <FontAwesome5
-                      name="money-check-alt"
+                      name="calendar-alt"
                       size={16}
                       color={theme.primary}
                       style={styles.icon}
                     />
-                    <Text style={[styles.paymentDetails, { color: theme.textSecondary }]}>
-                      Ref: {subscription.paymentDetails.referenceNumber || 'N/A'} | ₱
-                      {(subscription.paymentDetails.amount || 0).toLocaleString()}
+                    <Text style={[styles.expiryDate, { color: theme.textSecondary }]}>
+                      Expires: {formatDate(subscription.expiryDate)}
                     </Text>
                   </View>
-                )}
 
-                <View style={styles.userInfo}>
-                  <FontAwesome5
-                    name="calendar-alt"
-                    size={16}
-                    color={theme.primary}
-                    style={styles.icon}
-                  />
-                  <Text style={[styles.expiryDate, { color: theme.textSecondary }]}>
-                    Expires: {formatDate(subscription.expiryDate)}
-                  </Text>
-                </View>
-
-                <View style={styles.statusContainer}>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      {
-                        backgroundColor: subscription.isActive
-                          ? theme.success + '20'
-                          : theme.warning + '20',
-                      },
-                    ]}
-                  >
-                    <FontAwesome5 
-                      name={subscription.isActive ? "check-circle" : "clock"} 
-                      size={12} 
-                      color={subscription.isActive ? theme.success : theme.warning} 
-                      style={{marginRight: 6}}
-                    />
-                    <Text
+                  <View style={styles.statusContainer}>
+                    <View
                       style={[
-                        styles.statusText,
+                        styles.statusBadge,
                         {
-                          color: subscription.isActive ? theme.success : theme.warning,
+                          backgroundColor: subscription.isActive
+                            ? theme.success + '20'
+                            : theme.warning + '20',
                         },
                       ]}
                     >
-                      {subscription.isActive ? 'Active' : 'Pending'}
-                    </Text>
+                      <FontAwesome5 
+                        name={subscription.isActive ? "check-circle" : "clock"} 
+                        size={12} 
+                        color={subscription.isActive ? theme.success : theme.warning} 
+                        style={{marginRight: 6}}
+                      />
+                      <Text
+                        style={[
+                          styles.statusText,
+                          {
+                            color: subscription.isActive ? theme.success : theme.warning,
+                          },
+                        ]}
+                      >
+                        {subscription.isActive ? 'Active' : 'Pending'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={[styles.actionButtons, { borderTopColor: theme.border }]}>
+                    {!subscription.isActive && (
+                      <>
+                        <TouchableOpacity
+                          style={[styles.verifyButton, { borderColor: theme.success }]}
+                          onPress={() => handleVerifySubscription(subscription._id)}
+                        >
+                          <FontAwesome5 name="check" size={14} color={theme.success} />
+                          <Text style={[styles.verifyText, { color: theme.success }]}>Verify</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.rejectButton, { borderColor: theme.warning }]}
+                          onPress={() => handleRejectSubscription(subscription._id)}
+                        >
+                          <FontAwesome5 name="ban" size={14} color={theme.warning} />
+                          <Text style={[styles.rejectText, { color: theme.warning }]}>Reject</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                    <TouchableOpacity
+                      style={[
+                        styles.cancelButton, 
+                        { 
+                          backgroundColor: theme.error + '15',
+                          borderColor: theme.error 
+                        }
+                      ]}
+                      onPress={() => handleCancelSubscription(subscription._id)}
+                    >
+                      <FontAwesome5 name="times" size={14} color={theme.error} />
+                      <Text style={[styles.cancelText, { color: theme.error, fontWeight: 'bold' }]}>Cancel</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
-
-                <View style={[styles.actionButtons, { borderTopColor: theme.border }]}>
-                  {!subscription.isActive && (
-                    <>
-                      <TouchableOpacity
-                        style={[styles.verifyButton, { borderColor: theme.success }]}
-                        onPress={() => handleVerifySubscription(subscription._id)}
-                      >
-                        <FontAwesome5 name="check" size={14} color={theme.success} />
-                        <Text style={[styles.verifyText, { color: theme.success }]}>Verify</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.rejectButton, { borderColor: theme.warning }]}
-                        onPress={() => handleRejectSubscription(subscription._id)}
-                      >
-                        <FontAwesome5 name="ban" size={14} color={theme.warning} />
-                        <Text style={[styles.rejectText, { color: theme.warning }]}>Reject</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-                  <TouchableOpacity
-                    style={[
-                      styles.cancelButton, 
-                      { 
-                        backgroundColor: theme.error + '15',
-                        borderColor: theme.error 
-                      }
-                    ]}
-                    onPress={() => handleCancelSubscription(subscription._id)}
-                  >
-                    <FontAwesome5 name="times" size={14} color={theme.error} />
-                    <Text style={[styles.cancelText, { color: theme.error, fontWeight: 'bold' }]}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          )}
-        </ScrollView>
+              ))
+            )}
+          </ScrollView>
+        )}
 
         {/* Confirmation Modals */}
         <ConfirmationModal
