@@ -754,10 +754,10 @@ export default function HomeScreen() {
     setShowSubscriptionModal(true);
   };
 
-  // Modified to skip vehicle type selection for subscription
+  // Modified to navigate to subscription plans page
   const showSubscriptionOptions = () => {
-    // Skip vehicle type selection and go directly to subscription modal
-    setShowSubscriptionModal(true);
+    // Navigate to subscription plans page instead of showing modal
+    router.push('/(tabs)/subscription-plans');
   };
 
   const subscribeToService = (planId: SubscriptionId) => {

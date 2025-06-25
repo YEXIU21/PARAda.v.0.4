@@ -13,6 +13,7 @@ import { getSubscriptionPlans } from '../services/api/subscription.api';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SubscriptionPlan {
   id: string;
@@ -22,6 +23,47 @@ interface SubscriptionPlan {
   features: string[];
   recommended?: boolean;
 }
+
+// Default subscription plans to use as fallback
+const defaultSubscriptionPlans: SubscriptionPlan[] = [
+  {
+    id: 'monthly',
+    name: 'Monthly Pass',
+    price: 199,
+    duration: 30,
+    features: [
+      'Access to all basic routes',
+      'Unlimited rides during operating hours',
+      'Real-time vehicle tracking',
+      'Monthly billing'
+    ]
+  },
+  {
+    id: 'quarterly',
+    name: 'Quarterly Pass',
+    price: 499,
+    duration: 90,
+    features: [
+      'All Monthly Pass features',
+      'Priority boarding',
+      'Discounted fare for premium routes',
+      'Save 16% compared to monthly'
+    ],
+    recommended: true
+  },
+  {
+    id: 'annual',
+    name: 'Annual Pass',
+    price: 1799,
+    duration: 365,
+    features: [
+      'All Quarterly Pass features',
+      'VIP access to premium routes',
+      'Free companion pass on weekends',
+      'Save 25% compared to monthly'
+    ]
+  }
+];
 
 interface PassengerSubscriptionPlansProps {
   theme: {
@@ -39,7 +81,7 @@ interface PassengerSubscriptionPlansProps {
 }
 
 const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({ theme }) => {
-  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>(defaultSubscriptionPlans);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
@@ -52,11 +94,42 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      const plans = await getSubscriptionPlans();
-      setSubscriptionPlans(plans);
+      
+      // Try to get plans from API
+      try {
+        const plans = await getSubscriptionPlans();
+        if (plans && plans.length > 0) {
+          console.log('Successfully fetched subscription plans from API:', plans);
+          setSubscriptionPlans(plans);
+        } else {
+          console.log('API returned empty plans, using default plans');
+          // If API returns empty array, use default plans
+          setSubscriptionPlans(defaultSubscriptionPlans);
+        }
+      } catch (apiError) {
+        console.error('Error fetching from API, using default plans:', apiError);
+        // If API call fails, use default plans
+        setSubscriptionPlans(defaultSubscriptionPlans);
+        
+        // Try to get cached plans from AsyncStorage
+        try {
+          const cachedPlans = await AsyncStorage.getItem('subscriptionPlans');
+          if (cachedPlans) {
+            const parsedPlans = JSON.parse(cachedPlans);
+            if (parsedPlans && parsedPlans.length > 0) {
+              console.log('Using cached subscription plans');
+              setSubscriptionPlans(parsedPlans);
+            }
+          }
+        } catch (storageError) {
+          console.error('Error reading from AsyncStorage:', storageError);
+        }
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load subscription plans');
-      console.error('Error loading subscription plans:', err);
+      console.error('Error in fetchSubscriptionPlans:', err);
+      // Ensure we always have plans to display
+      setSubscriptionPlans(defaultSubscriptionPlans);
     } finally {
       setIsLoading(false);
     }
@@ -131,7 +204,7 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
             <Text style={[styles.currency, { color: theme.text }]}>₱</Text>
             <Text style={[styles.price, { color: theme.text }]}>{plan.price}</Text>
             <Text style={[styles.duration, { color: theme.textSecondary }]}>
-              /{plan.duration === 30 ? 'month' : 'year'}
+              /{plan.duration === 30 ? 'month' : plan.duration === 90 ? 'quarter' : 'year'}
             </Text>
           </View>
           
