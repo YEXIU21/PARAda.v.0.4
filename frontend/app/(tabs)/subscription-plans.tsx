@@ -31,19 +31,25 @@ export default function SubscriptionPlansScreen() {
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Use default plans initially to ensure we have something to display
+      setSubscriptionPlans(defaultSubscriptionPlans);
+      
+      // Then try to fetch from API
       const plans = await getSubscriptionPlans();
       
       // Only update plans if we got a valid response with at least one plan
       if (plans && Array.isArray(plans) && plans.length > 0) {
         setSubscriptionPlans(plans);
+        console.log('Loaded subscription plans from API:', plans.length);
       } else {
         console.log('API returned no plans, using default plans');
-        // Keep using the default plans that were set in the initial state
+        // Keep using the default plans that were set initially
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load subscription plans');
       console.error('Error loading subscription plans:', err);
-      // Keep using the default plans that were set in the initial state
+      // Keep using the default plans that were set initially
     } finally {
       setIsLoading(false);
     }

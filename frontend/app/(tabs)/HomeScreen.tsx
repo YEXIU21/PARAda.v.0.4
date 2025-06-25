@@ -12,7 +12,8 @@ import {
   Modal,
   Image,
   Platform,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  SafeAreaView
 } from 'react-native';
 import MapView, { Marker, Polyline } from '../../components/MapView';
 import * as Location from 'expo-location';
@@ -1544,21 +1545,164 @@ export default function HomeScreen() {
         visible={showSubscriptionModal}
         onRequestClose={() => setShowSubscriptionModal(false)}
       >
-        <SubscriptionView 
-          subscriptionPlans={subscriptionPlans}
-          onSubscribe={subscribeToService}
-          onClose={() => setShowSubscriptionModal(false)}
-          theme={{
-            background: theme.background,
-            card: theme.card,
-            text: theme.text,
-            textSecondary: theme.textSecondary,
-            border: theme.border,
-            primary: theme.primary,
-            gradientColors: theme.gradientColors as [string, string]
-          }}
-          isDarkMode={isDarkMode}
-        />
+        <SafeAreaView style={{flex: 1, backgroundColor: theme.background}}>
+          <LinearGradient
+            colors={theme.gradientColors}
+            style={{
+              paddingTop: 40,
+              paddingBottom: 20,
+              paddingHorizontal: 20
+            }}
+          >
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <Text style={{
+                fontSize: 24,
+                fontWeight: 'bold',
+                color: '#fff'
+              }}>Choose a Subscription</Text>
+              <TouchableOpacity 
+                onPress={() => setShowSubscriptionModal(false)}
+                style={{
+                  padding: 5
+                }}
+              >
+                <FontAwesome5 name="times" size={16} color="white" />
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+          
+          <ScrollView style={{flex: 1, padding: 20}}>
+            {subscriptionPlans.map((plan) => (
+              <View 
+                key={plan.id}
+                style={{
+                  borderRadius: 10,
+                  marginBottom: 20,
+                  padding: 20,
+                  borderWidth: 1,
+                  borderColor: plan.recommended ? theme.primary : theme.border,
+                  backgroundColor: theme.card,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 2
+                }}
+              >
+                {plan.recommended && (
+                  <View style={{
+                    position: 'absolute',
+                    top: -12,
+                    right: 20,
+                    paddingHorizontal: 12,
+                    paddingVertical: 5,
+                    borderRadius: 20,
+                    backgroundColor: theme.primary
+                  }}>
+                    <Text style={{
+                      color: 'white',
+                      fontWeight: 'bold',
+                      fontSize: 12
+                    }}>BEST VALUE</Text>
+                  </View>
+                )}
+                <Text style={{
+                  fontSize: 20,
+                  fontWeight: 'bold',
+                  marginBottom: 5,
+                  color: theme.text
+                }}>{plan.name}</Text>
+                <Text style={{
+                  fontSize: 24,
+                  fontWeight: 'bold',
+                  marginBottom: 5,
+                  color: theme.primary
+                }}>
+                  {typeof plan.price === 'string' 
+                    ? plan.price 
+                    : `₱${plan.price}/${typeof plan.duration === 'string' && plan.duration.toLowerCase().includes('yearly') ? 'year' : 'month'}`
+                  }
+                </Text>
+                <Text style={{
+                  fontSize: 14,
+                  marginBottom: 15,
+                  color: theme.textSecondary
+                }}>{plan.duration}</Text>
+                
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center'
+                }}>
+                  <FontAwesome5 name="money-bill-wave" size={14} color={theme.textSecondary} />
+                  <Text style={{
+                    marginLeft: 8,
+                    fontSize: 14,
+                    color: theme.textSecondary
+                  }}>
+                    Payment via GCash
+                  </Text>
+                </View>
+                
+                <View style={{
+                  height: 1,
+                  marginVertical: 15,
+                  backgroundColor: theme.border
+                }} />
+                
+                <View style={{
+                  marginTop: 5,
+                  marginBottom: 15
+                }}>
+                  <Text style={{
+                    fontSize: 18,
+                    fontWeight: 'bold',
+                    marginBottom: 10,
+                    color: theme.text
+                  }}>Features:</Text>
+                  {plan.features.map((feature, index) => (
+                    <View key={index} style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginBottom: 8
+                    }}>
+                      <FontAwesome5 
+                        name="check-circle" 
+                        size={16} 
+                        color={theme.primary} 
+                        style={{marginRight: 10}}
+                      />
+                      <Text style={{
+                        flex: 1,
+                        color: theme.text
+                      }}>{feature}</Text>
+                    </View>
+                  ))}
+                </View>
+                
+                <TouchableOpacity 
+                  style={{
+                    backgroundColor: theme.primary,
+                    paddingVertical: 12,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  onPress={() => subscribeToService(plan.id as SubscriptionId)}
+                >
+                  <Text style={{
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: 16
+                  }}>Subscribe with GCash</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
       </Modal>
       
       {/* GCash payment modal */}
