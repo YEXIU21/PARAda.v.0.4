@@ -577,16 +577,29 @@ export const cancelSubscription = async (subscriptionId) => {
 export const createSubscriptionPlan = async (planData) => {
   try {
     const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+    
     const response = await axios.post(
       `${BASE_URL}${ENDPOINTS.ADMIN.SUBSCRIPTION_PLANS}`,
       planData,
       {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 'x-access-token': token }
       }
     );
     return response.data.plan;
   } catch (error) {
     console.error('Error creating subscription plan:', error);
+    
+    // More detailed error logging
+    if (error.response) {
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+    } else if (error.request) {
+      console.error('No response received, request was:', error.request);
+    } else {
+      console.error('Error message:', error.message);
+    }
+    
     throw error;
   }
 };
@@ -600,16 +613,29 @@ export const createSubscriptionPlan = async (planData) => {
 export const updateSubscriptionPlan = async (planId, planData) => {
   try {
     const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+    
     const response = await axios.put(
       `${BASE_URL}${ENDPOINTS.ADMIN.SUBSCRIPTION_PLANS}/${planId}`,
       planData,
       {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 'x-access-token': token }
       }
     );
     return response.data.plan;
   } catch (error) {
     console.error('Error updating subscription plan:', error);
+    
+    // More detailed error logging
+    if (error.response) {
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+    } else if (error.request) {
+      console.error('No response received, request was:', error.request);
+    } else {
+      console.error('Error message:', error.message);
+    }
+    
     throw error;
   }
 };
@@ -622,15 +648,28 @@ export const updateSubscriptionPlan = async (planId, planData) => {
 export const deleteSubscriptionPlan = async (planId) => {
   try {
     const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+    
     const response = await axios.delete(
       `${BASE_URL}${ENDPOINTS.ADMIN.SUBSCRIPTION_PLANS}/${planId}`,
       {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 'x-access-token': token }
       }
     );
     return response.data;
   } catch (error) {
     console.error('Error deleting subscription plan:', error);
+    
+    // More detailed error logging
+    if (error.response) {
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+    } else if (error.request) {
+      console.error('No response received, request was:', error.request);
+    } else {
+      console.error('Error message:', error.message);
+    }
+    
     throw error;
   }
 };
