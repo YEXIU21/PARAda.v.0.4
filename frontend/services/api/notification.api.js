@@ -268,10 +268,17 @@ export const sendSystemNotification = async (notificationData, targetRoles = [])
     const token = await getAuthToken();
     if (!token) throw new Error('Authentication required');
     
+    // Ensure data object exists and set default expiration to 2 days
+    const data = notificationData.data || {};
+    if (!data.expiresIn) {
+      data.expiresIn = 2; // 2 days expiration
+    }
+    
     const response = await axios.post(
       `${BASE_URL}${ENDPOINTS.NOTIFICATION.SYSTEM}`,
       {
         ...notificationData,
+        data,
         targetRoles
       },
       {
