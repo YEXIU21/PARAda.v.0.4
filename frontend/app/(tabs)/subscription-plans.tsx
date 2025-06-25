@@ -12,13 +12,13 @@ import AdminSubscriptionPlansManager from '../../components/AdminSubscriptionPla
 import { useAuth } from '../../context/AuthContext';
 import SubscriptionView from '../../components/SubscriptionView';
 import { getSubscriptionPlans } from '../../services/api/subscription.api';
-import { Subscription } from '../../constants/SubscriptionPlans';
+import { Subscription, defaultSubscriptionPlans } from '../../constants/SubscriptionPlans';
 
 export default function SubscriptionPlansScreen() {
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
   const { user } = useAuth();
-  const [subscriptionPlans, setSubscriptionPlans] = useState<Subscription[]>([]);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<Subscription[]>(defaultSubscriptionPlans);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,10 +31,18 @@ export default function SubscriptionPlansScreen() {
       setIsLoading(true);
       setError(null);
       const plans = await getSubscriptionPlans();
-      setSubscriptionPlans(plans);
+      
+      // Only update plans if we got a valid response with at least one plan
+      if (plans && Array.isArray(plans) && plans.length > 0) {
+        setSubscriptionPlans(plans);
+      } else {
+        console.log('API returned no plans, using default plans');
+        // Keep using the default plans that were set in the initial state
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load subscription plans');
       console.error('Error loading subscription plans:', err);
+      // Keep using the default plans that were set in the initial state
     } finally {
       setIsLoading(false);
     }
@@ -55,16 +63,17 @@ export default function SubscriptionPlansScreen() {
       );
     }
 
-    if (error) {
-      return (
-        <View style={styles.errorContainer}>
-          <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
-        </View>
-      );
-    }
-
     // For admin users, show the admin subscription plans manager
     if (user?.role === 'admin') {
+      // If there was an error loading plans for admin, show the error
+      if (error) {
+        return (
+          <View style={styles.errorContainer}>
+            <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
+          </View>
+        );
+      }
+      
       return (
         <AdminSubscriptionPlansManager 
           theme={{
@@ -83,9 +92,10 @@ export default function SubscriptionPlansScreen() {
     }
 
     // For passengers (including students), show the subscription view
+    // Always ensure we have plans to display, even if there was an error
     return (
       <SubscriptionView
-        subscriptionPlans={subscriptionPlans}
+        subscriptionPlans={subscriptionPlans.length > 0 ? subscriptionPlans : defaultSubscriptionPlans}
         onSubscribe={handleSubscribe}
         onClose={() => {}}
         theme={{
