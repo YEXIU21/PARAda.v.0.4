@@ -17,7 +17,7 @@ import { getSubscriptions, verifySubscription, cancelSubscription } from '../../
 import { LinearGradient } from 'expo-linear-gradient';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import AdminSubscriptionPlansManager from '../../components/AdminSubscriptionPlansManager';
-import AdminStudentDiscountManager from '../../components/AdminStudentDiscountManager';
+import { useLocalSearchParams } from 'expo-router';
 
 // Define interfaces for API data
 interface Subscription {
@@ -48,11 +48,14 @@ interface Subscription {
 export default function AdminSubscribersScreen() {
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
+  const params = useLocalSearchParams();
+  const initialTab = params.tab === 'plans' ? 'plans' : 'active';
+  
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'active' | 'pending' | 'plans' | 'discounts'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'pending' | 'plans'>(initialTab as 'active' | 'pending' | 'plans');
   const [searchText, setSearchText] = useState('');
   
   // Modal states
@@ -63,7 +66,7 @@ export default function AdminSubscribersScreen() {
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    if (activeTab !== 'plans' && activeTab !== 'discounts') {
+    if (activeTab !== 'plans') {
       fetchSubscriptions();
     }
   }, [activeTab]);
@@ -280,7 +283,7 @@ export default function AdminSubscribersScreen() {
       
       <View style={styles.content}>
         {/* Search and Filter Section - Only show for subscriptions tabs */}
-        {activeTab !== 'plans' && activeTab !== 'discounts' && (
+        {activeTab !== 'plans' && (
           <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
             <FontAwesome5 name="search" size={16} color={theme.textSecondary} style={styles.searchIcon} />
             <TextInput
@@ -377,51 +380,12 @@ export default function AdminSubscribersScreen() {
                 Plans
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.tab,
-                activeTab === 'discounts' && [
-                  styles.activeTab,
-                  { backgroundColor: theme.primary + '20' },
-                ],
-              ]}
-              onPress={() => setActiveTab('discounts')}
-            >
-              <FontAwesome5 
-                name="graduation-cap" 
-                size={14} 
-                color={activeTab === 'discounts' ? theme.primary : theme.textSecondary} 
-                style={styles.tabIcon}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  { color: activeTab === 'discounts' ? theme.primary : theme.textSecondary },
-                ]}
-              >
-                Discounts
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
 
         {/* Content based on active tab */}
         {activeTab === 'plans' ? (
           <AdminSubscriptionPlansManager 
-            theme={{
-              background: theme.background,
-              card: theme.card,
-              text: theme.text,
-              textSecondary: theme.textSecondary,
-              border: theme.border,
-              primary: theme.primary,
-              error: theme.error,
-              success: theme.success,
-              warning: theme.warning
-            }} 
-          />
-        ) : activeTab === 'discounts' ? (
-          <AdminStudentDiscountManager 
             theme={{
               background: theme.background,
               card: theme.card,

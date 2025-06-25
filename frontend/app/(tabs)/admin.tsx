@@ -574,15 +574,20 @@ export default function AdminScreen() {
     
     // Handle specific function actions
     if (id === 'subscriptions') {
-      // Navigate to the admin-subscribers page instead of showing a modal
-      router.push('/admin-subscribers');
+      // Navigate to the admin-subscribers page with plans tab active
+      router.push('/admin-subscribers?tab=plans');
       return;
     }
     
     // Navigate to the appropriate screen if defined
     const selectedFunction = adminFunctions.find(f => f.id === id);
     if (selectedFunction && selectedFunction.screen) {
-      router.push(`/${selectedFunction.screen}`);
+      if (selectedFunction.screen === 'admin-subscribers') {
+        // Default to active tab for subscribers screen
+        router.push(`/${selectedFunction.screen}`);
+      } else {
+        router.push(`/${selectedFunction.screen}`);
+      }
     }
   };
 

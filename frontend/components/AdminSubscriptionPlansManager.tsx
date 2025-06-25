@@ -9,11 +9,18 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
-  ScrollView
+  ScrollView,
+  Switch
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { getSubscriptionPlans } from '../services/api/subscription.api';
-import { updateSubscriptionPlan, createSubscriptionPlan, deleteSubscriptionPlan } from '../services/api/admin.api';
+import { 
+  updateSubscriptionPlan, 
+  createSubscriptionPlan, 
+  deleteSubscriptionPlan,
+  getStudentDiscountSettings,
+  updateStudentDiscountSettings
+} from '../services/api/admin.api';
 
 interface SubscriptionPlan {
   id: string;
@@ -54,8 +61,14 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
   });
   const [newFeature, setNewFeature] = useState('');
 
+  // Student discount settings
+  const [isStudentDiscountEnabled, setIsStudentDiscountEnabled] = useState(true);
+  const [discountPercent, setDiscountPercent] = useState(20);
+  const [isSavingDiscount, setIsSavingDiscount] = useState(false);
+
   useEffect(() => {
     fetchSubscriptionPlans();
+    fetchStudentDiscountSettings();
   }, []);
 
   const fetchSubscriptionPlans = async () => {
@@ -69,6 +82,16 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
       console.error('Error loading subscription plans:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchStudentDiscountSettings = async () => {
+    try {
+      const settings = await getStudentDiscountSettings();
+      setIsStudentDiscountEnabled(settings.isEnabled);
+      setDiscountPercent(settings.discountPercent);
+    } catch (err: any) {
+      console.error('Error loading student discount settings:', err);
     }
   };
 
@@ -165,6 +188,31 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     }
   };
 
+  const handleSaveDiscountSettings = async () => {
+    try {
+      setIsSavingDiscount(true);
+      
+      // Validate discount percent
+      if (discountPercent < 0 || discountPercent > 100) {
+        Alert.alert('Validation Error', 'Discount percentage must be between 0 and 100');
+        setIsSavingDiscount(false);
+        return;
+      }
+      
+      const settings = {
+        isEnabled: isStudentDiscountEnabled,
+        discountPercent
+      };
+      
+      await updateStudentDiscountSettings(settings);
+      Alert.alert('Success', 'Student discount settings updated successfully');
+    } catch (err: any) {
+      Alert.alert('Error', 'Failed to update student discount settings');
+    } finally {
+      setIsSavingDiscount(false);
+    }
+  };
+
   if (isLoading && subscriptionPlans.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -191,7 +239,78 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
+      {/* Student Discount Settings Section */}
+      <View style={[styles.discountCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <View style={styles.header}>
+          <FontAwesome5 name="graduation-cap" size={20} color={theme.primary} style={styles.icon} />
+          <Text style={[styles.title, { color: theme.text }]}>Student Discount Settings</Text>
+        </View>
+        
+        <View style={styles.settingRow}>
+          <Text style={[styles.settingLabel, { color: theme.text }]}>Enable Student Discount</Text>
+          <Switch
+            value={isStudentDiscountEnabled}
+            onValueChange={setIsStudentDiscountEnabled}
+            trackColor={{ false: '#767577', true: theme.primary + '80' }}
+            thumbColor={isStudentDiscountEnabled ? theme.primary : '#f4f3f4'}
+          />
+        </View>
+        
+        <View style={styles.settingRow}>
+          <Text style={[styles.settingLabel, { color: theme.text }]}>Discount Percentage</Text>
+          <View style={styles.percentInputContainer}>
+            <TextInput
+              style={[
+                styles.percentInput,
+                { 
+                  color: theme.text,
+                  borderColor: theme.border,
+                  backgroundColor: theme.background
+                }
+              ]}
+              value={discountPercent.toString()}
+              onChangeText={(text) => {
+                const value = parseInt(text);
+                if (!isNaN(value)) {
+                  setDiscountPercent(value);
+                }
+              }}
+              keyboardType="numeric"
+              maxLength={3}
+              editable={isStudentDiscountEnabled}
+            />
+            <Text style={[styles.percentSymbol, { color: theme.text }]}>%</Text>
+          </View>
+        </View>
+        
+        <View style={styles.description}>
+          <Text style={[styles.descriptionText, { color: theme.textSecondary }]}>
+            Student discount is automatically applied to all subscription plans for users with a student account type.
+          </Text>
+        </View>
+        
+        <TouchableOpacity
+          style={[
+            styles.saveDiscountButton,
+            { backgroundColor: theme.primary },
+            isSavingDiscount && { opacity: 0.7 }
+          ]}
+          onPress={handleSaveDiscountSettings}
+          disabled={isSavingDiscount}
+        >
+          {isSavingDiscount ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <>
+              <FontAwesome5 name="save" size={16} color="#FFF" style={styles.saveIcon} />
+              <Text style={styles.saveButtonText}>Save Discount Settings</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* Subscription Plans Section */}
+      <View style={styles.plansHeader}>
         <Text style={[styles.title, { color: theme.text }]}>Subscription Plans</Text>
         <TouchableOpacity
           style={[styles.createButton, { backgroundColor: theme.primary }]}
@@ -256,13 +375,13 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
             </View>
           </View>
         )}
-        contentContainerStyle={styles.plansList}
       />
 
+      {/* Plan Edit/Create Modal */}
       <Modal
-        visible={modalVisible}
-        transparent={true}
         animationType="slide"
+        transparent={true}
+        visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
@@ -397,43 +516,54 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 16
   },
   header: {
     flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16
+  },
+  plansHeader: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginTop: 20,
+    marginBottom: 16
+  },
+  icon: {
+    marginRight: 12
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   createButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 4
   },
   createButtonIcon: {
-    marginRight: 6,
+    marginRight: 6
   },
   createButtonText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: 'bold'
   },
-  plansList: {
-    paddingBottom: 20,
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000
   },
   planCard: {
-    marginVertical: 8,
+    marginBottom: 16,
+    borderRadius: 8,
     padding: 16,
-    borderRadius: 12,
     borderWidth: 1,
-    position: 'relative',
-    overflow: 'hidden',
+    position: 'relative'
   },
   recommendedBadge: {
     position: 'absolute',
@@ -441,104 +571,149 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderBottomLeftRadius: 8,
+    borderBottomLeftRadius: 8
   },
   recommendedText: {
-    color: '#FFF',
-    fontSize: 10,
+    color: '#FFFFFF',
     fontWeight: 'bold',
+    fontSize: 10
   },
   planHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 8
   },
   planName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   planPrice: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   planDuration: {
-    fontSize: 14,
-    marginBottom: 12,
+    marginBottom: 12
   },
   featuresContainer: {
-    marginBottom: 16,
+    marginBottom: 16
   },
   featuresTitle: {
-    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 8
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 4
   },
   featureIcon: {
-    marginRight: 8,
+    marginRight: 8
   },
   featureText: {
-    fontSize: 14,
+    flex: 1
   },
   actionButtons: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-end'
   },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 6,
-    marginRight: 8,
+    borderRadius: 4,
+    marginRight: 8
   },
   editButtonText: {
     marginLeft: 6,
-    fontWeight: 'bold',
-    fontSize: 14,
+    fontWeight: '500'
   },
   deleteButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 4
   },
   deleteButtonText: {
     marginLeft: 6,
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 999,
+    fontWeight: '500'
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 16,
+    textAlign: 'center'
   },
   errorText: {
     marginTop: 12,
-    fontSize: 16,
     textAlign: 'center',
+    marginBottom: 16
   },
   retryButton: {
-    marginTop: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 4
   },
   retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold'
+  },
+  // Student discount styles
+  discountCard: {
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    marginBottom: 20
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16
+  },
+  settingLabel: {
+    fontSize: 16,
+    fontWeight: '500'
+  },
+  percentInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  percentInput: {
+    width: 60,
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    textAlign: 'right'
+  },
+  percentSymbol: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '500'
+  },
+  description: {
+    marginTop: 8,
+    marginBottom: 20
+  },
+  descriptionText: {
+    fontSize: 14,
+    lineHeight: 20
+  },
+  saveDiscountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 4
+  },
+  saveIcon: {
+    marginRight: 8
+  },
+  saveButtonText: {
     color: '#FFF',
     fontWeight: 'bold',
+    fontSize: 16
   },
   modalOverlay: {
     flex: 1,
@@ -653,11 +828,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
-  },
-  saveButtonText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    fontSize: 14,
   },
 });
 
