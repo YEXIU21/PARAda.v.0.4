@@ -55,6 +55,7 @@ export default function TabLayout() {
         <Tabs.Screen name="system-settings" />
         <Tabs.Screen name="reports" />
         <Tabs.Screen name="notifications" />
+        <Tabs.Screen name="messages" />
       </Tabs>
       <RoleBasedNavBar />
     </View>
