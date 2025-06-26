@@ -68,6 +68,10 @@ export default function MessagesScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [showComposeModal, setShowComposeModal] = useState<boolean>(false);
+  const [composeText, setComposeText] = useState<string>('');
+  const [composeSubject, setComposeSubject] = useState<string>('');
+  const [composeRecipient, setComposeRecipient] = useState<string>('');
+  const [showHeaderMenu, setShowHeaderMenu] = useState<boolean>(false);
   
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
@@ -984,12 +988,170 @@ export default function MessagesScreen() {
 
   // Handle compose message
   const handleComposeMessage = () => {
-    // For now, just show an alert
-    Alert.alert(
-      'Coming Soon',
-      'Message composition will be available in a future update.',
-      [{ text: 'OK', onPress: () => console.log('Compose message dialog closed') }]
-    );
+    // Show the compose modal
+    setComposeSubject('');
+    setComposeText('');
+    setComposeRecipient('');
+    setShowComposeModal(true);
+  };
+  
+  // Handle sending a new message
+  const handleSendMessage = async () => {
+    if (!composeSubject.trim() || !composeText.trim() || !composeRecipient.trim()) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    
+    try {
+      // In a real implementation, this would send the message to the server
+      // For now, just show a success message and close the modal
+      Alert.alert(
+        'Message Sent',
+        'Your message has been sent successfully.',
+        [{ text: 'OK', onPress: () => setShowComposeModal(false) }]
+      );
+      
+      // Reset the form
+      setComposeSubject('');
+      setComposeText('');
+      setComposeRecipient('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      Alert.alert('Error', 'Failed to send message. Please try again.');
+    }
+  };
+  
+  // Render compose modal
+  const renderComposeModal = () => (
+    <Modal
+      visible={showComposeModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowComposeModal(false)}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { backgroundColor: theme.card }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>New Message</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowComposeModal(false)}
+              >
+                <FontAwesome5 name="times" size={20} color={theme.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.modalBody}>
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: theme.text }]}>To:</Text>
+                <TextInput
+                  style={[styles.input, { color: theme.text, borderColor: theme.border }]}
+                  placeholder="Recipient"
+                  placeholderTextColor={theme.textSecondary}
+                  value={composeRecipient}
+                  onChangeText={setComposeRecipient}
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: theme.text }]}>Subject:</Text>
+                <TextInput
+                  style={[styles.input, { color: theme.text, borderColor: theme.border }]}
+                  placeholder="Subject"
+                  placeholderTextColor={theme.textSecondary}
+                  value={composeSubject}
+                  onChangeText={setComposeSubject}
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: theme.text }]}>Message:</Text>
+                <TextInput
+                  style={[
+                    styles.messageInput,
+                    { color: theme.text, borderColor: theme.border, backgroundColor: theme.inputBackground || theme.card }
+                  ]}
+                  placeholder="Type your message here..."
+                  placeholderTextColor={theme.textSecondary}
+                  value={composeText}
+                  onChangeText={setComposeText}
+                  multiline={true}
+                  numberOfLines={6}
+                  textAlignVertical="top"
+                />
+              </View>
+              
+              <TouchableOpacity
+                style={[styles.sendButton, { backgroundColor: theme.primary }]}
+                onPress={handleSendMessage}
+              >
+                <FontAwesome5 name="paper-plane" size={16} color="#fff" style={styles.sendIcon} />
+                <Text style={styles.sendButtonText}>Send Message</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+  
+  // Handle header menu toggle
+  const handleHeaderMenuToggle = () => {
+    setShowHeaderMenu(!showHeaderMenu);
+  };
+  
+  // Handle menu action
+  const handleMenuAction = (action: string) => {
+    setShowHeaderMenu(false);
+    
+    switch (action) {
+      case 'mark_all_read':
+        Alert.alert(
+          'Mark All as Read',
+          'Are you sure you want to mark all messages as read?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Mark All Read', 
+              onPress: () => {
+                // In a real implementation, this would call an API
+                Alert.alert('Success', 'All messages marked as read');
+              } 
+            }
+          ]
+        );
+        break;
+        
+      case 'delete_all':
+        Alert.alert(
+          'Delete All Messages',
+          'Are you sure you want to delete all messages? This action cannot be undone.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Delete All', 
+              style: 'destructive',
+              onPress: () => {
+                // In a real implementation, this would call an API
+                Alert.alert('Success', 'All messages deleted');
+              } 
+            }
+          ]
+        );
+        break;
+        
+      case 'settings':
+        // Navigate to settings
+        router.push('/settings');
+        break;
+        
+      default:
+        break;
+    }
   };
   
   return (
@@ -1000,9 +1162,43 @@ export default function MessagesScreen() {
       >
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Messages</Text>
-          <TouchableOpacity style={styles.headerActionButton}>
-            <FontAwesome5 name="ellipsis-v" size={18} color="#fff" />
-          </TouchableOpacity>
+          <View>
+            <TouchableOpacity 
+              style={styles.headerActionButton}
+              onPress={handleHeaderMenuToggle}
+            >
+              <FontAwesome5 name="ellipsis-v" size={18} color="#fff" />
+            </TouchableOpacity>
+            
+            {/* Header dropdown menu */}
+            {showHeaderMenu && (
+              <View style={[styles.headerMenu, { backgroundColor: theme.card }]}>
+                <TouchableOpacity 
+                  style={styles.headerMenuItem}
+                  onPress={() => handleMenuAction('mark_all_read')}
+                >
+                  <FontAwesome5 name="check-double" size={16} color={theme.primary} style={styles.headerMenuIcon} />
+                  <Text style={[styles.headerMenuText, { color: theme.text }]}>Mark All as Read</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.headerMenuItem}
+                  onPress={() => handleMenuAction('delete_all')}
+                >
+                  <FontAwesome5 name="trash-alt" size={16} color={theme.error} style={styles.headerMenuIcon} />
+                  <Text style={[styles.headerMenuText, { color: theme.text }]}>Delete All Messages</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.headerMenuItem}
+                  onPress={() => handleMenuAction('settings')}
+                >
+                  <FontAwesome5 name="cog" size={16} color={theme.textSecondary} style={styles.headerMenuIcon} />
+                  <Text style={[styles.headerMenuText, { color: theme.text }]}>Settings</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
       </LinearGradient>
 
@@ -1126,6 +1322,9 @@ export default function MessagesScreen() {
       
       {/* Reply modal */}
       {renderReplyModal()}
+      
+      {/* Compose modal */}
+      {renderComposeModal()}
     </SafeAreaView>
   );
 }
@@ -1157,6 +1356,34 @@ const styles = StyleSheet.create({
   },
   headerActionButton: {
     padding: 8,
+  },
+  headerMenu: {
+    position: 'absolute',
+    top: 40,
+    right: 0,
+    width: 200,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  headerMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  headerMenuIcon: {
+    marginRight: 12,
+    width: 20,
+    textAlign: 'center',
+  },
+  headerMenuText: {
+    fontSize: 14,
   },
   closeButton: {
     padding: 8,
@@ -1327,27 +1554,27 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
   },
   modalContainer: {
-    width: '90%',
+    width: '100%',
     maxWidth: 500,
-    borderRadius: 16,
+    borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 10,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    padding: 16,
     borderBottomWidth: 1,
   },
   modalTitle: {
@@ -1355,25 +1582,76 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   modalBody: {
-    padding: 20,
-    maxHeight: 500,
+    padding: 16,
   },
-  detailTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  detailDate: {
-    fontSize: 14,
+  inputGroup: {
     marginBottom: 16,
   },
-  detailContent: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  messageExpiry: {
+  inputLabel: {
     fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  input: {
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+  },
+  messageInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    minHeight: 120,
+  },
+  sendButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  sendIcon: {
+    marginRight: 8,
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  replyToText: {
+    fontSize: 14,
+    marginBottom: 8,
     fontStyle: 'italic',
+  },
+  replyInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    minHeight: 100,
+    marginBottom: 16,
+    textAlignVertical: 'top',
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    marginRight: 10,
+  },
+  cancelButtonText: {
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   modalFooter: {
     flexDirection: 'row',
@@ -1416,52 +1694,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  replyToText: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  replyInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    minHeight: 120,
-    textAlignVertical: 'top',
-  },
-  cancelButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    flex: 1,
-    marginRight: 10,
-  },
-  cancelButtonText: {
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  sendButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    flex: 1,
-  },
-  sendButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
   disabledButton: {
     opacity: 0.6,
   },
-  
-  // Original styles for older parts
   actionButton: {
     marginLeft: 8,
     padding: 4,
@@ -1471,9 +1706,32 @@ const styles = StyleSheet.create({
     marginTop: 8,
     justifyContent: 'flex-end',
   },
+  detailTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  detailDate: {
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  detailContent: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  messageExpiry: {
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
   messageFooter: {
     flexDirection: 'row',
-    marginTop: 10,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  messageCategory: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   categoryBadge: {
     flexDirection: 'row',
