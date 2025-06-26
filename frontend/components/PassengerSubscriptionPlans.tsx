@@ -276,6 +276,7 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
         plan: selectedPlanForPayment.id,
         planId: selectedPlanForPayment.id || selectedPlanForPayment.planId || selectedPlanForPayment._id,
         planName: selectedPlanForPayment.name,
+        displayName: selectedPlanForPayment.name,
         planPrice: selectedPlanForPayment.price,
         planDuration: selectedPlanForPayment.duration,
         startDate: now.toISOString(),
@@ -318,6 +319,7 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
         
         // Plan details for custom plan creation if needed
         name: selectedPlanForPayment.name || 'Selected Plan',
+        displayName: selectedPlanForPayment.name || 'Selected Plan',
         price: selectedPlanForPayment.price || 0,
         amount: selectedPlanForPayment.price || 0, // Ensure both price and amount are set
         duration: selectedPlanForPayment.duration || 30,
@@ -550,6 +552,9 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
                   setReferenceNumber('');
                   setPaymentError(null);
                   setIsProcessingPayment(false);
+                  
+                  // Navigate to profile page to show subscription status
+                  router.push('/(tabs)/profile');
                 }}
                 style={styles.closeButton}
               >
@@ -626,13 +631,17 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
                 <View style={styles.processingContainer}>
                   <ActivityIndicator size="large" color={theme.primary} />
                   <Text style={[styles.processingText, { color: theme.text }]}>
-                    Verifying payment...
+                    Verifying payment for {selectedPlanForPayment?.name}...
                   </Text>
                   <TouchableOpacity 
                     style={[styles.cancelButton, { borderColor: theme.border, marginTop: 20 }]}
                     onPress={() => {
                       setIsProcessingPayment(false);
                       setReferenceNumber('');
+                      
+                      // Navigate to profile page to show subscription status
+                      setShowGCashModal(false);
+                      router.push('/(tabs)/profile');
                     }}
                   >
                     <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>

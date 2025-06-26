@@ -42,6 +42,8 @@ interface Subscription {
     verifiedBy?: string;
     status?: string;
   };
+  displayName?: string;
+  planName?: string;
 }
 
 export default function SubscribersManagementScreen() {
@@ -211,7 +213,22 @@ export default function SubscribersManagementScreen() {
 
   // Get proper plan name based on plan ID
   const getPlanName = (planId: string) => {
-    // First check if it's one of our standard plans
+    // First check if it's a MongoDB ID format (like 685db8517f982c2bfaa1d1bd)
+    if (planId && planId.length === 24 && /^[0-9a-f]{24}$/i.test(planId)) {
+      // Try to find this subscription in the subscriptions list
+      const subscription = subscriptions.find(sub => sub._id === planId || sub.planId === planId);
+      if (subscription) {
+        // Check for displayName or planName fields first
+        if (subscription.displayName) {
+          return subscription.displayName;
+        }
+        if (subscription.planName) {
+          return subscription.planName;
+        }
+      }
+    }
+    
+    // If not found or not a MongoDB ID, use standard plan names
     switch (planId.toLowerCase()) {
       case 'basic':
         return 'Basic Plan';
@@ -220,11 +237,6 @@ export default function SubscribersManagementScreen() {
       case 'annual':
         return 'Annual Plan';
       default:
-        // Try to find the plan in defaultSubscriptionPlans
-        const plan = defaultSubscriptionPlans.find(p => p.id.toLowerCase() === planId.toLowerCase());
-        if (plan) return plan.name;
-        
-        // If not found, capitalize the first letter of the ID
         return planId.charAt(0).toUpperCase() + planId.slice(1);
     }
   };

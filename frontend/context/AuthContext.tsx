@@ -22,6 +22,8 @@ export interface User {
   subscription?: {
     type: string;
     plan: string;
+    planName?: string;
+    displayName?: string;
     verified: boolean;
     isActive?: boolean;
     expiryDate: string;
@@ -172,6 +174,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               userData.subscription = {
                 type: subscription.type,
                 plan: subscription.planId,
+                planName: subscription.planName || undefined,
+                displayName: subscription.displayName || undefined,
                 verified: subscription.verification?.verified || false,
                 isActive: subscription.isActive || false,
                 expiryDate: subscription.expiryDate || '',
@@ -182,6 +186,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const storageData = {
                 type: subscription.type,
                 plan: subscription.planId,
+                planName: subscription.planName || undefined,
+                displayName: subscription.displayName || undefined,
                 verified: subscription.verification?.verified || false,
                 isActive: subscription.isActive || false,
                 approved: subscription.verification?.verified || false,
@@ -208,6 +214,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     userData.subscription = {
                       type: parsedSub.type,
                       plan: parsedSub.plan,
+                      planName: parsedSub.planName || undefined,
+                      displayName: parsedSub.displayName || undefined,
                       verified: parsedSub.verified || false,
                       isActive: parsedSub.isActive || false,
                       expiryDate: parsedSub.expiryDate || '',
@@ -467,6 +475,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             subscription: {
               type: userData.subscription.type,
               plan: userData.subscription.plan,
+              planName: userData.subscription.planName || undefined,
+              displayName: userData.subscription.displayName || undefined,
               verified: userData.subscription.verified || false,
               isActive: userData.subscription.isActive || false,
               expiryDate: userData.subscription.expiryDate || '',
@@ -480,6 +490,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const storageData = {
             type: userData.subscription.type,
             plan: userData.subscription.plan,
+            planName: userData.subscription.planName || undefined,
+            displayName: userData.subscription.displayName || undefined,
             verified: userData.subscription.verified || false,
             isActive: userData.subscription.isActive || false,
             approved: userData.subscription.verified || false,
@@ -510,6 +522,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   subscription: {
                     type: parsedSub.type,
                     plan: parsedSub.plan,
+                    planName: parsedSub.planName || undefined,
+                    displayName: parsedSub.displayName || undefined,
                     verified: parsedSub.verified || false,
                     isActive: parsedSub.isActive || false,
                     expiryDate: parsedSub.expiryDate || '',
@@ -555,6 +569,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 subscription: {
                   type: data.type,
                   plan: data.plan,
+                  planName: data.planName || undefined,
+                  displayName: data.displayName || undefined,
                   verified: data.verified || false,
                   isActive: data.isActive || false,
                   expiryDate: data.expiryDate || '',

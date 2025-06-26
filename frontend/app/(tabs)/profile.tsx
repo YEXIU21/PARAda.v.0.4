@@ -561,6 +561,26 @@ export default function ProfileScreen() {
 
   // Get proper plan name based on plan ID
   const getPlanName = (planId: string) => {
+    // First check if it's a MongoDB ID format (like 685db8517f982c2bfaa1d1bd)
+    if (planId && planId.length === 24 && /^[0-9a-f]{24}$/i.test(planId)) {
+      // Try to get the subscription data from context
+      try {
+        const subscriptionData = user?.subscription;
+        if (subscriptionData) {
+          // Check for displayName or planName fields first
+          if (subscriptionData.displayName) {
+            return subscriptionData.displayName;
+          }
+          if (subscriptionData.planName) {
+            return subscriptionData.planName;
+          }
+        }
+      } catch (error) {
+        console.error('Error getting subscription data:', error);
+      }
+    }
+    
+    // If not found or not a MongoDB ID, use standard plan names
     switch (planId.toLowerCase()) {
       case 'basic':
         return 'Basic Plan';
