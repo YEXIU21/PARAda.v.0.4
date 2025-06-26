@@ -86,10 +86,12 @@ const NotificationBadge: React.FC<NotificationBadgeProps> = ({
   const fetchUnreadCount = async () => {
     try {
       const count = await getUnreadCount();
-      setUnreadCount(count);
+      // Make sure count is a valid number
+      const validCount = typeof count === 'number' ? count : 0;
+      setUnreadCount(validCount);
       
       // Also store in AsyncStorage for persistence
-      await AsyncStorage.setItem('notification_unread_count', count.toString());
+      await AsyncStorage.setItem('notification_unread_count', validCount.toString());
     } catch (error) {
       console.error('Error fetching unread count:', error);
       
@@ -98,9 +100,14 @@ const NotificationBadge: React.FC<NotificationBadgeProps> = ({
         const storedCount = await AsyncStorage.getItem('notification_unread_count');
         if (storedCount) {
           setUnreadCount(parseInt(storedCount));
+        } else {
+          // Default to 0 if nothing in storage
+          setUnreadCount(0);
         }
       } catch (storageError) {
         console.error('Error getting count from storage:', storageError);
+        // Default to 0 if all else fails
+        setUnreadCount(0);
       }
     }
   };

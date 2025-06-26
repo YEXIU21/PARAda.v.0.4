@@ -571,13 +571,15 @@ export default function ProfileScreen() {
         colors={theme.gradientColors}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>My Profile</Text>
-        <TouchableOpacity 
-          style={styles.notificationButton}
-          onPress={() => setShowNotifications(true)}
-        >
-          <NotificationBadge theme={theme} size={22} />
-        </TouchableOpacity>
+        <View style={{ width: '100%', paddingTop: 10 }}>
+          <Text style={styles.headerTitle}>My Profile</Text>
+          <TouchableOpacity 
+            style={styles.notificationButton}
+            onPress={() => setShowNotifications(true)}
+          >
+            <NotificationBadge theme={theme} size={22} />
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
       
       <ScrollView style={styles.content}>
@@ -826,24 +828,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 50,
-    paddingBottom: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    paddingTop: 40,
+    paddingBottom: 20,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
     position: 'relative',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#fff',
-    textAlign: 'center',
+    marginBottom: 0,
+    paddingHorizontal: 24,
   },
   notificationButton: {
     position: 'absolute',
     right: 20,
-    top: 50,
+    top: 40,
     padding: 8,
   },
   content: {

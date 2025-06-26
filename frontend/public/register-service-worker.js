@@ -102,31 +102,46 @@ if ('serviceWorker' in navigator) {
         'x-access-token': token
       }
     })
-    .then(response => response.json())
+    .then(response => {
+      // Check if response is OK before parsing JSON
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
     .then(data => {
-      if (data && typeof data.count === 'number') {
-        // Update document title
-        const count = data.count;
-        const originalTitle = 'PARAda Admin Dashboard';
-        document.title = count > 0 ? `(${count}) ${originalTitle}` : originalTitle;
-        
-        // Store count in localStorage
-        localStorage.setItem('notification_unread_count', count.toString());
-        
-        // Trigger custom event that components can listen for
-        window.dispatchEvent(new CustomEvent('notificationCountUpdated', { 
-          detail: { count } 
-        }));
-        
-        // Update favicon badge with a data attribute
-        const favicon = document.querySelector('link[rel="icon"]');
-        if (favicon) {
-          favicon.setAttribute('data-badge', count.toString());
-        }
+      // Ensure data.count is a valid number
+      const count = data && typeof data.count === 'number' ? data.count : 0;
+      
+      // Update document title
+      const originalTitle = 'PARAda Admin Dashboard';
+      document.title = count > 0 ? `(${count}) ${originalTitle}` : originalTitle;
+      
+      // Store count in localStorage
+      localStorage.setItem('notification_unread_count', count.toString());
+      
+      // Trigger custom event that components can listen for
+      window.dispatchEvent(new CustomEvent('notificationCountUpdated', { 
+        detail: { count } 
+      }));
+      
+      // Update favicon badge with a data attribute
+      const favicon = document.querySelector('link[rel="icon"]');
+      if (favicon) {
+        favicon.setAttribute('data-badge', count.toString());
       }
     })
     .catch(error => {
       console.error('Error fetching notification count:', error);
+      
+      // Try to get count from localStorage as fallback
+      const storedCount = localStorage.getItem('notification_unread_count');
+      if (storedCount) {
+        const count = parseInt(storedCount);
+        // Update document title with stored count
+        const originalTitle = 'PARAda Admin Dashboard';
+        document.title = count > 0 ? `(${count}) ${originalTitle}` : originalTitle;
+      }
     });
   }, 30000); // 30 seconds
 } 
