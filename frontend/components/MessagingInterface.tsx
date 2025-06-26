@@ -13,7 +13,8 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView
+  SafeAreaView,
+  ScrollView
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useTheme, getThemeColors } from '../context/ThemeContext';
@@ -24,17 +25,30 @@ import { getSocket } from '../services/socket/socket.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 
+// Add interface for message categories
+const categories = [
+  { id: 'all', label: 'All', icon: 'bell' },
+  { id: 'system', label: 'System', icon: 'cog' },
+  { id: 'route', label: 'Routes', icon: 'route' },
+  { id: 'user', label: 'Users', icon: 'user' },
+  { id: 'payment', label: 'Payments', icon: 'credit-card' },
+  { id: 'promo', label: 'Promotions', icon: 'tag' }
+];
+
 interface Message {
   _id: string;
   title: string;
   message: string;
   createdAt: string;
   read: boolean;
+  type?: 'info' | 'success' | 'warning' | 'error';
+  category?: 'system' | 'route' | 'user' | 'payment' | 'promo';
   data?: {
     fromAdmin?: boolean;
     expiresIn?: number;
     adminId?: string;
     notificationId?: string;
+    category?: string;
   };
 }
 
@@ -51,6 +65,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [showReplyModal, setShowReplyModal] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
@@ -714,15 +729,49 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
     }
   };
   
-  // Filter messages based on search query
-  const filteredMessages = searchQuery
-    ? messages.filter(msg => 
+  // Get icon for message category
+  const getCategoryIcon = (category?: string) => {
+    if (!category) return 'bell';
+    const found = categories.find(cat => cat.id === category);
+    return found ? found.icon : 'bell';
+  };
+  
+  // Get color for notification type
+  const getTypeColor = (type?: string) => {
+    switch (type) {
+      case 'info':
+        return '#4B6BFE';
+      case 'success':
+        return '#4CAF50';
+      case 'warning':
+        return '#FF9500';
+      case 'error':
+        return '#FF3B30';
+      default:
+        return '#4B6BFE';
+    }
+  };
+  
+  // Filter messages based on search query and category
+  const filteredMessages = messages.filter(msg => {
+    // First check if it passes the category filter
+    if (selectedCategory !== 'all') {
+      const msgCategory = msg.category || msg.data?.category || 'system';
+      if (msgCategory !== selectedCategory) return false;
+    }
+    
+    // Then check if it passes the search filter
+    if (searchQuery) {
+      return (
         msg.message?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         msg.title?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : messages;
+      );
+    }
+    
+    return true;
+  });
   
-  // Render message item
+  // Render each message item with the new design
   const renderMessageItem = ({ item }: { item: Message }) => {
     // Check if item exists and has required properties
     if (!item || !item._id || !item.title || !item.message) {
@@ -730,13 +779,16 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
       return null;
     }
     
+    const messageCategory = item.category || item.data?.category || 'system';
+    const messageType = item.type || 'info';
+    
     return (
       <TouchableOpacity 
         style={[
           styles.messageItem, 
           { 
             backgroundColor: theme.card,
-            borderLeftColor: item.read ? theme.border : theme.primary 
+            borderLeftColor: item.read ? theme.border : getTypeColor(messageType) 
           }
         ]}
         onPress={() => {
@@ -762,6 +814,22 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
         >
           {item.message}
         </Text>
+        
+        {/* Category badge */}
+        <View style={styles.messageFooter}>
+          <View style={[styles.categoryBadge, { backgroundColor: `${getTypeColor(messageType)}15` }]}>
+            <FontAwesome5 
+              name={getCategoryIcon(messageCategory)} 
+              size={10} 
+              color={getTypeColor(messageType)}
+              style={styles.categoryIcon} 
+            />
+            <Text style={[styles.categoryText, { color: getTypeColor(messageType) }]}>
+              {messageCategory.charAt(0).toUpperCase() + messageCategory.slice(1)}
+            </Text>
+          </View>
+        </View>
+        
         {!item.read && (
           <View style={[styles.unreadIndicator, { backgroundColor: theme.primary }]} />
         )}
@@ -931,6 +999,41 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
         </LinearGradient>
 
         <View style={styles.content}>
+          {/* Category filters */}
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesContainer}
+          >
+            {categories.map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                style={[
+                  styles.categoryButton,
+                  selectedCategory === category.id && {
+                    backgroundColor: `${theme.primary}20`,
+                    borderColor: theme.primary
+                  }
+                ]}
+                onPress={() => setSelectedCategory(category.id)}
+              >
+                <FontAwesome5 
+                  name={category.icon} 
+                  size={14} 
+                  color={selectedCategory === category.id ? theme.primary : theme.textSecondary} 
+                />
+                <Text 
+                  style={[
+                    styles.categoryButtonText,
+                    { color: selectedCategory === category.id ? theme.primary : theme.textSecondary }
+                  ]}
+                >
+                  {category.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          
           {/* Search bar */}
           <View style={[styles.searchContainer, { backgroundColor: theme.inputBackground || theme.card }]}>
             <FontAwesome5 name="search" size={16} color={theme.textSecondary} />
@@ -970,7 +1073,12 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
               <FontAwesome5 name="inbox" size={40} color={theme.textSecondary} />
               <Text style={[styles.emptyText, { color: theme.text }]}>No messages found</Text>
               <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-                {searchQuery ? 'Try a different search term' : 'Your messages will appear here'}
+                {searchQuery 
+                  ? 'Try a different search term' 
+                  : selectedCategory !== 'all'
+                    ? `No ${categories.find(c => c.id === selectedCategory)?.label || selectedCategory} messages`
+                    : 'Your messages will appear here'
+                }
               </Text>
             </View>
           ) : (
@@ -1276,6 +1384,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: 8,
     justifyContent: 'flex-end',
+  },
+  categoriesContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  categoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    marginRight: 8,
+  },
+  categoryButtonText: {
+    marginLeft: 6,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  messageFooter: {
+    flexDirection: 'row',
+    marginTop: 10,
+  },
+  categoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+  categoryIcon: {
+    marginRight: 4,
+  },
+  categoryText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
 });
 
