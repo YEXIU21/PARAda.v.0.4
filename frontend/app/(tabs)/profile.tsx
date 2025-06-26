@@ -571,15 +571,13 @@ export default function ProfileScreen() {
         colors={theme.gradientColors}
         style={styles.header}
       >
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>My Profile</Text>
-          <TouchableOpacity 
-            style={styles.notificationButton}
-            onPress={() => setShowNotifications(true)}
-          >
-            <NotificationBadge theme={theme} size={22} />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.headerTitle}>My Profile</Text>
+        <TouchableOpacity 
+          style={styles.notificationButton}
+          onPress={() => setShowNotifications(true)}
+        >
+          <NotificationBadge theme={theme} size={22} />
+        </TouchableOpacity>
       </LinearGradient>
       
       <ScrollView style={styles.content}>
@@ -834,13 +832,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingHorizontal: 20,
+    position: 'relative',
   },
   headerTitle: {
     fontSize: 24,
@@ -849,6 +841,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   notificationButton: {
+    position: 'absolute',
+    right: 20,
+    top: 50,
     padding: 8,
   },
   content: {
