@@ -13,33 +13,113 @@ import { getAuthToken } from './auth.api';
 export const getSubscriptionPlans = async () => {
   try {
     console.log('Fetching subscription plans from public API');
-    const response = await axios.get(`${BASE_URL}${ENDPOINTS.SUBSCRIPTION.PLANS}`);
     
-    // Make sure we return the same data structure as admin API
-    if (response.data && response.data.plans && Array.isArray(response.data.plans)) {
-      console.log('Successfully fetched subscription plans from public API:', response.data.plans);
+    // Try to get plans from the public endpoint
+    try {
+      const response = await axios.get(`${BASE_URL}${ENDPOINTS.SUBSCRIPTION.PLANS}`);
       
-      // Ensure the plans have the same structure as admin plans
-      const normalizedPlans = response.data.plans.map(plan => ({
-        id: plan.id || plan._id || `plan-${Math.random().toString(36).substr(2, 9)}`,
-        name: plan.name || 'Unnamed Plan',
-        price: typeof plan.price === 'string' ? parseFloat(plan.price) : (plan.price || 0),
-        duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : (plan.duration || 30),
-        features: Array.isArray(plan.features) ? plan.features : [],
-        recommended: plan.recommended || false
-      }));
+      // Debug log full response for troubleshooting
+      console.log('Public API response:', response.data);
       
-      return normalizedPlans;
+      // Make sure we return the same data structure as admin API
+      if (response.data && Array.isArray(response.data.plans) && response.data.plans.length > 0) {
+        console.log('Successfully fetched subscription plans from public API:', response.data.plans);
+        
+        // Ensure the plans have the same structure as admin plans
+        const normalizedPlans = response.data.plans.map(plan => ({
+          id: plan.id || plan.planId || plan._id || `plan-${Math.random().toString(36).substr(2, 9)}`,
+          planId: plan.planId,
+          _id: plan._id,
+          name: plan.name || 'Unnamed Plan',
+          price: typeof plan.price === 'string' ? parseFloat(plan.price) : (plan.price || 0),
+          duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : (plan.duration || 30),
+          features: Array.isArray(plan.features) ? plan.features : [],
+          recommended: plan.recommended || false
+        }));
+        
+        return normalizedPlans;
+      }
+      
+      // If the public API returned an empty or invalid response, throw an error to fall back to the admin API
+      console.warn('Public API returned invalid or empty plans data:', response.data);
+      throw new Error('Invalid data from public API');
+    } catch (publicApiError) {
+      console.warn('Error or invalid data from public API, trying admin API as fallback:', publicApiError);
+      
+      // Fallback: Try the admin API endpoint
+      try {
+        // Import the admin API function dynamically to avoid circular dependencies
+        const { getAdminSubscriptionPlans } = await import('./admin.api');
+        const adminPlans = await getAdminSubscriptionPlans();
+        
+        if (adminPlans && Array.isArray(adminPlans) && adminPlans.length > 0) {
+          console.log('Successfully fetched subscription plans from admin API:', adminPlans);
+          return adminPlans;
+        } 
+        
+        throw new Error('No valid plans from admin API');
+      } catch (adminApiError) {
+        console.error('Error fetching from admin API:', adminApiError);
+        
+        // If both APIs fail, return default plans from the database
+        return await fetchDefaultPlansFromBackend();
+      }
     }
-    
-    // If the data structure is unexpected, return an empty array
-    console.warn('Unexpected data structure from subscription plans API:', response.data);
-    return [];
   } catch (error) {
-    console.error('Error fetching subscription plans:', error);
+    console.error('Error in getSubscriptionPlans:', error);
     // Return empty array instead of throwing to prevent crashes
     return [];
   }
+};
+
+/**
+ * Fallback function to get default plans from backend
+ * @returns {Promise<Array>} - List of default subscription plans
+ */
+const fetchDefaultPlansFromBackend = async () => {
+  console.log('Fetching default plans from backend');
+  
+  try {
+    // Use a special endpoint to get default plans
+    const response = await axios.get(`${BASE_URL}/api/subscriptions/default-plans`);
+    
+    if (response.data && Array.isArray(response.data.plans) && response.data.plans.length > 0) {
+      console.log('Successfully fetched default plans:', response.data.plans);
+      return response.data.plans;
+    }
+  } catch (error) {
+    console.error('Error fetching default plans:', error);
+  }
+  
+  // If all else fails, return hardcoded default plans
+  console.log('Using hardcoded default plans');
+  return [
+    {
+      id: 'basic',
+      planId: 'basic',
+      name: 'Basic',
+      price: 99,
+      duration: 30,
+      features: ['Real-time tracking', 'Schedule access', 'Traffic updates']
+    },
+    {
+      id: 'premium',
+      planId: 'premium',
+      name: 'Premium',
+      price: 199,
+      duration: 30,
+      features: ['All Basic features', 'Priority notifications', 'Offline maps', 'No advertisements'],
+      recommended: true
+    },
+    {
+      id: 'annual',
+      planId: 'annual',
+      name: 'Annual',
+      price: 999,
+      duration: 365,
+      features: ['All Premium features', '24/7 support', 'Schedule alarms', 'Trip history']
+    }
+  ];
 };
 
 /**
