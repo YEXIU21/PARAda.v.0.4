@@ -822,7 +822,7 @@ export default function MessagesScreen() {
           <View style={[styles.categoryBadge, { backgroundColor: `${getTypeColor(messageType)}15` }]}>
             <FontAwesome5 
               name={getCategoryIcon(messageCategory)} 
-              size={10} 
+              size={14} 
               color={getTypeColor(messageType)}
               style={styles.categoryIcon} 
             />
@@ -1217,7 +1217,7 @@ export default function MessagesScreen() {
               >
                 <FontAwesome5 
                   name={category.icon} 
-                  size={12} 
+                  size={14} 
                   color={selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary)} 
                 />
                 <Text 
@@ -1444,22 +1444,22 @@ const styles = StyleSheet.create({
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    marginRight: 8,
+    marginRight: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 1,
     elevation: 1,
-    height: 32,
+    height: 36,
   },
   categoryButtonText: {
-    marginLeft: 6,
-    fontSize: 12,
+    marginLeft: 8,
+    fontSize: 13,
     fontWeight: '500',
   },
   messagesList: {
