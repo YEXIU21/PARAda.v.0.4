@@ -17,6 +17,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SubscriptionPlan {
   id: string;
+  planId?: string; // Backend planId field
+  _id?: string;    // MongoDB ID field
   name: string;
   price: number;
   duration: number;
@@ -100,7 +102,7 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
     const validPlans = plans.filter(plan => 
       plan && 
       typeof plan === 'object' && 
-      plan.id && 
+      (plan.id || plan.planId || plan._id) && 
       plan.name && 
       (typeof plan.price === 'number' || typeof plan.price === 'string') && 
       (typeof plan.duration === 'number' || typeof plan.duration === 'string') && 
@@ -111,9 +113,14 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
       return [];
     }
     
-    // Convert string prices to numbers if needed
+    // Convert string prices to numbers if needed and ensure consistent id field
     return validPlans.map(plan => ({
       ...plan,
+      // Ensure we have an id field that's used consistently in the UI
+      id: plan.id || plan.planId || (plan._id ? String(plan._id) : `plan-${Math.random().toString(36).substring(2, 9)}`),
+      // Keep original IDs for API interaction
+      planId: plan.planId,
+      _id: plan._id,
       price: typeof plan.price === 'string' ? parseFloat(plan.price) : plan.price,
       duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : plan.duration
     }));
@@ -143,6 +150,15 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
       // Try to get plans from public API
       try {
         const publicPlans = await getSubscriptionPlans();
+        
+        // Debug: Log the format of plans from API
+        if (publicPlans && publicPlans.length > 0) {
+          console.log('DEBUG - Subscription plan format from API:', JSON.stringify(publicPlans[0], null, 2));
+          console.log('Plan IDs - Standard format:', publicPlans.map(p => p.id));
+          console.log('Plan IDs - MongoDB format:', publicPlans.map(p => p._id));
+          console.log('Plan IDs - Backend format:', publicPlans.map(p => p.planId));
+        }
+        
         const validPublicPlans = validateAndNormalizePlans(publicPlans);
         
         if (validPublicPlans.length > 0) {
@@ -179,10 +195,20 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
   };
 
   const handleSubscribe = (plan: SubscriptionPlan) => {
+    // Make sure we're using the right ID for subscription
+    // Prefer planId (backend), then id (frontend), then _id (MongoDB)
+    const planIdToUse = plan.planId || plan.id || (plan._id ? String(plan._id) : undefined);
+    
+    if (!planIdToUse) {
+      console.error('Cannot subscribe: No valid plan ID found', plan);
+      Alert.alert('Error', 'Invalid subscription plan selected. Please try again.');
+      return;
+    }
+    
     // Navigate back to home screen and pass the selected plan
     router.push({
       pathname: '/(tabs)',
-      params: { selectedPlan: plan.id }
+      params: { selectedPlan: planIdToUse }
     });
   };
 
