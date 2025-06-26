@@ -21,6 +21,7 @@ import { useAuth, User } from '../../context/AuthContext';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { ThemeColors } from '../../types/ThemeTypes';
 import FeedbackForm from '../../components/FeedbackForm';
+import MessagingInterface from '../../components/MessagingInterface';
 import NotificationBadge from '../../components/ui/NotificationBadge';
 import { NotificationList } from '../(tabs)/notifications';
 
@@ -452,6 +453,7 @@ export default function ProfileScreen() {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showLanguage, setShowLanguage] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
   const [isRefreshingSubscription, setIsRefreshingSubscription] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<{
@@ -699,7 +701,7 @@ export default function ProfileScreen() {
           
           <TouchableOpacity 
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
-            onPress={() => router.push('/messages')}
+            onPress={() => setShowMessages(true)}
           >
             <FontAwesome5 name="envelope" size={18} color={theme.textSecondary} style={styles.menuIcon} />
             <Text style={[styles.menuText, { color: theme.text }]}>Messages</Text>
@@ -774,6 +776,12 @@ export default function ProfileScreen() {
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
+      
+      {/* Add MessagingInterface component */}
+      <MessagingInterface 
+        isVisible={showMessages} 
+        onClose={() => setShowMessages(false)} 
+      />
       
       {/* Modals */}
       <EditProfileModal 
