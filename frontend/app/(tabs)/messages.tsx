@@ -1049,7 +1049,7 @@ export default function MessagesScreen() {
             >
               <FontAwesome5 
                 name={category.icon} 
-                size={14} 
+                size={12} 
                 color={selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary)} 
               />
               <Text 
@@ -1193,12 +1193,12 @@ const styles = StyleSheet.create({
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    marginRight: 10,
+    marginRight: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -1206,8 +1206,8 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   categoryButtonText: {
-    marginLeft: 8,
-    fontSize: 13,
+    marginLeft: 6,
+    fontSize: 12,
     fontWeight: '600',
   },
   messagesList: {
