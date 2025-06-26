@@ -4,9 +4,12 @@
  */
 const User = require('../models/user.model');
 const Driver = require('../models/driver.model');
+const Vehicle = require('../models/vehicle.model');
 const Route = require('../models/route.model');
 const Ride = require('../models/ride.model');
 const Subscription = require('../models/subscription.model');
+const SubscriptionPlan = require('../models/subscription-plan.model');
+const mongoose = require('mongoose');
 const driverService = require('../services/driver.service');
 
 /**
@@ -765,6 +768,179 @@ exports.verifyDriver = async (req, res) => {
     
     return res.status(500).json({
       message: 'Error verifying driver',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Verify a subscription
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} - Response with verified subscription or error
+ */
+exports.verifySubscription = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get subscription by ID
+    const subscription = await Subscription.findById(id);
+    
+    if (!subscription) {
+      return res.status(404).json({
+        message: 'Subscription not found'
+      });
+    }
+    
+    // Check if subscription is already verified
+    if (subscription.verification && subscription.verification.verified) {
+      return res.status(400).json({
+        message: 'Subscription is already verified'
+      });
+    }
+    
+    // Update subscription verification status
+    subscription.verification.verified = true;
+    subscription.verification.verifiedBy = req.user._id;
+    subscription.verification.verificationDate = new Date();
+    subscription.verification.status = 'approved';
+    subscription.isActive = true;
+    
+    // Save subscription
+    const verifiedSubscription = await subscription.save();
+    
+    // Get plan name if it exists in the subscription, otherwise get it from the service
+    let planName = subscription.planName;
+    if (!planName) {
+      const subscriptionService = require('../services/subscription.service');
+      planName = await subscriptionService.getPlanNameFromId(subscription.planId);
+    }
+    
+    // Update user's subscription status
+    await User.findByIdAndUpdate(subscription.userId, {
+      'subscription.verified': true,
+      'subscription.plan': subscription.planId,
+      'subscription.planName': planName,
+      'subscription.expiryDate': subscription.expiryDate
+    });
+    
+    // Create notification for user
+    try {
+      const NotificationService = require('../services/notification.service');
+      await NotificationService.createUserNotification(
+        subscription.userId,
+        'Subscription Verified',
+        `Your subscription has been verified and is now active.`,
+        'subscription',
+        {
+          subscriptionId: subscription._id,
+          planId: subscription.planId,
+          planName: planName,
+          expiryDate: subscription.expiryDate
+        }
+      );
+    } catch (error) {
+      console.error('Error creating user notification:', error);
+      // Don't fail the verification if notification fails
+    }
+    
+    // Emit real-time event
+    const socketService = require('../services/socket.service');
+    socketService.emitToUser(subscription.userId, 'subscription:verified', {
+      subscriptionId: subscription._id,
+      planId: subscription.planId,
+      planName: planName,
+      expiryDate: subscription.expiryDate
+    });
+    
+    return res.status(200).json({
+      message: 'Subscription verified successfully',
+      subscription: verifiedSubscription
+    });
+  } catch (error) {
+    console.error('Error verifying subscription:', error);
+    return res.status(500).json({
+      message: 'Error verifying subscription',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Reject a subscription
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} - Response with rejected subscription or error
+ */
+exports.rejectSubscription = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get subscription by ID
+    const subscription = await Subscription.findById(id);
+    
+    if (!subscription) {
+      return res.status(404).json({
+        message: 'Subscription not found'
+      });
+    }
+    
+    // Check if subscription is already verified or rejected
+    if (subscription.verification && subscription.verification.status === 'rejected') {
+      return res.status(400).json({
+        message: 'Subscription is already rejected'
+      });
+    }
+    
+    // Update subscription verification status
+    subscription.verification.verified = false;
+    subscription.verification.verifiedBy = req.user._id;
+    subscription.verification.verificationDate = new Date();
+    subscription.verification.status = 'rejected';
+    subscription.isActive = false;
+    
+    // Save subscription
+    const rejectedSubscription = await subscription.save();
+    
+    // Update user's subscription status
+    await User.findByIdAndUpdate(subscription.userId, {
+      'subscription.verified': false,
+      'subscription.status': 'rejected'
+    });
+    
+    // Create notification for user
+    try {
+      const NotificationService = require('../services/notification.service');
+      await NotificationService.createUserNotification(
+        subscription.userId,
+        'Subscription Rejected',
+        `Your subscription request has been rejected. Please contact support for more information.`,
+        'subscription',
+        {
+          subscriptionId: subscription._id,
+          status: 'rejected'
+        }
+      );
+    } catch (error) {
+      console.error('Error creating user notification:', error);
+      // Don't fail the rejection if notification fails
+    }
+    
+    // Emit real-time event
+    const socketService = require('../services/socket.service');
+    socketService.emitToUser(subscription.userId, 'subscription:rejected', {
+      subscriptionId: subscription._id,
+      status: 'rejected'
+    });
+    
+    return res.status(200).json({
+      message: 'Subscription rejected successfully',
+      subscription: rejectedSubscription
+    });
+  } catch (error) {
+    console.error('Error rejecting subscription:', error);
+    return res.status(500).json({
+      message: 'Error rejecting subscription',
       error: error.message
     });
   }

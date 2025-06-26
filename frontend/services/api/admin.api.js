@@ -201,8 +201,12 @@ export const verifySubscription = async (subscriptionId) => {
 
     console.log(`Verifying subscription: ${subscriptionId}`);
     
+    // Ensure proper URL construction with correct slashes
+    const url = `${BASE_URL}/api/admin/subscriptions/verify/${subscriptionId}`;
+    console.log(`Using URL: ${url}`);
+    
     const response = await axios.post(
-      `${BASE_URL}${ENDPOINTS.ADMIN.VERIFY_SUBSCRIPTION}/${subscriptionId}`,
+      url,
       {},
       {
         headers: { 'x-access-token': token }
@@ -802,8 +806,12 @@ export const rejectSubscription = async (subscriptionId) => {
 
     console.log(`Rejecting subscription: ${subscriptionId}`);
     
+    // Ensure proper URL construction with correct slashes
+    const url = `${BASE_URL}/api/admin/subscriptions/reject/${subscriptionId}`;
+    console.log(`Using URL: ${url}`);
+    
     const response = await axios.post(
-      `${BASE_URL}${ENDPOINTS.ADMIN.REJECT_SUBSCRIPTION}/${subscriptionId}`,
+      url,
       {},
       {
         headers: { 'x-access-token': token }

@@ -102,4 +102,24 @@ router.post(
   adminController.verifyDriver
 );
 
+/**
+ * @route POST /api/admin/subscriptions/verify/:id
+ * @desc Verify a subscription
+ * @access Private/Admin
+ */
+router.post(
+  '/subscriptions/verify/:id',
+  adminController.verifySubscription
+);
+
+/**
+ * @route POST /api/admin/subscriptions/reject/:id
+ * @desc Reject a subscription
+ * @access Private/Admin
+ */
+router.post(
+  '/subscriptions/reject/:id',
+  adminController.rejectSubscription
+);
+
 module.exports = router; 
