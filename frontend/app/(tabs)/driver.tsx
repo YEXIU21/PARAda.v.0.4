@@ -24,8 +24,8 @@ import { acceptRide, updateRideStatus } from '../../services/api/ride.api';
 import * as driverApi from '../../services/api/driver.api';
 import * as routeApi from '../../services/api/route.api';
 import { useAuth } from '../../context/AuthContext';
-import MessagingInterface from '../../components/MessagingInterface';
 import { BASE_URL } from '../../services/api/endpoints';
+import { router } from 'expo-router';
 
 // Helper functions for vehicle icons and colors
 const getVehicleIcon = (vehicleType: string) => {
@@ -111,7 +111,6 @@ export default function DriverScreen() {
   const { user } = useAuth();
   const [showRouteRequestModal, setShowRouteRequestModal] = useState(false);
   const [routeRequestText, setRouteRequestText] = useState("From [start location] to [end location] via [major landmarks]");
-  const [showMessages, setShowMessages] = useState(false);
   // Add state for custom confirmation modal
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   // Add state for route removal confirmation
@@ -1473,6 +1472,11 @@ export default function DriverScreen() {
     );
   }
 
+  // Handle navigation to messages
+  const handleNavigateToMessages = () => {
+    router.push('/messages');
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <LinearGradient
@@ -1528,7 +1532,7 @@ export default function DriverScreen() {
         <View style={styles.actionButtonsRow}>
         <TouchableOpacity
             style={[styles.actionCardButton, { backgroundColor: '#4B6BFE' }]}
-          onPress={() => setShowMessages(true)}
+          onPress={handleNavigateToMessages}
         >
             <FontAwesome5 name="envelope" size={20} color="#fff" />
             <Text style={styles.actionCardButtonText}>Messages</Text>
@@ -1942,81 +1946,6 @@ export default function DriverScreen() {
         )}
       </ScrollView>
 
-      {/* MessagingInterface Modal */}
-      {showMessages && (
-        <MessagingInterface
-          isVisible={showMessages}
-          onClose={() => setShowMessages(false)}
-        />
-      )}
-
-      {/* Available Routes Modal */}
-      <Modal
-        visible={showAvailableRoutesModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowAvailableRoutesModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { 
-            backgroundColor: theme.card,
-            borderRadius: 16,
-            maxWidth: 500,
-            width: '95%',
-            maxHeight: '80%'
-          }]}>
-            <View style={[styles.modalHeader, { 
-              borderBottomColor: theme.border,
-              paddingVertical: 16,
-              paddingHorizontal: 20
-            }]}>
-              <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                <FontAwesome5 name="route" size={20} color={theme.primary} style={{marginRight: 10}} />
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Available Routes</Text>
-              </View>
-              <TouchableOpacity 
-                style={[styles.closeButton, { padding: 8 }]}
-                onPress={() => setShowAvailableRoutesModal(false)}
-              >
-                <FontAwesome5 name="times" size={20} color={theme.textSecondary} />
-              </TouchableOpacity>
-            </View>
-            
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingHorizontal: 20,
-              paddingVertical: 12,
-              borderBottomWidth: 1,
-              borderBottomColor: theme.border,
-              backgroundColor: `${theme.primary}15`
-            }}>
-              <FontAwesome5 name="info-circle" size={14} color={theme.primary} style={{marginRight: 8}} />
-              <Text style={{color: theme.text, fontSize: 14, flex: 1}}>
-                Select routes to add to your dashboard. You can remove them later from your "My Routes" section.
-              </Text>
-            </View>
-            
-            <FlatList
-              data={availableRoutes}
-              renderItem={renderAvailableRouteItem}
-              keyExtractor={(item) => item.id || item._id || String(Math.random())}
-              contentContainerStyle={[styles.availableRoutesList, {paddingHorizontal: 20, paddingVertical: 10}]}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={() => (
-                <View style={styles.emptyContainer}>
-                  <FontAwesome5 name="route" size={40} color={isDarkMode ? '#444' : '#DDD'} />
-                  <Text style={[styles.emptyText, { color: theme.text }]}>No available routes</Text>
-                  <Text style={[styles.emptySubText, { color: theme.textSecondary }]}>
-                    Check back later or request a custom route
-                  </Text>
-                </View>
-              )}
-            />
-          </View>
-        </View>
-      </Modal>
-
       {/* Route Request Modal */}
       <Modal
         visible={showRouteRequestModal}
@@ -2309,6 +2238,73 @@ export default function DriverScreen() {
                 </TouchableOpacity>
               </View>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Available Routes Modal */}
+      <Modal
+        visible={showAvailableRoutesModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowAvailableRoutesModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { 
+            backgroundColor: theme.card,
+            borderRadius: 16,
+            maxWidth: 500,
+            width: '95%',
+            maxHeight: '80%'
+          }]}>
+            <View style={[styles.modalHeader, { 
+              borderBottomColor: theme.border,
+              paddingVertical: 16,
+              paddingHorizontal: 20
+            }]}>
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <FontAwesome5 name="route" size={20} color={theme.primary} style={{marginRight: 10}} />
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Available Routes</Text>
+              </View>
+              <TouchableOpacity 
+                style={[styles.closeButton, { padding: 8 }]}
+                onPress={() => setShowAvailableRoutesModal(false)}
+              >
+                <FontAwesome5 name="times" size={20} color={theme.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: theme.border,
+              backgroundColor: `${theme.primary}15`
+            }}>
+              <FontAwesome5 name="info-circle" size={14} color={theme.primary} style={{marginRight: 8}} />
+              <Text style={{color: theme.text, fontSize: 14, flex: 1}}>
+                Select routes to add to your dashboard. You can remove them later from your "My Routes" section.
+              </Text>
+            </View>
+            
+            <FlatList
+              data={availableRoutes}
+              renderItem={renderAvailableRouteItem}
+              keyExtractor={(item) => item.id || item._id || String(Math.random())}
+              contentContainerStyle={[styles.availableRoutesList, {paddingHorizontal: 20, paddingVertical: 10}]}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={() => (
+                <View style={styles.emptyContainer}>
+                  <FontAwesome5 name="route" size={40} color={isDarkMode ? '#444' : '#DDD'} />
+                  <Text style={[styles.emptyText, { color: theme.text }]}>No available routes</Text>
+                  <Text style={[styles.emptySubText, { color: theme.textSecondary }]}>
+                    Check back later or request a custom route
+                  </Text>
+                </View>
+              )}
+            />
           </View>
         </View>
       </Modal>

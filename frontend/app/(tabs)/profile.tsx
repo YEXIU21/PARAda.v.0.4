@@ -21,7 +21,6 @@ import { useAuth, User } from '../../context/AuthContext';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { ThemeColors } from '../../types/ThemeTypes';
 import FeedbackForm from '../../components/FeedbackForm';
-import MessagingInterface from '../../components/MessagingInterface';
 import NotificationBadge from '../../components/ui/NotificationBadge';
 import { NotificationList } from '../(tabs)/notifications';
 
@@ -560,6 +559,32 @@ export default function ProfileScreen() {
     }
   };
 
+  // Handle menu item click
+  const handleMenuItemClick = (item: string) => {
+    switch (item) {
+      case 'edit_profile':
+        setShowEditProfile(true);
+        break;
+      case 'notifications':
+        setShowNotifications(true);
+        break;
+      case 'change_password':
+        setShowChangePassword(true);
+        break;
+      case 'language':
+        setShowLanguage(true);
+        break;
+      case 'feedback':
+        setShowFeedback(true);
+        break;
+      case 'messages':
+        router.push('/messages');
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <LinearGradient
@@ -692,7 +717,7 @@ export default function ProfileScreen() {
           
           <TouchableOpacity 
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
-            onPress={() => setShowEditProfile(true)}
+            onPress={() => handleMenuItemClick('edit_profile')}
           >
             <FontAwesome5 name="user-edit" size={18} color={theme.textSecondary} style={styles.menuIcon} />
             <Text style={[styles.menuText, { color: theme.text }]}>Edit Profile</Text>
@@ -701,7 +726,7 @@ export default function ProfileScreen() {
           
           <TouchableOpacity 
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
-            onPress={() => setShowMessages(true)}
+            onPress={() => handleMenuItemClick('messages')}
           >
             <FontAwesome5 name="envelope" size={18} color={theme.textSecondary} style={styles.menuIcon} />
             <Text style={[styles.menuText, { color: theme.text }]}>Messages</Text>
@@ -710,7 +735,7 @@ export default function ProfileScreen() {
           
           <TouchableOpacity 
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
-            onPress={() => setShowNotifications(true)}
+            onPress={() => handleMenuItemClick('notifications')}
           >
             <FontAwesome5 name="bell" size={18} color={theme.textSecondary} style={styles.menuIcon} />
             <Text style={[styles.menuText, { color: theme.text }]}>Notifications</Text>
@@ -719,7 +744,7 @@ export default function ProfileScreen() {
           
           <TouchableOpacity 
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
-            onPress={() => setShowChangePassword(true)}
+            onPress={() => handleMenuItemClick('change_password')}
           >
             <FontAwesome5 name="lock" size={18} color={theme.textSecondary} style={styles.menuIcon} />
             <Text style={[styles.menuText, { color: theme.text }]}>Change Password</Text>
@@ -734,7 +759,7 @@ export default function ProfileScreen() {
           
           <TouchableOpacity 
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
-            onPress={() => setShowLanguage(true)}
+            onPress={() => handleMenuItemClick('language')}
           >
             <FontAwesome5 name="language" size={18} color={theme.textSecondary} style={styles.menuIcon} />
             <Text style={[styles.menuText, { color: theme.text }]}>Language</Text>
@@ -743,7 +768,7 @@ export default function ProfileScreen() {
           
           <TouchableOpacity 
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
-            onPress={() => setShowFeedback(true)}
+            onPress={() => handleMenuItemClick('feedback')}
           >
             <FontAwesome5 name="comment-alt" size={18} color={theme.textSecondary} style={styles.menuIcon} />
             <Text style={[styles.menuText, { color: theme.text }]}>Feedback</Text>
@@ -776,12 +801,6 @@ export default function ProfileScreen() {
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
-      
-      {/* Add MessagingInterface component */}
-      <MessagingInterface 
-        isVisible={showMessages} 
-        onClose={() => setShowMessages(false)} 
-      />
       
       {/* Modals */}
       <EditProfileModal 
