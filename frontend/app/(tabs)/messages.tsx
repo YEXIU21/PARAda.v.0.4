@@ -337,7 +337,7 @@ export default function MessagesScreen() {
             });
             
             // Add timeout
-            setTimeout(() => {
+          setTimeout(() => {
               reject(new Error('Socket reply timed out'));
             }, 10000);
           });
@@ -661,7 +661,7 @@ export default function MessagesScreen() {
         queueReplyForLater(replyData);
         setIsLoading(false);
       }
-    } catch (error) {
+      } catch (error) {
       console.error('Error in handleReply:', error);
       
       // Show error message
@@ -671,10 +671,10 @@ export default function MessagesScreen() {
         [{ text: 'OK' }]
       );
       
-      setIsLoading(false);
-    }
-  };
-  
+        setIsLoading(false);
+      }
+    };
+    
   // Queue a reply for later sending when socket reconnects
   const queueReplyForLater = async (replyData: any) => {
     try {
@@ -785,37 +785,37 @@ export default function MessagesScreen() {
     const messageType = item.type || 'info';
     
     return (
-      <TouchableOpacity 
-        style={[
-          styles.messageItem, 
-          { 
-            backgroundColor: theme.card,
+    <TouchableOpacity 
+      style={[
+        styles.messageItem, 
+        { 
+          backgroundColor: theme.card,
             borderLeftColor: item.read ? theme.border : getTypeColor(messageType) 
-          }
-        ]}
+        }
+      ]}
         onPress={() => {
           setSelectedMessage(item);
           handleMarkAsRead(item._id);
         }}
-      >
-        <View style={styles.messageHeader}>
+    >
+      <View style={styles.messageHeader}>
           <Text style={[styles.senderName, { color: theme.text }]}>
             {item.title || 'System Message'}
           </Text>
-          <Text style={[styles.timestamp, { color: theme.textSecondary }]}>
+        <Text style={[styles.timestamp, { color: theme.textSecondary }]}>
             {formatDate(item.createdAt)}
-          </Text>
-        </View>
-        <Text 
-          style={[
-            styles.messageContent, 
-            { color: theme.textSecondary },
-            !item.read && { color: theme.text, fontWeight: '500' }
-          ]}
-          numberOfLines={2}
-        >
-          {item.message}
         </Text>
+      </View>
+      <Text 
+        style={[
+          styles.messageContent, 
+          { color: theme.textSecondary },
+          !item.read && { color: theme.text, fontWeight: '500' }
+        ]}
+        numberOfLines={2}
+      >
+        {item.message}
+      </Text>
         
         {/* Category badge */}
         <View style={styles.messageFooter}>
@@ -832,11 +832,11 @@ export default function MessagesScreen() {
           </View>
         </View>
         
-        {!item.read && (
+      {!item.read && (
           <View style={[styles.unreadIndicator, { backgroundColor: theme.primary }]} />
-        )}
-      </TouchableOpacity>
-    );
+      )}
+    </TouchableOpacity>
+  );
   };
   
   // Render message detail modal
@@ -864,11 +864,11 @@ export default function MessagesScreen() {
           <View style={styles.modalBody}>
             <Text style={[styles.detailTitle, { color: theme.text }]}>
               {selectedMessage?.title}
-            </Text>
+          </Text>
             
             <Text style={[styles.detailDate, { color: theme.textSecondary }]}>
               {selectedMessage ? formatDate(selectedMessage.createdAt) : ''}
-            </Text>
+          </Text>
             
             <Text style={[styles.detailContent, { color: theme.text }]}>
               {selectedMessage?.message}
@@ -880,7 +880,7 @@ export default function MessagesScreen() {
           </View>
           
           <View style={[styles.modalFooter, { borderTopColor: theme.border }]}>
-            <TouchableOpacity
+          <TouchableOpacity 
               style={[styles.replyButton, { backgroundColor: theme.primary }]}
               onPress={() => {
                 setShowReplyModal(true);
@@ -901,8 +901,8 @@ export default function MessagesScreen() {
             >
               <FontAwesome5 name="trash-alt" size={16} color="#fff" style={styles.deleteIcon} />
               <Text style={styles.deleteButtonText}>Delete</Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
+        </View>
         </View>
       </View>
     </Modal>
@@ -972,7 +972,7 @@ export default function MessagesScreen() {
             >
               <Text style={styles.sendButtonText}>Send</Text>
             </TouchableOpacity>
-          </View>
+        </View>
         </View>
       </View>
     </Modal>
@@ -1161,7 +1161,7 @@ export default function MessagesScreen() {
         style={styles.header}
       >
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Messages</Text>
+        <Text style={styles.headerTitle}>Messages</Text>
           <View>
             <TouchableOpacity 
               style={styles.headerActionButton}
@@ -1190,7 +1190,7 @@ export default function MessagesScreen() {
             </TouchableOpacity>
           ) : null}
         </View>
-        
+
         {/* Category filters - Improved design */}
         <ScrollView 
           horizontal 
@@ -1208,7 +1208,7 @@ export default function MessagesScreen() {
                 },
                 // Make the notification category more prominent
                 category.id === 'notification' && {
-                  borderWidth: 2,
+                  borderWidth: 1.5,
                   borderColor: category.id === selectedCategory ? theme.primary : '#FF9500',
                 }
               ]}
@@ -1216,7 +1216,7 @@ export default function MessagesScreen() {
             >
               <FontAwesome5 
                 name={category.icon} 
-                size={12} 
+                size={10} 
                 color={selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary)} 
               />
               <Text 
@@ -1249,18 +1249,18 @@ export default function MessagesScreen() {
             </TouchableOpacity>
           </View>
         ) : filteredMessages.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <FontAwesome5 name="inbox" size={40} color={theme.textSecondary} />
-            <Text style={[styles.emptyText, { color: theme.text }]}>No messages found</Text>
-            <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+            <View style={styles.emptyContainer}>
+              <FontAwesome5 name="inbox" size={40} color={theme.textSecondary} />
+              <Text style={[styles.emptyText, { color: theme.text }]}>No messages found</Text>
+              <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
               {searchQuery 
                 ? 'Try a different search term' 
                 : selectedCategory !== 'all'
                   ? `No ${categories.find(c => c.id === selectedCategory)?.label || selectedCategory} messages`
                   : 'Your messages will appear here'
               }
-            </Text>
-          </View>
+              </Text>
+            </View>
         ) : (
           <FlatList
             data={filteredMessages}
@@ -1284,7 +1284,7 @@ export default function MessagesScreen() {
       {showHeaderMenu && (
         <>
           {/* Backdrop to close menu when clicking outside */}
-          <TouchableOpacity
+        <TouchableOpacity 
             style={styles.menuBackdrop}
             activeOpacity={0}
             onPress={() => setShowHeaderMenu(false)}
@@ -1319,8 +1319,8 @@ export default function MessagesScreen() {
               >
                 <FontAwesome5 name="cog" size={16} color={theme.textSecondary} style={styles.headerMenuIcon} />
                 <Text style={[styles.headerMenuText, { color: theme.text }]}>Settings</Text>
-              </TouchableOpacity>
-            </View>
+        </TouchableOpacity>
+      </View>
           </View>
         </>
       )}
@@ -1430,18 +1430,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   categoriesContainer: {
-    paddingBottom: 12,
-    marginBottom: 8,
+    paddingBottom: 8,
+    marginBottom: 6,
+    paddingLeft: 2,
   },
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    marginRight: 8,
+    marginRight: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -1449,9 +1450,9 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   categoryButtonText: {
-    marginLeft: 6,
-    fontSize: 12,
-    fontWeight: '600',
+    marginLeft: 4,
+    fontSize: 11,
+    fontWeight: '500',
   },
   messagesList: {
     paddingBottom: 80, // Extra space for FAB
@@ -1782,4 +1783,4 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     zIndex: 9998,
   },
-});
+}); 

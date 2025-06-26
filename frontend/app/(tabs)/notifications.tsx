@@ -114,11 +114,25 @@ export function NotificationList({ theme, standalone = false }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteNotification(id);
+              console.log(`Attempting to delete notification ${id}`);
+              const result = await deleteNotification(id);
+              console.log('Delete notification result:', result);
               
-              // Update local state
-              const updatedNotifications = notifications.filter(notification => notification._id !== id);
-              setNotifications(updatedNotifications);
+              if (result && (result.success || result.message)) {
+                // Update local state regardless of notification category
+                const updatedNotifications = notifications.filter(notification => notification._id !== id);
+                console.log(`Removed notification from state. Before: ${notifications.length}, After: ${updatedNotifications.length}`);
+                setNotifications(updatedNotifications);
+                
+                // Update unread count if the notification was unread
+                const deletedNotification = notifications.find(n => n._id === id);
+                if (deletedNotification && !deletedNotification.read) {
+                  setUnreadCount(prev => Math.max(0, prev - 1));
+                }
+              } else {
+                console.error('Unexpected response format from deleteNotification:', result);
+                Alert.alert('Error', 'Failed to delete notification due to unexpected response');
+              }
             } catch (err) {
               console.error('Error deleting notification:', err);
               Alert.alert('Error', 'Failed to delete notification');

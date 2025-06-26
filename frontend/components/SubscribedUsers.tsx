@@ -438,7 +438,7 @@ export default function SubscribedUsers({ isDarkMode, theme, initialPendingFilte
             >
               <FontAwesome5 
                 name={filterButtonProps.icon} 
-                size={14} 
+                size={10} 
                 color="white" 
               />
               <Text style={styles.filterButtonText}>
@@ -817,15 +817,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    minWidth: 140,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    minWidth: 120,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    elevation: 1,
   },
   filterButtonText: {
-    marginLeft: 5,
-    fontWeight: 'bold',
-    fontSize: 12,
+    marginLeft: 4,
+    fontWeight: '500',
+    fontSize: 11,
     color: 'white',
     flexShrink: 1,
   },

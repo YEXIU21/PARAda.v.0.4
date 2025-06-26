@@ -237,8 +237,13 @@ export const deleteNotification = async (notificationId) => {
       }
     );
     
-    console.log(`Successfully deleted notification ${notificationId}`);
-    return response.data;
+    console.log(`Successfully deleted notification ${notificationId}`, response.data);
+    return {
+      success: true,
+      message: 'Notification deleted successfully',
+      notificationId,
+      ...response.data
+    };
   } catch (error) {
     console.error('Error deleting notification:', error);
     console.error('Error details:', error.response?.data || error.message);
@@ -248,6 +253,7 @@ export const deleteNotification = async (notificationId) => {
     return { 
       success: true,
       message: 'Message removed from local storage',
+      notificationId,
       error: error.message
     };
   }

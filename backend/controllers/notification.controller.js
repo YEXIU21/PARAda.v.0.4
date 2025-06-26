@@ -115,31 +115,49 @@ exports.markAllAsRead = async (req, res) => {
 exports.deleteNotification = async (req, res) => {
   try {
     const { notificationId } = req.params;
+    const userId = req.user._id;
     
-    console.log(`Received request to delete notification ${notificationId}`);
+    console.log(`Received request to delete notification ${notificationId} from user ${userId}`);
     
-    // Get notification first to check if it exists
+    // Try to get the notification first to check if it exists and belongs to the user
+    let notification = null;
     try {
-      const notification = await notificationService.getNotificationById(notificationId);
-    
-    // Delete notification
-    await notificationService.deleteNotification(notificationId);
-    
-    return res.status(200).json({
-        message: 'Notification deleted successfully',
-        notificationId
-      });
+      notification = await notificationService.getNotificationById(notificationId);
+      
+      // Verify ownership (optional - we might want to allow admins to delete any notification)
+      if (notification && notification.userId && notification.userId.toString() !== userId.toString()) {
+        if (req.user.role !== 'admin') {
+          console.warn(`User ${userId} attempted to delete notification ${notificationId} that belongs to user ${notification.userId}`);
+          return res.status(403).json({
+            message: 'You do not have permission to delete this notification',
+            notificationId
+          });
+        }
+      }
     } catch (notFoundError) {
       // If notification doesn't exist, still return success
-      console.warn(`Notification ${notificationId} not found, but returning success`);
+      console.warn(`Notification ${notificationId} not found, but returning success: ${notFoundError.message}`);
       return res.status(200).json({
+        success: true,
         message: 'Notification already deleted or not found',
         notificationId
-    });
+      });
     }
+    
+    // Delete notification
+    const result = await notificationService.deleteNotification(notificationId);
+    console.log(`Delete result for notification ${notificationId}:`, result);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Notification deleted successfully',
+      notificationId,
+      deletedCount: result.deletedCount
+    });
   } catch (error) {
     console.error('Error deleting notification:', error);
     return res.status(500).json({
+      success: false,
       message: 'Error deleting notification',
       error: error.message
     });
