@@ -1192,45 +1192,46 @@ export default function MessagesScreen() {
         </View>
 
         {/* Category filters - Improved design */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesContainer}
-          style={{ marginVertical: 4 }}
-        >
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category.id}
-              style={[
-                styles.categoryButton,
-                selectedCategory === category.id && {
-                  backgroundColor: `${theme.primary}20`,
-                  borderColor: theme.primary
-                },
-                // Make the notification category more prominent
-                category.id === 'notification' && {
-                  borderWidth: 1.5,
-                  borderColor: category.id === selectedCategory ? theme.primary : '#FF9500',
-                }
-              ]}
-              onPress={() => setSelectedCategory(category.id)}
-            >
-              <FontAwesome5 
-                name={category.icon} 
-                size={10} 
-                color={selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary)} 
-              />
-              <Text 
+        <View style={styles.filterContainer}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesContainer}
+          >
+            {categories.map((category) => (
+              <TouchableOpacity
+                key={category.id}
                 style={[
-                  styles.categoryButtonText,
-                  { color: selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary) }
+                  styles.categoryButton,
+                  selectedCategory === category.id && {
+                    backgroundColor: `${theme.primary}20`,
+                    borderColor: theme.primary
+                  },
+                  // Make the notification category more prominent
+                  category.id === 'notification' && {
+                    borderWidth: 1.5,
+                    borderColor: category.id === selectedCategory ? theme.primary : '#FF9500',
+                  }
                 ]}
+                onPress={() => setSelectedCategory(category.id)}
               >
-                {category.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <FontAwesome5 
+                  name={category.icon} 
+                  size={12} 
+                  color={selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary)} 
+                />
+                <Text 
+                  style={[
+                    styles.categoryButtonText,
+                    { color: selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary) }
+                  ]}
+                >
+                  {category.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
         {isLoading && !isRefreshing ? (
           <View style={styles.loadingContainer}>
@@ -1430,32 +1431,35 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 15,
   },
+  filterContainer: {
+    marginBottom: 12,
+    width: '100%',
+  },
   categoriesContainer: {
     paddingVertical: 4,
-    marginBottom: 8,
-    paddingHorizontal: 4,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
   },
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    marginRight: 6,
+    marginRight: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 1,
     elevation: 1,
-    height: 26,
+    height: 32,
   },
   categoryButtonText: {
-    marginLeft: 4,
-    fontSize: 11,
+    marginLeft: 6,
+    fontSize: 12,
     fontWeight: '500',
   },
   messagesList: {
