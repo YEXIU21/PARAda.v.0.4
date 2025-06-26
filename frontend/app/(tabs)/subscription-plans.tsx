@@ -66,19 +66,19 @@ export default function SubscriptionPlansScreen() {
           }}
         >
           {isAdmin ? (
-            <AdminSubscriptionPlansManager 
-              theme={{
-                background: theme.background,
-                card: theme.card,
-                text: theme.text,
-                textSecondary: theme.textSecondary,
-                border: theme.border,
-                primary: theme.primary,
-                error: theme.error,
-                success: theme.success,
-                warning: theme.warning
-              }} 
-            />
+        <AdminSubscriptionPlansManager 
+          theme={{
+            background: theme.background,
+            card: theme.card,
+            text: theme.text,
+            textSecondary: theme.textSecondary,
+            border: theme.border,
+            primary: theme.primary,
+            error: theme.error,
+            success: theme.success,
+            warning: theme.warning
+          }} 
+        />
           ) : (
             <ErrorBoundary
               onReset={() => {

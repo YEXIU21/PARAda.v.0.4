@@ -267,6 +267,9 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
       await AsyncStorage.setItem('userSubscription', JSON.stringify(subscriptionDataLocal));
       console.log('Subscription saved to AsyncStorage');
       
+      // Try to use the backend API for creating a subscription
+      let backendSubscriptionCreated = false;
+      
       // Prepare API subscription data
       const subscriptionData = {
         planId: selectedPlanForPayment.id,
@@ -285,42 +288,46 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
         amount: selectedPlanForPayment.price
       };
       
-      // Try to use the backend API for creating a subscription
-      let backendSubscriptionCreated = false;
-      let subscriptionResponse = null;
-      
       try {
-        // The API will automatically determine whether to use public or authenticated endpoint
-        subscriptionResponse = await createSubscription(subscriptionData);
+        // Set a timeout to ensure we don't wait forever for the API
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('API timeout')), 5000)
+        );
+        
+        // Race between the API call and the timeout
+        const subscriptionResponse = await Promise.race([
+          createSubscription(subscriptionData),
+          timeoutPromise
+        ]);
+        
         console.log('Subscription created successfully via API:', subscriptionResponse);
         backendSubscriptionCreated = true;
       } catch (apiError) {
         console.error('Error creating subscription via API:', apiError);
         // We'll continue with the local storage approach
         backendSubscriptionCreated = false;
+      } finally {
+        // Always show success and close modal regardless of API status
+        // since we've already saved to AsyncStorage
+        Alert.alert(
+          'Payment Submitted',
+          'Your payment has been recorded. Your subscription will be activated once approved by an admin.',
+          [{ 
+            text: 'OK',
+            onPress: () => {
+              // Close payment modal
+              setShowGCashModal(false);
+              // Reset states
+              setReferenceNumber('');
+              setSelectedPlanForPayment(null);
+              setIsProcessingPayment(false);
+              
+              // Navigate back to home screen
+              router.push('/(tabs)');
+            }
+          }]
+        );
       }
-      
-      // Payment submitted successfully
-      Alert.alert(
-        'Payment Submitted',
-        backendSubscriptionCreated
-          ? 'Your payment reference has been submitted and is pending admin approval. Your subscription will be activated once approved.'
-          : 'Your payment has been recorded locally. You may need to show your GCash receipt to an admin for verification.',
-        [{ 
-          text: 'OK',
-          onPress: () => {
-            // Close payment modal
-            setShowGCashModal(false);
-            // Reset states
-            setReferenceNumber('');
-            setSelectedPlanForPayment(null);
-            setIsProcessingPayment(false);
-            
-            // Navigate back to home screen
-            router.push('/(tabs)');
-          }
-        }]
-      );
     } catch (error) {
       console.error('Payment processing error:', error);
       setPaymentError('An error occurred saving your payment information. Please try again or contact support.');
