@@ -36,40 +36,41 @@ interface SubscriptionPlan {
 // Default subscription plans to use as fallback
 const defaultSubscriptionPlans: SubscriptionPlan[] = [
   {
-    id: 'monthly',
-    name: 'Monthly Pass',
-    price: 199,
+    id: 'basic',
+    name: 'Basic Plan',
+    price: 99,
     duration: 30,
     features: [
-      'Access to all basic routes',
-      'Unlimited rides during operating hours',
-      'Real-time vehicle tracking',
+      'Real-time tracking',
+      'Schedule access',
+      'Traffic updates',
       'Monthly billing'
     ]
   },
   {
-    id: 'quarterly',
-    name: 'Quarterly Pass',
-    price: 499,
-    duration: 90,
+    id: 'premium',
+    name: 'Premium Plan',
+    price: 199,
+    duration: 30,
     features: [
-      'All Monthly Pass features',
-      'Priority boarding',
-      'Discounted fare for premium routes',
-      'Save 16% compared to monthly'
+      'All Basic Plan features',
+      'Priority notifications',
+      'Offline maps',
+      'No advertisements'
     ],
     recommended: true
   },
   {
     id: 'annual',
-    name: 'Annual Pass',
-    price: 1799,
+    name: 'Annual Plan',
+    price: 999,
     duration: 365,
     features: [
-      'All Quarterly Pass features',
-      'VIP access to premium routes',
-      'Free companion pass on weekends',
-      'Save 25% compared to monthly'
+      'All Premium Plan features',
+      '24/7 support',
+      'Schedule alarms',
+      'Trip history',
+      'Save 16% compared to monthly'
     ]
   }
 ];
