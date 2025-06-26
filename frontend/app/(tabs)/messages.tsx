@@ -136,7 +136,7 @@ export default function MessagesScreen() {
           colors={theme.gradientColors}
           style={styles.header}
         >
-          <Text style={styles.headerTitle}>Inbox</Text>
+          <Text style={styles.headerTitle}>Messages</Text>
         </LinearGradient>
         
         <View style={styles.errorContainer}>
@@ -167,7 +167,7 @@ export default function MessagesScreen() {
           colors={theme.gradientColors}
           style={styles.header}
         >
-          <Text style={styles.headerTitle}>Inbox</Text>
+          <Text style={styles.headerTitle}>Messages</Text>
         </LinearGradient>
         
         <View style={styles.loadingContainer}>
@@ -184,7 +184,7 @@ export default function MessagesScreen() {
         colors={theme.gradientColors}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>Inbox</Text>
+        <Text style={styles.headerTitle}>Messages</Text>
       </LinearGradient>
 
       <View style={styles.content}>
