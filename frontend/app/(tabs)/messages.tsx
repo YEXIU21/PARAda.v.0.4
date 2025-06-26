@@ -1169,35 +1169,6 @@ export default function MessagesScreen() {
             >
               <FontAwesome5 name="ellipsis-v" size={18} color="#fff" />
             </TouchableOpacity>
-            
-            {/* Header dropdown menu */}
-            {showHeaderMenu && (
-              <View style={[styles.headerMenu, { backgroundColor: theme.card }]}>
-                <TouchableOpacity 
-                  style={styles.headerMenuItem}
-                  onPress={() => handleMenuAction('mark_all_read')}
-                >
-                  <FontAwesome5 name="check-double" size={16} color={theme.primary} style={styles.headerMenuIcon} />
-                  <Text style={[styles.headerMenuText, { color: theme.text }]}>Mark All as Read</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.headerMenuItem}
-                  onPress={() => handleMenuAction('delete_all')}
-                >
-                  <FontAwesome5 name="trash-alt" size={16} color={theme.error} style={styles.headerMenuIcon} />
-                  <Text style={[styles.headerMenuText, { color: theme.text }]}>Delete All Messages</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.headerMenuItem}
-                  onPress={() => handleMenuAction('settings')}
-                >
-                  <FontAwesome5 name="cog" size={16} color={theme.textSecondary} style={styles.headerMenuIcon} />
-                  <Text style={[styles.headerMenuText, { color: theme.text }]}>Settings</Text>
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
         </View>
       </LinearGradient>
@@ -1309,6 +1280,51 @@ export default function MessagesScreen() {
         )}
       </View>
       
+      {/* Header dropdown menu - Moved outside content flow for proper z-index */}
+      {showHeaderMenu && (
+        <>
+          {/* Backdrop to close menu when clicking outside */}
+          <TouchableOpacity
+            style={styles.menuBackdrop}
+            activeOpacity={0}
+            onPress={() => setShowHeaderMenu(false)}
+          />
+          
+          <View 
+            style={[
+              styles.headerMenuContainer,
+              { top: Platform.OS === 'web' ? 60 : 80 } // Adjust based on platform
+            ]}
+          >
+            <View style={[styles.headerMenu, { backgroundColor: theme.card }]}>
+              <TouchableOpacity 
+                style={styles.headerMenuItem}
+                onPress={() => handleMenuAction('mark_all_read')}
+              >
+                <FontAwesome5 name="check-double" size={16} color={theme.primary} style={styles.headerMenuIcon} />
+                <Text style={[styles.headerMenuText, { color: theme.text }]}>Mark All as Read</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.headerMenuItem}
+                onPress={() => handleMenuAction('delete_all')}
+              >
+                <FontAwesome5 name="trash-alt" size={16} color={theme.error} style={styles.headerMenuIcon} />
+                <Text style={[styles.headerMenuText, { color: theme.text }]}>Delete All Messages</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.headerMenuItem, { borderBottomWidth: 0 }]}
+                onPress={() => handleMenuAction('settings')}
+              >
+                <FontAwesome5 name="cog" size={16} color={theme.textSecondary} style={styles.headerMenuIcon} />
+                <Text style={[styles.headerMenuText, { color: theme.text }]}>Settings</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </>
+      )}
+      
       {/* Compose FAB button */}
       <TouchableOpacity 
         style={[styles.composeFab, { backgroundColor: theme.primary }]}
@@ -1357,10 +1373,13 @@ const styles = StyleSheet.create({
   headerActionButton: {
     padding: 8,
   },
-  headerMenu: {
+  headerMenuContainer: {
     position: 'absolute',
-    top: 40,
-    right: 0,
+    right: 20,
+    zIndex: 9999,
+    elevation: 9999,
+  },
+  headerMenu: {
     width: 200,
     borderRadius: 8,
     shadowColor: '#000',
@@ -1368,7 +1387,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 5,
-    zIndex: 1000,
+    overflow: 'hidden',
   },
   headerMenuItem: {
     flexDirection: 'row',
@@ -1753,5 +1772,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginLeft: 2,
     textTransform: 'uppercase',
+  },
+  menuBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 9998,
   },
 });
