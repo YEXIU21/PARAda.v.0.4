@@ -846,7 +846,7 @@ const styles = StyleSheet.create({
   notificationButton: {
     position: 'absolute',
     right: 20,
-    top: 10,
+    top: 5,
     padding: 8,
     zIndex: 10,
   },
