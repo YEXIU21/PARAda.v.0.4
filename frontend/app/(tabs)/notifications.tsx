@@ -38,17 +38,13 @@ const categories = [
   { id: 'promo', label: 'Promotions', icon: 'tag' }
 ];
 
-export default function NotificationsScreen() {
+// Export the notification list component so it can be used elsewhere
+export function NotificationList({ theme, standalone = false }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
-  
-  const { isDarkMode } = useTheme();
-  const theme = getThemeColors(isDarkMode);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Fetch notifications from API
   const fetchNotifications = useCallback(async () => {
@@ -56,16 +52,8 @@ export default function NotificationsScreen() {
       setError(null);
       
       const options: any = {
-        limit: 50 // Get a reasonable number of notifications
+        limit: 50
       };
-      
-      if (selectedCategory !== 'all') {
-        options.category = selectedCategory;
-      }
-      
-      if (showUnreadOnly) {
-        options.unreadOnly = true;
-      }
       
       const result = await getUserNotifications(options);
       
@@ -83,19 +71,12 @@ export default function NotificationsScreen() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [selectedCategory, showUnreadOnly]);
+  }, []);
   
-  // Fetch notifications when component mounts or when filters change
+  // Fetch notifications when component mounts
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
-  
-  // Refresh notifications when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      fetchNotifications();
-    }, [fetchNotifications])
-  );
   
   // Handle refresh
   const handleRefresh = () => {
@@ -103,18 +84,15 @@ export default function NotificationsScreen() {
     fetchNotifications();
   };
   
-  // Filter notifications based on selected category and unread filter
-  const filteredNotifications = notifications;
-  
   // Handle marking notification as read
   const handleMarkAsRead = async (id: string) => {
     try {
       await markAsRead(id);
       
       // Update local state
-    setNotifications(notifications.map(notification => 
+      setNotifications(notifications.map(notification => 
         notification._id === id ? { ...notification, read: true } : notification
-    ));
+      ));
       
       // Update unread count
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -141,12 +119,6 @@ export default function NotificationsScreen() {
               // Update local state
               const updatedNotifications = notifications.filter(notification => notification._id !== id);
               setNotifications(updatedNotifications);
-              
-              // Update unread count if needed
-              const deletedNotification = notifications.find(n => n._id === id);
-              if (deletedNotification && !deletedNotification.read) {
-                setUnreadCount(prev => Math.max(0, prev - 1));
-              }
             } catch (err) {
               console.error('Error deleting notification:', err);
               Alert.alert('Error', 'Failed to delete notification');
@@ -163,10 +135,10 @@ export default function NotificationsScreen() {
       await markAllAsRead();
       
       // Update local state
-    setNotifications(notifications.map(notification => ({ ...notification, read: true })));
+      setNotifications(notifications.map(notification => ({ ...notification, read: true })));
       setUnreadCount(0);
       
-    Alert.alert('Success', 'All notifications marked as read');
+      Alert.alert('Success', 'All notifications marked as read');
     } catch (err) {
       console.error('Error marking all notifications as read:', err);
       Alert.alert('Error', 'Failed to mark all notifications as read');
@@ -226,10 +198,60 @@ export default function NotificationsScreen() {
     }
   };
   
+  // Render the notification item
+  const renderNotificationItem = ({ item }: { item: Notification }) => {
+    return (
+      <View 
+        style={[
+          styles.notificationItem,
+          { 
+            borderLeftColor: getNotificationColor(item.type),
+            backgroundColor: !item.read ? `${getNotificationColor(item.type)}10` : theme.card
+          }
+        ]}
+      >
+        <View style={styles.notificationIcon}>
+          <FontAwesome5 
+            name={getNotificationIcon(item.type)} 
+            size={18} 
+            color={getNotificationColor(item.type)} 
+          />
+        </View>
+        <View style={styles.notificationContent}>
+          <View style={styles.notificationHeader}>
+            <Text style={[styles.notificationTitle, { color: theme.text }]}>{item.title}</Text>
+            <Text style={[styles.notificationTime, { color: theme.textSecondary }]}>
+              {formatRelativeTime(item.createdAt)}
+            </Text>
+          </View>
+          <Text style={[styles.notificationMessage, { color: theme.textSecondary }]}>
+            {item.message}
+          </Text>
+        </View>
+        <View style={styles.notificationActions}>
+          {!item.read && (
+            <TouchableOpacity 
+              style={styles.actionButton} 
+              onPress={() => handleMarkAsRead(item._id)}
+            >
+              <FontAwesome5 name="check" size={16} color={theme.primary} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleDeleteNotification(item._id)}
+          >
+            <FontAwesome5 name="trash-alt" size={16} color={theme.error} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+  
   // Render empty state
   const renderEmptyState = () => {
     if (isLoading) {
-    return (
+      return (
         <View style={styles.emptyContainer}>
           <ActivityIndicator size="large" color={theme.primary} />
           <Text style={[styles.emptyText, { color: theme.text }]}>Loading notifications...</Text>
@@ -243,172 +265,62 @@ export default function NotificationsScreen() {
           <FontAwesome5 name="exclamation-circle" size={40} color={theme.error} />
           <Text style={[styles.emptyText, { color: theme.text }]}>Something went wrong</Text>
           <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>{error}</Text>
-                <TouchableOpacity 
+          <TouchableOpacity 
             style={[styles.retryButton, { backgroundColor: theme.primary }]}
             onPress={fetchNotifications}
-              >
+          >
             <Text style={{ color: '#fff' }}>Retry</Text>
-              </TouchableOpacity>
+          </TouchableOpacity>
         </View>
       );
     }
     
-    return (
-      <View style={styles.emptyContainer}>
-        <FontAwesome5 name="bell-slash" size={40} color={theme.textSecondary} />
-        <Text style={[styles.emptyText, { color: theme.text }]}>No notifications</Text>
-        <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-          {showUnreadOnly 
-            ? "You don't have any unread notifications" 
-            : selectedCategory !== 'all' 
-              ? `No ${selectedCategory} notifications found` 
-              : "You're all caught up!"}
-        </Text>
-      </View>
-    );
+    if (notifications.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <FontAwesome5 name="bell-slash" size={40} color={theme.textSecondary} />
+          <Text style={[styles.emptyText, { color: theme.text }]}>No notifications</Text>
+          <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+            You don't have any notifications right now
+          </Text>
+        </View>
+      );
+    }
+    
+    return null;
   };
   
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <LinearGradient
-        colors={theme.gradientColors || [theme.primary, theme.primary]}
-        style={styles.header}
-      >
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={styles.headerStats}>
-          <Text style={styles.headerSubtitle}>
-            {unreadCount} unread {unreadCount === 1 ? 'notification' : 'notifications'}
-          </Text>
-          </View>
-      </LinearGradient>
-      
-      <View style={[styles.filtersContainer, { backgroundColor: theme.card }]}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesContainer}
+    <View style={[standalone ? styles.container : { flex: 1 }, { backgroundColor: standalone ? theme.background : 'transparent' }]}>
+      {standalone && (
+        <LinearGradient
+          colors={theme.gradientColors}
+          style={styles.header}
         >
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category.id}
-              style={[
-                styles.categoryButton,
-                selectedCategory === category.id && {
-                  backgroundColor: `${theme.primary}20`,
-                  borderColor: theme.primary
-                }
-              ]}
-              onPress={() => setSelectedCategory(category.id)}
-            >
-              <FontAwesome5 
-                name={category.icon} 
-                size={14} 
-                color={selectedCategory === category.id ? theme.primary : theme.textSecondary} 
-              />
-              <Text 
-                style={[
-                  styles.categoryText,
-                  { color: selectedCategory === category.id ? theme.primary : theme.textSecondary }
-                ]}
-              >
-                {category.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        
-        <View style={styles.filterActions}>
-          <View style={styles.switchContainer}>
-            <Text style={[styles.switchLabel, { color: theme.textSecondary }]}>Unread only</Text>
-          <Switch
-            value={showUnreadOnly}
-            onValueChange={setShowUnreadOnly}
-              trackColor={{ false: '#e0e0e0', true: `${theme.primary}80` }}
-              thumbColor={showUnreadOnly ? theme.primary : '#f4f3f4'}
-            />
-          </View>
+          <Text style={styles.headerTitle}>Notifications</Text>
           
-          {notifications.length > 0 && (
+          {unreadCount > 0 && (
             <TouchableOpacity 
-              style={styles.markAllButton}
+              style={[styles.markAllButton, { backgroundColor: theme.card }]}
               onPress={handleMarkAllAsRead}
             >
-              <FontAwesome5 name="check-double" size={14} color={theme.primary} />
               <Text style={[styles.markAllText, { color: theme.primary }]}>Mark all as read</Text>
             </TouchableOpacity>
           )}
-        </View>
-      </View>
+        </LinearGradient>
+      )}
       
       <FlatList
-        data={filteredNotifications}
+        data={notifications}
+        renderItem={renderNotificationItem}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <View style={[styles.notificationItem, { 
-            backgroundColor: theme.card,
-            borderLeftColor: getNotificationColor(item.type),
-            opacity: item.read ? 0.8 : 1
-          }]}>
-            <View style={[styles.notificationIconContainer, { 
-              backgroundColor: `${getNotificationColor(item.type)}20` 
-            }]}>
-              <FontAwesome5 
-                name={getNotificationIcon(item.type)} 
-                size={16} 
-                color={getNotificationColor(item.type)} 
-              />
-            </View>
-            <View style={styles.notificationContent}>
-              <View style={styles.notificationHeader}>
-                <Text style={[styles.notificationTitle, { color: theme.text }]}>
-                  {item.title}
-                  {!item.read && <View style={styles.unreadDot} />}
-                </Text>
-                <Text style={[styles.notificationTime, { color: theme.textSecondary }]}>
-                  {formatRelativeTime(item.createdAt)}
-                </Text>
-              </View>
-              <Text style={[styles.notificationMessage, { color: theme.textSecondary }]}>
-                {item.message}
-              </Text>
-              <View style={styles.notificationFooter}>
-                <View style={[styles.categoryBadge, { backgroundColor: `${getNotificationColor(item.type)}10` }]}>
-                  <FontAwesome5 
-                    name={categories.find(c => c.id === item.category)?.icon || 'bell'} 
-                    size={10} 
-                    color={getNotificationColor(item.type)} 
-                    style={styles.categoryIcon}
-                  />
-                  <Text style={[styles.categoryText, { color: getNotificationColor(item.type) }]}>
-                    {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
-            </Text>
-                </View>
-                <View style={styles.notificationActions}>
-                  {!item.read && (
-                    <TouchableOpacity 
-                      style={styles.actionButton}
-                      onPress={() => handleMarkAsRead(item._id)}
-                    >
-                      <FontAwesome5 name="check" size={12} color={theme.success} />
-                      <Text style={[styles.actionText, { color: theme.success }]}>Mark as read</Text>
-                    </TouchableOpacity>
-                  )}
-                  <TouchableOpacity 
-                    style={styles.actionButton}
-                    onPress={() => handleDeleteNotification(item._id)}
-                  >
-                    <FontAwesome5 name="trash" size={12} color={theme.error} />
-                    <Text style={[styles.actionText, { color: theme.error }]}>Delete</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </View>
-        )}
-        contentContainerStyle={styles.notificationsList}
+        contentContainerStyle={[
+          styles.notificationList,
+          notifications.length === 0 && styles.emptyList
+        ]}
         ListEmptyComponent={renderEmptyState}
         refreshControl={
-          <RefreshControl
+          <RefreshControl 
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
             colors={[theme.primary]}
@@ -416,6 +328,26 @@ export default function NotificationsScreen() {
           />
         }
       />
+      
+      {!standalone && notifications.length > 0 && (
+        <TouchableOpacity 
+          style={[styles.markAllButton, { backgroundColor: theme.primary + '22', alignSelf: 'center', marginTop: 10 }]}
+          onPress={handleMarkAllAsRead}
+        >
+          <Text style={[styles.markAllText, { color: theme.primary }]}>Mark all as read</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+export default function NotificationsScreen() {
+  const { isDarkMode } = useTheme();
+  const theme = getThemeColors(isDarkMode);
+  
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <NotificationList theme={theme} standalone={true} />
     </SafeAreaView>
   );
 }
@@ -603,5 +535,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
-  }
+  },
+  notificationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 12,
+  },
+  notificationList: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  emptyList: {
+    padding: 40,
+  },
 }); 

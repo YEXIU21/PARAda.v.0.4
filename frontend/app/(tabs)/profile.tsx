@@ -23,6 +23,7 @@ import { ThemeColors } from '../../types/ThemeTypes';
 import FeedbackForm from '../../components/FeedbackForm';
 import MessagingInterface from '../../components/MessagingInterface';
 import NotificationBadge from '../../components/ui/NotificationBadge';
+import { NotificationList } from '../(tabs)/notifications';
 
 // Define types for modal props
 interface ModalProps {
@@ -234,13 +235,7 @@ const NotificationsModal = ({ visible, onClose, theme }: ModalProps) => {
             </>
           ) : (
             <View style={styles.notificationListContainer}>
-              {/* Embedded NotificationBadge component in full display mode */}
-              <NotificationBadge 
-                theme={theme}
-                hideCount={false}
-                size={22}
-                embedded={true}
-              />
+              <NotificationList theme={theme} standalone={false} />
             </View>
           )}
         </View>
@@ -851,8 +846,9 @@ const styles = StyleSheet.create({
   notificationButton: {
     position: 'absolute',
     right: 20,
-    top: 40,
+    top: 10,
     padding: 8,
+    zIndex: 10,
   },
   content: {
     flex: 1,
