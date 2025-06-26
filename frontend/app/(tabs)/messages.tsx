@@ -17,11 +17,11 @@ import {
   ScrollView
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useTheme, getThemeColors } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
-import { getUserNotifications, markAsRead, deleteNotification } from '../services/api/notification.api';
+import { useTheme, getThemeColors } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { getUserNotifications, markAsRead, deleteNotification } from '../../services/api/notification.api';
 import { formatDistanceToNow } from 'date-fns';
-import { getSocket } from '../services/socket/socket.service';
+import { getSocket } from '../../services/socket/socket.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
