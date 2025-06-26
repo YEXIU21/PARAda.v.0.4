@@ -62,6 +62,48 @@ router.post(
 );
 
 /**
+ * @route POST /api/subscriptions/public-create
+ * @desc Create a new subscription without authentication (for users on web version)
+ * @access Public
+ */
+router.post(
+  '/public-create',
+  [
+    body(['plan', 'planId'])
+      .optional()
+      .isString()
+      .notEmpty()
+      .withMessage('Plan is required')
+      .custom((value, { req }) => {
+        // Either plan or planId must be provided
+        if (!req.body.plan && !req.body.planId) {
+          throw new Error('Either plan or planId is required');
+        }
+        return true;
+      }),
+    body('paymentMethod')
+      .isString()
+      .notEmpty()
+      .withMessage('Payment method is required'),
+    body('referenceNumber')
+      .isString()
+      .notEmpty()
+      .withMessage('Reference number is required'),
+    body('username')
+      .isString()
+      .notEmpty()
+      .withMessage('Username is required'),
+    body('email')
+      .isEmail()
+      .withMessage('Valid email is required'),
+    body('userId')
+      .optional()
+      .isString()
+  ],
+  subscriptionController.createPublicSubscription
+);
+
+/**
  * @route GET /api/subscriptions/user
  * @desc Get user's active subscription
  * @access Private

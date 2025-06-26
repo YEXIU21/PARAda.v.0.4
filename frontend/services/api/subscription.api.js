@@ -5,6 +5,7 @@
 import axios from 'axios';
 import { BASE_URL, ENDPOINTS } from './api.config';
 import { getAuthToken } from './auth.api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Get all subscription plans
@@ -323,18 +324,40 @@ export const getUserSubscription = async () => {
  */
 export const createSubscription = async (subscriptionData) => {
   try {
-    const token = await getAuthToken();
-    if (!token) throw new Error('Authentication required');
-
-    const response = await axios.post(
-      `${BASE_URL}${ENDPOINTS.SUBSCRIPTION.CREATE}`,
-      subscriptionData,
-      {
-        headers: { 'x-access-token': token }
-      }
-    );
+    // First try to get the auth token to see if user is authenticated
+    const token = await AsyncStorage.getItem('token');
+    const userData = await AsyncStorage.getItem('user');
+    let parsedUserData = null;
     
-    return response.data.subscription;
+    // Parse user data if available
+    try {
+      if (userData) {
+        parsedUserData = JSON.parse(userData);
+      }
+    } catch (parseError) {
+      console.error('Error parsing user data:', parseError);
+    }
+    
+    // Check if user is authenticated
+    if (token && parsedUserData) {
+      console.log('User is authenticated, using authenticated endpoint');
+      // Use the authenticated endpoint
+      const response = await axios.post(ENDPOINTS.SUBSCRIPTION.CREATE, subscriptionData);
+      return response.data;
+    } else {
+      console.log('User is not authenticated, using public endpoint');
+      // User is not authenticated, use the public endpoint
+      // Need to include user information in the request
+      const publicSubscriptionData = {
+        ...subscriptionData,
+        username: parsedUserData?.username || 'Guest User',
+        email: parsedUserData?.email || 'guest@email.com',
+        userId: parsedUserData?.id || null
+      };
+      
+      const response = await axios.post(ENDPOINTS.SUBSCRIPTION.PUBLIC_CREATE, publicSubscriptionData);
+      return response.data;
+    }
   } catch (error) {
     console.error('Error creating subscription:', error);
     throw error;

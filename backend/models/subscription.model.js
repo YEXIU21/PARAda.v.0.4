@@ -84,6 +84,20 @@ const SubscriptionSchema = new mongoose.Schema({
       enum: ['pending', 'approved', 'rejected'],
       default: 'pending'
     }
+  },
+  publicUserData: {
+    username: {
+      type: String,
+      default: null
+    },
+    email: {
+      type: String,
+      default: null
+    },
+    isPublicSubmission: {
+      type: Boolean,
+      default: false
+    }
   }
 }, {
   timestamps: true

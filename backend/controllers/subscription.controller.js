@@ -7,6 +7,9 @@ const subscriptionService = require('../services/subscription.service');
 const socketService = require('../services/socket.service');
 const Subscription = require('../models/subscription.model');
 const SubscriptionPlan = require('../models/subscription-plan.model');
+const User = require('../models/user.model');
+const NotificationService = require('../services/notification.service');
+const mongoose = require('mongoose');
 
 /**
  * Get all subscription plans
@@ -448,6 +451,121 @@ exports.getAllSubscriptions = async (req, res) => {
     console.error('Error getting all subscriptions:', error);
     return res.status(500).json({
       message: 'Error getting all subscriptions',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Create a new subscription from public (unauthenticated) users
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} - Response with subscription or error
+ */
+exports.createPublicSubscription = async (req, res) => {
+  try {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        message: 'Validation error', 
+        errors: errors.array() 
+      });
+    }
+
+    console.log('Creating public subscription for:', req.body.username, req.body.email);
+    
+    // Find or create user
+    let user;
+    if (req.body.userId) {
+      // Try to find user by ID first
+      user = await User.findById(req.body.userId);
+    }
+    
+    if (!user && req.body.email) {
+      // If no user found by ID, try to find by email
+      user = await User.findOne({ email: req.body.email });
+    }
+    
+    // If no user found, create a pending record
+    if (!user) {
+      console.log('No user found, creating a pending subscription record');
+      
+      // Create new subscription data in a special collection for admin review
+      const pendingSubscription = new Subscription({
+        // Use a temporary userId for now
+        userId: new mongoose.Types.ObjectId(),
+        planId: req.body.planId || req.body.plan,
+        type: req.body.type || 'all',
+        startDate: new Date(),
+        expiryDate: new Date(Date.now() + (req.body.duration || 30) * 24 * 60 * 60 * 1000),
+        paymentDetails: {
+          amount: req.body.amount || 0,
+          referenceNumber: req.body.referenceNumber,
+          paymentDate: new Date(),
+          paymentMethod: req.body.paymentMethod || 'gcash'
+        },
+        isActive: false,
+        autoRenew: req.body.autoRenew || false,
+        verification: {
+          verified: false,
+          status: 'pending'
+        },
+        publicUserData: {
+          username: req.body.username,
+          email: req.body.email
+        }
+      });
+      
+      const savedSubscription = await pendingSubscription.save();
+      
+      // Create notification for admin
+      try {
+        await NotificationService.createSystemNotification(
+          null, // Send to all admins
+          'New Public Subscription Request',
+          `New subscription request from ${req.body.username} (${req.body.email}) without authentication.`,
+          'payment',
+          {
+            subscriptionId: savedSubscription._id,
+            email: req.body.email,
+            username: req.body.username,
+            referenceNumber: req.body.referenceNumber
+          }
+        );
+      } catch (notifyError) {
+        console.error('Error creating admin notification:', notifyError);
+        // Don't fail the subscription creation if notification fails
+      }
+      
+      return res.status(201).json({
+        message: 'Subscription request received and pending verification',
+        subscription: savedSubscription,
+        status: 'pending'
+      });
+    }
+    
+    // User found, use the regular subscription service with the found user
+    const subscriptionData = {
+      ...req.body,
+      planId: req.body.planId || req.body.plan
+    };
+    
+    // Create subscription using the service
+    const subscription = await subscriptionService.createSubscription(subscriptionData, user);
+    
+    // Emit real-time event
+    socketService.emitToAdmins('subscription:created', subscription);
+    socketService.emitToUser(user._id, 'subscription:created', subscription);
+    
+    return res.status(201).json({
+      message: 'Subscription created successfully, pending verification',
+      subscription
+    });
+  } catch (error) {
+    console.error('Error creating public subscription:', error);
+    return res.status(500).json({
+      message: 'Error creating subscription',
       error: error.message
     });
   }

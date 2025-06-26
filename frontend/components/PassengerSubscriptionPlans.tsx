@@ -267,9 +267,6 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
       await AsyncStorage.setItem('userSubscription', JSON.stringify(subscriptionDataLocal));
       console.log('Subscription saved to AsyncStorage');
       
-      // Try to use the backend API for creating a subscription
-      let backendSubscriptionCreated = false;
-      
       // Prepare API subscription data
       const subscriptionData = {
         planId: selectedPlanForPayment.id,
@@ -280,12 +277,21 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
         studentDiscount: {
           applied: user?.accountType === 'student',
           percentage: 20 // Default student discount percentage
-        }
+        },
+        // Include user information for public API
+        username: user?.username || 'Guest User',
+        email: user?.email || '',
+        duration: selectedPlanForPayment.duration,
+        amount: selectedPlanForPayment.price
       };
       
+      // Try to use the backend API for creating a subscription
+      let backendSubscriptionCreated = false;
+      let subscriptionResponse = null;
+      
       try {
-        // Attempt to create subscription via API
-        const subscriptionResponse = await createSubscription(subscriptionData);
+        // The API will automatically determine whether to use public or authenticated endpoint
+        subscriptionResponse = await createSubscription(subscriptionData);
         console.log('Subscription created successfully via API:', subscriptionResponse);
         backendSubscriptionCreated = true;
       } catch (apiError) {

@@ -85,6 +85,7 @@ export const ENDPOINTS = {
     BASE: '/api/subscriptions',
     PLANS: '/api/subscriptions/plans',
     PUBLIC_PLANS: '/api/subscriptions/public-plans',
+    PUBLIC_CREATE: '/api/subscriptions/public-create',
     CREATE: '/api/subscriptions',
     ME: '/api/subscriptions/me',
     USER: '/api/subscriptions/user',
@@ -93,8 +94,8 @@ export const ENDPOINTS = {
     PENDING: '/api/subscriptions/pending',
     VERIFY: '/api/subscriptions/verify',
     APPROVE: '/api/subscriptions/approve',
-    ADMIN_PENDING: '/api/subscriptions/admin/pending', // Add the new debug endpoint
-    VERIFIED: '/api/subscriptions/verified' // Add the verified subscriptions endpoint
+    ADMIN_PENDING: '/api/subscriptions/admin/pending',
+    CANCEL: (id) => `/api/subscriptions/${id}`
   },
   
   // User endpoints
