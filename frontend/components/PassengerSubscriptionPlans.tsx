@@ -6,7 +6,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
-  Alert
+  Alert,
+  Modal,
+  Image,
+  TextInput
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { getSubscriptionPlans } from '../services/api/subscription.api';
@@ -14,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createSubscription } from '../services/api/subscription.api';
 
 interface SubscriptionPlan {
   id: string;
@@ -87,6 +91,13 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  
+  // Add new states for GCash payment modal
+  const [showGCashModal, setShowGCashModal] = useState(false);
+  const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<SubscriptionPlan | null>(null);
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   useEffect(() => {
     fetchSubscriptionPlans();
@@ -195,21 +206,114 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
   };
 
   const handleSubscribe = (plan: SubscriptionPlan) => {
-    // Make sure we're using the right ID for subscription
-    // Prefer planId (backend), then id (frontend), then _id (MongoDB)
-    const planIdToUse = plan.planId || plan.id || (plan._id ? String(plan._id) : undefined);
-    
-    if (!planIdToUse) {
-      console.error('Cannot subscribe: No valid plan ID found', plan);
-      Alert.alert('Error', 'Invalid subscription plan selected. Please try again.');
+    // Check if the user is logged in
+    if (!user) {
+      Alert.alert(
+        'Login Required',
+        'You need to be logged in to subscribe to a plan.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Login', onPress: () => router.push('/auth/login') }
+        ]
+      );
       return;
     }
     
-    // Navigate back to home screen and pass the selected plan
-    router.push({
-      pathname: '/(tabs)',
-      params: { selectedPlan: planIdToUse }
-    });
+    // Set the selected plan for payment and show payment modal
+    setSelectedPlanForPayment(plan);
+    setShowGCashModal(true);
+  };
+  
+  // Add a new function to handle payment submission
+  const handlePaymentSubmit = async () => {
+    // Reset any previous errors
+    setPaymentError(null);
+    
+    if (!referenceNumber.trim()) {
+      setPaymentError('Please enter the reference number from your GCash payment');
+      return;
+    }
+
+    if (referenceNumber.length < 8) {
+      setPaymentError('Please enter a valid reference number (at least 8 characters)');
+      return;
+    }
+    
+    if (!selectedPlanForPayment) {
+      setPaymentError('No plan selected. Please try again.');
+      return;
+    }
+
+    setIsProcessingPayment(true);
+
+    try {
+      // Create subscription data
+      const subscriptionData = {
+        planId: selectedPlanForPayment.id,
+        type: 'all', // Use 'all' to allow access to all vehicle types
+        referenceNumber: referenceNumber,
+        paymentMethod: 'gcash',
+        autoRenew: false,
+        studentDiscount: {
+          applied: user?.accountType === 'student',
+          percentage: 20 // Default student discount percentage
+        }
+      };
+      
+      // Create subscription via API
+      try {
+        const subscriptionResponse = await createSubscription(subscriptionData);
+        console.log('Subscription created successfully via API:', subscriptionResponse);
+        
+        // Local backup - store in AsyncStorage as well
+        const now = new Date();
+        const expiry = new Date(now);
+        expiry.setDate(expiry.getDate() + (selectedPlanForPayment.duration || 30));
+        
+        const subscriptionDataLocal = {
+          username: user?.username || 'User',
+          type: 'all',
+          plan: selectedPlanForPayment.id,
+          expiryDate: expiry.toISOString(),
+          referenceNumber: referenceNumber,
+          paymentDate: now.toISOString(),
+          approved: false,
+          verified: false
+        };
+        
+        await AsyncStorage.setItem('userSubscription', JSON.stringify(subscriptionDataLocal));
+        
+        // Show success message
+        Alert.alert(
+          'Payment Submitted',
+          'Your payment reference has been submitted and is pending admin approval. Your subscription will be activated once approved.',
+          [{ 
+            text: 'OK',
+            onPress: () => {
+              // Close payment modal
+              setShowGCashModal(false);
+              // Reset states
+              setReferenceNumber('');
+              setSelectedPlanForPayment(null);
+              setIsProcessingPayment(false);
+              
+              // Navigate back to home screen
+              router.push('/(tabs)');
+            }
+          }]
+        );
+        
+      } catch (apiError) {
+        console.error('Error creating subscription via API:', apiError);
+        // Show error and let user try again
+        setPaymentError('Error connecting to server. Please try again.');
+        setIsProcessingPayment(false);
+      }
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      setPaymentError('Failed to process payment. Please try again.');
+      setIsProcessingPayment(false);
+    }
   };
 
   const renderFeature = (feature: string, index: number) => (
@@ -254,93 +358,192 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
   const showErrorBanner = error !== null && subscriptionPlans.length > 0;
 
   return (
-    <ScrollView 
-      style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={styles.contentContainer}
-    >
-      {showErrorBanner && (
-        <View style={[styles.errorBanner, { backgroundColor: theme.error + '20', borderColor: theme.error }]}>
-          <FontAwesome5 name="exclamation-circle" size={16} color={theme.error} style={styles.errorIcon} />
-          <Text style={[styles.errorBannerText, { color: theme.error }]}>
-            {error || 'Could not refresh plans. Using cached data.'}
-          </Text>
-          <TouchableOpacity onPress={fetchSubscriptionPlans}>
-            <FontAwesome5 name="sync" size={16} color={theme.error} />
-          </TouchableOpacity>
-        </View>
-      )}
-      
-      <Text style={[styles.title, { color: theme.text }]}>Choose Your Subscription Plan</Text>
-      <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-        Select a plan that fits your transportation needs
-      </Text>
-
-      {plansToDisplay.length === 0 ? (
-        <View style={[styles.noPlansContainer, { borderColor: theme.border }]}>
-          <FontAwesome5 name="info-circle" size={40} color={theme.textSecondary} style={styles.noPlansIcon} />
-          <Text style={[styles.noPlansText, { color: theme.text }]}>
-            No subscription plans are currently available.
-          </Text>
-          <Text style={[styles.noPlansSubtext, { color: theme.textSecondary }]}>
-            Please check back later or contact support for assistance.
-          </Text>
-          <TouchableOpacity 
-            style={[styles.refreshButton, { backgroundColor: theme.primary }]}
-            onPress={fetchSubscriptionPlans}
-          >
-            <Text style={styles.refreshButtonText}>Refresh</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        plansToDisplay.map((plan) => (
-        <View 
-          key={plan.id} 
-          style={[
-            styles.planCard, 
-            { 
-              backgroundColor: theme.card,
-              borderColor: plan.recommended ? theme.primary : theme.border
-            }
-          ]}
-        >
-          {plan.recommended && (
-            <View style={styles.recommendedBadge}>
-              <Text style={styles.recommendedText}>RECOMMENDED</Text>
-            </View>
-          )}
-          
-          <Text style={[styles.planName, { color: theme.text }]}>{plan.name}</Text>
-          
-          <View style={styles.priceContainer}>
-            <Text style={[styles.currency, { color: theme.text }]}>₱</Text>
-            <Text style={[styles.price, { color: theme.text }]}>{plan.price}</Text>
-            <Text style={[styles.duration, { color: theme.textSecondary }]}>
-              /{plan.duration === 30 ? 'month' : plan.duration === 90 ? 'quarter' : 'year'}
+    <>
+      <ScrollView 
+        style={[styles.container, { backgroundColor: theme.background }]}
+        contentContainerStyle={styles.contentContainer}
+      >
+        {showErrorBanner && (
+          <View style={[styles.errorBanner, { backgroundColor: theme.error + '20', borderColor: theme.error }]}>
+            <FontAwesome5 name="exclamation-circle" size={16} color={theme.error} style={styles.errorIcon} />
+            <Text style={[styles.errorBannerText, { color: theme.error }]}>
+              {error || 'Could not refresh plans. Using cached data.'}
             </Text>
+            <TouchableOpacity onPress={fetchSubscriptionPlans}>
+              <FontAwesome5 name="sync" size={16} color={theme.error} />
+            </TouchableOpacity>
           </View>
-          
-          <View style={styles.featuresContainer}>
-            {Array.isArray(plan.features) ? plan.features.map((feature, index) => renderFeature(feature, index)) : (
-              <Text style={[styles.noFeaturesText, { color: theme.textSecondary }]}>No features available</Text>
-            )}
-          </View>
-          
-          <TouchableOpacity
-            style={styles.subscribeButton}
-            onPress={() => handleSubscribe(plan)}
-          >
-            <LinearGradient
-              colors={theme.gradientColors || ['#4B6BFE', '#3451E1']}
-              style={styles.subscribeGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+        )}
+        
+        <Text style={[styles.title, { color: theme.text }]}>Choose Your Subscription Plan</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+          Select a plan that fits your transportation needs
+        </Text>
+
+        {plansToDisplay.length === 0 ? (
+          <View style={[styles.noPlansContainer, { borderColor: theme.border }]}>
+            <FontAwesome5 name="info-circle" size={40} color={theme.textSecondary} style={styles.noPlansIcon} />
+            <Text style={[styles.noPlansText, { color: theme.text }]}>
+              No subscription plans are currently available.
+            </Text>
+            <Text style={[styles.noPlansSubtext, { color: theme.textSecondary }]}>
+              Please check back later or contact support for assistance.
+            </Text>
+            <TouchableOpacity 
+              style={[styles.refreshButton, { backgroundColor: theme.primary }]}
+              onPress={fetchSubscriptionPlans}
             >
-              <Text style={styles.subscribeText}>Subscribe Now</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+              <Text style={styles.refreshButtonText}>Refresh</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          plansToDisplay.map((plan) => (
+          <View 
+            key={plan.id} 
+            style={[
+              styles.planCard, 
+              { 
+                backgroundColor: theme.card,
+                borderColor: plan.recommended ? theme.primary : theme.border
+              }
+            ]}
+          >
+            {plan.recommended && (
+              <View style={styles.recommendedBadge}>
+                <Text style={styles.recommendedText}>RECOMMENDED</Text>
+              </View>
+            )}
+            
+            <Text style={[styles.planName, { color: theme.text }]}>{plan.name}</Text>
+            
+            <View style={styles.priceContainer}>
+              <Text style={[styles.currency, { color: theme.text }]}>₱</Text>
+              <Text style={[styles.price, { color: theme.text }]}>{plan.price}</Text>
+              <Text style={[styles.duration, { color: theme.textSecondary }]}>
+                /{plan.duration === 30 ? 'month' : plan.duration === 90 ? 'quarter' : 'year'}
+              </Text>
+            </View>
+            
+            <View style={styles.featuresContainer}>
+              {Array.isArray(plan.features) ? plan.features.map((feature, index) => renderFeature(feature, index)) : (
+                <Text style={[styles.noFeaturesText, { color: theme.textSecondary }]}>No features available</Text>
+              )}
+            </View>
+            
+            <TouchableOpacity
+              style={styles.subscribeButton}
+              onPress={() => handleSubscribe(plan)}
+            >
+              <LinearGradient
+                colors={theme.gradientColors || ['#4B6BFE', '#3451E1']}
+                style={styles.subscribeGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Text style={styles.subscribeText}>Subscribe Now</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )))}
+      </ScrollView>
+      
+      {/* GCash Payment Modal */}
+      <Modal
+        visible={showGCashModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowGCashModal(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>GCash Payment</Text>
+              {!isProcessingPayment && (
+                <TouchableOpacity 
+                  onPress={() => {
+                    setShowGCashModal(false);
+                    setReferenceNumber('');
+                    setPaymentError(null);
+                  }}
+                  style={styles.closeButton}
+                >
+                  <FontAwesome5 name="times" size={20} color={theme.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            <View style={styles.qrContainer}>
+              {/* GCash QR Code */}
+              <Image 
+                source={require('../assets/images/gcash.jpg')} 
+                style={styles.qrCode}
+                resizeMode="contain"
+              />
+              
+              <View style={styles.paymentDetailsContainer}>
+                <Text style={[styles.planDetailsText, { color: theme.text }]}>
+                  Plan: {selectedPlanForPayment?.name}
+                </Text>
+                <Text style={[styles.planDetailsText, { color: theme.text }]}>
+                  Amount: ₱{selectedPlanForPayment?.price}
+                </Text>
+                <Text style={[styles.paymentInstructions, { color: theme.textSecondary }]}>
+                  Scan the QR code with your GCash app to pay
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.referenceContainer}>
+              <Text style={[styles.referenceTitle, { color: theme.text }]}>
+                Enter Reference Number
+              </Text>
+              
+              <TextInput
+                style={[
+                  styles.referenceInput, 
+                  { 
+                    backgroundColor: theme.background,
+                    borderColor: paymentError ? theme.error : theme.border,
+                    color: theme.text 
+                  }
+                ]}
+                placeholder="e.g. GC0123456789"
+                placeholderTextColor={theme.textSecondary}
+                value={referenceNumber}
+                onChangeText={(text) => {
+                  setReferenceNumber(text);
+                  if (paymentError) setPaymentError(null);
+                }}
+                editable={!isProcessingPayment}
+                autoCapitalize="characters"
+              />
+              
+              {paymentError && (
+                <Text style={[styles.paymentErrorText, { color: theme.error }]}>
+                  {paymentError}
+                </Text>
+              )}
+              
+              {isProcessingPayment ? (
+                <View style={styles.processingContainer}>
+                  <ActivityIndicator size="large" color={theme.primary} />
+                  <Text style={[styles.processingText, { color: theme.text }]}>
+                    Verifying payment...
+                  </Text>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  style={[styles.paymentSubmitButton, { backgroundColor: theme.primary }]}
+                  onPress={handlePaymentSubmit}
+                >
+                  <Text style={styles.paymentSubmitButtonText}>Submit Payment</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
         </View>
-      )))}
-    </ScrollView>
+      </Modal>
+    </>
   );
 };
 
@@ -523,6 +726,95 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   refreshButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  qrContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  qrCode: {
+    width: 200,
+    height: 200,
+    marginBottom: 16,
+  },
+  paymentDetailsContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  planDetailsText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 6,
+  },
+  paymentInstructions: {
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  referenceContainer: {
+    marginTop: 16,
+  },
+  referenceTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  referenceInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  paymentErrorText: {
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  processingContainer: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  processingText: {
+    marginTop: 12,
+    fontSize: 16,
+  },
+  paymentSubmitButton: {
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  paymentSubmitButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
