@@ -14,7 +14,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
-  ScrollView
+  ScrollView,
+  RefreshControl
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
@@ -64,6 +65,7 @@ export default function MessagesScreen() {
   const [showReplyModal, setShowReplyModal] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
@@ -982,115 +984,145 @@ export default function MessagesScreen() {
     </Modal>
   );
   
+  // Add refresh handler
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchMessages().finally(() => {
+      setIsRefreshing(false);
+    });
+  };
+  
   return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <LinearGradient
-          colors={theme.gradientColors || ['#4B6BFE', '#2D3AF2']}
-          style={styles.header}
-        >
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Messages</Text>
-          </View>
-        </LinearGradient>
-
-        <View style={styles.content}>
-          {/* Category filters */}
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesContainer}
-          >
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryButton,
-                  selectedCategory === category.id && {
-                    backgroundColor: `${theme.primary}20`,
-                    borderColor: theme.primary
-                  },
-                  // Make the notification category more prominent
-                  category.id === 'notification' && {
-                    borderWidth: 2,
-                    borderColor: category.id === selectedCategory ? theme.primary : '#FF9500',
-                  }
-                ]}
-                onPress={() => setSelectedCategory(category.id)}
-              >
-                <FontAwesome5 
-                  name={category.icon} 
-                  size={14} 
-                  color={selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary)} 
-                />
-                <Text 
-                  style={[
-                    styles.categoryButtonText,
-                    { color: selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary) }
-                  ]}
-                >
-                  {category.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          
-          {/* Search bar */}
-          <View style={[styles.searchContainer, { backgroundColor: theme.inputBackground || theme.card }]}>
-            <FontAwesome5 name="search" size={16} color={theme.textSecondary} />
-            <TextInput
-              style={[styles.searchInput, { color: theme.text }]}
-              placeholder="Search messages..."
-              placeholderTextColor={theme.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <FontAwesome5 name="times" size={16} color={theme.textSecondary} />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={theme.primary} />
-              <Text style={[styles.loadingText, { color: theme.text }]}>Loading messages...</Text>
-            </View>
-          ) : error ? (
-            <View style={styles.errorContainer}>
-              <FontAwesome5 name="exclamation-triangle" size={40} color={theme.error} />
-              <Text style={[styles.errorTitle, { color: theme.text }]}>Error</Text>
-              <Text style={[styles.errorMessage, { color: theme.textSecondary }]}>{error}</Text>
-              <TouchableOpacity 
-                style={[styles.retryButton, { backgroundColor: theme.primary }]}
-                onPress={fetchMessages}
-              >
-                <Text style={{ color: '#fff' }}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          ) : filteredMessages.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <FontAwesome5 name="inbox" size={40} color={theme.textSecondary} />
-              <Text style={[styles.emptyText, { color: theme.text }]}>No messages found</Text>
-              <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-                {searchQuery 
-                  ? 'Try a different search term' 
-                  : selectedCategory !== 'all'
-                    ? `No ${categories.find(c => c.id === selectedCategory)?.label || selectedCategory} messages`
-                    : 'Your messages will appear here'
-                }
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={filteredMessages}
-              renderItem={renderMessageItem}
-              keyExtractor={item => item._id || Math.random().toString()}
-              contentContainerStyle={styles.messagesList}
-              style={{ width: '100%' }}
-            />
-          )}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <LinearGradient
+        colors={theme.gradientColors || ['#4B6BFE', '#2D3AF2']}
+        style={styles.header}
+      >
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Messages</Text>
+          <TouchableOpacity style={styles.headerActionButton}>
+            <FontAwesome5 name="ellipsis-v" size={18} color="#fff" />
+          </TouchableOpacity>
         </View>
+      </LinearGradient>
+
+      <View style={styles.content}>
+        {/* Search bar - Updated design */}
+        <View style={[styles.searchContainer, { backgroundColor: theme.inputBackground || theme.card }]}>
+          <FontAwesome5 name="search" size={16} color={theme.textSecondary} />
+          <TextInput
+            style={[styles.searchInput, { color: theme.text }]}
+            placeholder="Search messages..."
+            placeholderTextColor={theme.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery ? (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <FontAwesome5 name="times" size={16} color={theme.textSecondary} />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+        
+        {/* Category filters - Improved design */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContainer}
+        >
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category.id}
+              style={[
+                styles.categoryButton,
+                selectedCategory === category.id && {
+                  backgroundColor: `${theme.primary}20`,
+                  borderColor: theme.primary
+                },
+                // Make the notification category more prominent
+                category.id === 'notification' && {
+                  borderWidth: 2,
+                  borderColor: category.id === selectedCategory ? theme.primary : '#FF9500',
+                }
+              ]}
+              onPress={() => setSelectedCategory(category.id)}
+            >
+              <FontAwesome5 
+                name={category.icon} 
+                size={14} 
+                color={selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary)} 
+              />
+              <Text 
+                style={[
+                  styles.categoryButtonText,
+                  { color: selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary) }
+                ]}
+              >
+                {category.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {isLoading && !isRefreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.loadingText, { color: theme.text }]}>Loading messages...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <FontAwesome5 name="exclamation-triangle" size={40} color={theme.error} />
+            <Text style={[styles.errorTitle, { color: theme.text }]}>Error</Text>
+            <Text style={[styles.errorMessage, { color: theme.textSecondary }]}>{error}</Text>
+            <TouchableOpacity 
+              style={[styles.retryButton, { backgroundColor: theme.primary }]}
+              onPress={fetchMessages}
+            >
+              <Text style={{ color: '#fff' }}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : filteredMessages.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <FontAwesome5 name="inbox" size={40} color={theme.textSecondary} />
+            <Text style={[styles.emptyText, { color: theme.text }]}>No messages found</Text>
+            <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+              {searchQuery 
+                ? 'Try a different search term' 
+                : selectedCategory !== 'all'
+                  ? `No ${categories.find(c => c.id === selectedCategory)?.label || selectedCategory} messages`
+                  : 'Your messages will appear here'
+              }
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredMessages}
+            renderItem={renderMessageItem}
+            keyExtractor={item => item._id || Math.random().toString()}
+            contentContainerStyle={styles.messagesList}
+            style={{ width: '100%' }}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                colors={[theme.primary]}
+                tintColor={theme.primary}
+              />
+            }
+          />
+        )}
+      </View>
+      
+      {/* Compose FAB button */}
+      <TouchableOpacity 
+        style={[styles.composeFab, { backgroundColor: theme.primary }]}
+        onPress={() => {
+          // Handle compose new message
+          Alert.alert('Coming Soon', 'Message composition will be available in a future update.');
+        }}
+      >
+        <FontAwesome5 name="pen" size={20} color="#fff" />
+      </TouchableOpacity>
       
       {/* Message detail modal */}
       {renderMessageDetailModal()}
@@ -1106,17 +1138,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 20,
-    paddingBottom: 15,
-    paddingHorizontal: 16,
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
+    paddingTop: 40,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    justifyContent: 'flex-end',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
-    zIndex: 10,
+    shadowRadius: 3,
+    elevation: 5,
   },
   headerContent: {
     flexDirection: 'row',
@@ -1124,11 +1154,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
   },
-  backButton: {
+  headerActionButton: {
     padding: 8,
   },
   closeButton: {
@@ -1137,16 +1167,14 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
-    alignItems: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 25,
-    marginHorizontal: 16,
-    marginVertical: 12,
+    borderRadius: 12,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -1158,9 +1186,32 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 15,
   },
+  categoriesContainer: {
+    paddingBottom: 12,
+    marginBottom: 8,
+  },
+  categoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    marginRight: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  categoryButtonText: {
+    marginLeft: 8,
+    fontSize: 13,
+    fontWeight: '600',
+  },
   messagesList: {
-    paddingBottom: 20,
-    width: '100%',
+    paddingBottom: 80, // Extra space for FAB
   },
   messageItem: {
     padding: 16,
@@ -1168,10 +1219,25 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderLeftWidth: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 2,
     elevation: 2,
+  },
+  composeFab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   messageHeader: {
     flexDirection: 'row',
@@ -1407,31 +1473,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: 8,
     justifyContent: 'flex-end',
-  },
-  categoriesContainer: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(0,0,0,0.03)',
-  },
-  categoryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    marginRight: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  categoryButtonText: {
-    marginLeft: 8,
-    fontSize: 13,
-    fontWeight: '600',
   },
   messageFooter: {
     flexDirection: 'row',
