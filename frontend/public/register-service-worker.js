@@ -96,10 +96,15 @@ if ('serviceWorker' in navigator) {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    // Make API request to get unread count
-    fetch('/api/notifications/unread-count', {
+    // Get the API base URL from localStorage or use the default
+    const apiBaseUrl = localStorage.getItem('apiBaseUrl') || 'https://parada-backend.onrender.com';
+    
+    // Make API request to get unread count with full URL
+    fetch(`${apiBaseUrl}/api/notifications/unread-count`, {
       headers: {
-        'x-access-token': token
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       }
     })
     .then(response => {
@@ -125,10 +130,25 @@ if ('serviceWorker' in navigator) {
         detail: { count } 
       }));
       
-      // Update favicon badge with a data attribute
-      const favicon = document.querySelector('link[rel="icon"]');
-      if (favicon) {
-        favicon.setAttribute('data-badge', count.toString());
+      // Update favicon badge safely
+      try {
+        const favicon = document.querySelector('link[rel="icon"]');
+        if (favicon) {
+          favicon.setAttribute('data-badge', count.toString());
+        } else {
+          console.warn('Favicon not found for badge update');
+          
+          // Create a favicon if it doesn't exist
+          if (count > 0) {
+            const newFavicon = document.createElement('link');
+            newFavicon.rel = 'icon';
+            newFavicon.href = '/assets/images/favicon.ico';
+            newFavicon.setAttribute('data-badge', count.toString());
+            document.head.appendChild(newFavicon);
+          }
+        }
+      } catch (e) {
+        console.warn('Error updating favicon badge:', e);
       }
     })
     .catch(error => {

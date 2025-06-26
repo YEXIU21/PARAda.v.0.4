@@ -11,6 +11,7 @@ import ThemedStatusBar from '../components/ThemedStatusBar';
 import PWAInstallPrompt from '../components/PWAInstallPrompt';
 import { initializeSocket } from '../services/socket/socket.service';
 import * as WebBrowser from 'expo-web-browser';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -124,6 +125,15 @@ export default function RootLayout() {
         document.head.appendChild(linkManifest);
       }
       
+      // Add favicon link if it doesn't exist
+      const existingFavicon = document.querySelector('link[rel="icon"]');
+      if (!existingFavicon) {
+        const linkFavicon = document.createElement('link');
+        linkFavicon.rel = 'icon';
+        linkFavicon.href = '/assets/images/favicon.ico';
+        document.head.appendChild(linkFavicon);
+      }
+      
       // Add service worker registration script if it doesn't exist
       const existingServiceWorkerScript = document.querySelector('script[src="/register-service-worker.js"]');
       if (!existingServiceWorkerScript) {
@@ -136,21 +146,23 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <NotificationService>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" options={{ title: 'Not Found', headerShown: true }} />
-            <Stack.Screen name="auth/login" options={{ title: 'Login' }} />
-            <Stack.Screen name="auth/register" options={{ title: 'Register' }} />
-          </Stack>
-          <ThemedStatusBar />
-          {/* Only show PWA install prompt on pages other than landing page */}
-          {Platform.OS === 'web' && window.location.pathname !== '/' && <PWAInstallPrompt />}
-        </NotificationService>
-      </ThemeProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <ThemeProvider>
+          <NotificationService>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" options={{ title: 'Not Found', headerShown: true }} />
+              <Stack.Screen name="auth/login" options={{ title: 'Login' }} />
+              <Stack.Screen name="auth/register" options={{ title: 'Register' }} />
+            </Stack>
+            <ThemedStatusBar />
+            {/* Only show PWA install prompt on pages other than landing page */}
+            {Platform.OS === 'web' && window.location.pathname !== '/' && <PWAInstallPrompt />}
+          </NotificationService>
+        </ThemeProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
