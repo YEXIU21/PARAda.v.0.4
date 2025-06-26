@@ -142,7 +142,7 @@ export default function GCashPaymentModal({
             {!isProcessing && (
               <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
                 <View style={styles.closeButtonCircle}>
-                  <FontAwesome5 name="times" size={16} color="white" />
+                  <FontAwesome5 name="times" size={18} color="white" />
                 </View>
               </TouchableOpacity>
             )}
@@ -213,12 +213,20 @@ export default function GCashPaymentModal({
                 </Text>
               </View>
             ) : (
-              <TouchableOpacity 
-                style={[styles.confirmButton, { backgroundColor: theme.primary }]}
-                onPress={handlePaymentSubmit}
-              >
-                <Text style={styles.confirmButtonText}>Submit</Text>
-              </TouchableOpacity>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity 
+                  style={[styles.cancelButton, { borderColor: theme.border }]}
+                  onPress={handleClose}
+                >
+                  <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.confirmButton, { backgroundColor: theme.primary }]}
+                  onPress={handlePaymentSubmit}
+                >
+                  <Text style={styles.confirmButtonText}>Submit</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         </ScrollView>
@@ -247,12 +255,12 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   closeButton: {
-    padding: 5,
+    padding: 8,
   },
   closeButtonCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -350,12 +358,29 @@ const styles = StyleSheet.create({
     marginTop: 15,
     fontSize: 16,
   },
-  confirmButton: {
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     width: '100%',
+    marginTop: 10,
+  },
+  cancelButton: {
+    width: '48%',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 10,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  confirmButton: {
+    width: '48%',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
   },
   confirmButtonText: {
     color: 'white',
