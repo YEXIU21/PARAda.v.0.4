@@ -235,17 +235,23 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
       return;
     }
     
-    // Check if the plan exists in our current list
-    const planExists = subscriptionPlans.some(plan => plan.id === planId);
-    if (!planExists) {
+    // Find the plan in our current list
+    const planToDelete = subscriptionPlans.find(plan => plan.id === planId);
+    if (!planToDelete) {
       console.log('Plan ID does not exist in current plans list:', planId);
       Alert.alert('Error', 'The selected plan no longer exists');
       return;
     }
     
-    console.log('Setting plan ID for deletion:', planId);
+    // Log the actual plan object for debugging
+    console.log('Found plan to delete:', planToDelete);
+    
+    // Use the correct ID field based on what the backend expects
+    const idToDelete = planId;
+    console.log('Setting plan ID for deletion:', idToDelete);
+    
     // Set the plan ID to delete and show the confirmation modal
-    setPlanToDelete(planId);
+    setPlanToDelete(idToDelete);
     setDeleteModalVisible(true);
   };
   
@@ -258,14 +264,17 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     }
     
     // Find the plan in the current plans list to ensure it exists
-    const planExists = subscriptionPlans.some(plan => plan.id === planToDelete);
-    if (!planExists) {
+    const planToDeleteObj = subscriptionPlans.find(plan => plan.id === planToDelete);
+    if (!planToDeleteObj) {
       console.log('Plan ID does not exist in current plans list:', planToDelete);
       Alert.alert('Error', 'The selected plan no longer exists');
       setDeleteModalVisible(false);
       setPlanToDelete(null);
       return;
     }
+    
+    // Add detailed logging of the plan object
+    console.log('Found plan object to delete:', planToDeleteObj);
     
     try {
       console.log('Setting loading state...');
