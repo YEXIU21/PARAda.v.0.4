@@ -292,162 +292,285 @@ exports.getSubscriptionPlanWithDiscount = async (planId, isStudent) => {
 /**
  * Create a new subscription
  * @param {Object} subscriptionData - Subscription data
- * @param {Object} user - User object
+ * @param {Object} user - User data
  * @returns {Promise<Object>} - Created subscription
  */
 exports.createSubscription = async (subscriptionData, user) => {
-  // Extract planId from multiple possible sources
-  const planId = subscriptionData.planId || subscriptionData.plan || 'custom';
-  
-  // Log the data we're working with for debugging
-  console.log('Creating subscription with data:', {
-    planId: planId,
-    price: subscriptionData.price || subscriptionData.amount,
-    duration: subscriptionData.duration,
-    name: subscriptionData.name,
-    user: user ? { id: user._id, email: user.email, accountType: user.accountType } : 'No user data'
-  });
-  
-  // Check if user is a student
-  const isStudent = user && user.accountType === 'student';
-  
-  // Try to find the plan in the database
-  let selectedPlan = null;
-  
   try {
-    selectedPlan = await this.getSubscriptionPlanWithDiscount(planId, isStudent);
-  } catch (error) {
-    console.log('Error getting plan with discount, will try to create custom plan:', error.message);
-    // Continue execution - we'll create a custom plan below
-  }
-  
-  // If no plan found but we have subscription data with price and duration, create a custom plan
-  if (!selectedPlan && (subscriptionData.price !== undefined || subscriptionData.amount !== undefined) && 
-      (subscriptionData.duration !== undefined)) {
-    console.log('Creating custom plan from subscription data:', {
-      id: planId || 'custom',
-      price: subscriptionData.price || subscriptionData.amount,
-      duration: subscriptionData.duration,
-      name: subscriptionData.name || 'Custom Plan'
+    console.log('Creating subscription for user:', user._id);
+    console.log('Subscription data:', JSON.stringify(subscriptionData, null, 2));
+    
+    // Check if user already has an active subscription
+    const existingSubscription = await this.getUserActiveSubscription(user._id);
+    
+    if (existingSubscription) {
+      console.log('User already has an active subscription:', existingSubscription._id);
+      throw new Error('User already has an active subscription');
+    }
+    
+    // Check if reference number already exists
+    const referenceNumber = subscriptionData.referenceNumber;
+    
+    if (!referenceNumber) {
+      console.error('Missing reference number');
+      throw new Error('Reference number is required');
+    }
+    
+    const existingReference = await Subscription.findOne({
+      'paymentDetails.referenceNumber': referenceNumber
     });
     
-    selectedPlan = {
-      id: planId || 'custom',
-      name: subscriptionData.name || 'Custom Plan',
-      price: parseFloat(subscriptionData.price || subscriptionData.amount) || 0,
-      duration: parseInt(subscriptionData.duration) || 30,
-      features: subscriptionData.features || ['Custom subscription plan']
-    };
-  } else if (!selectedPlan) {
-    console.error('Invalid subscription plan and insufficient data to create custom plan:', planId);
-    throw new Error('Invalid subscription plan');
-  }
-
-  // Calculate expiry date
-  const expiryDate = new Date();
-  expiryDate.setDate(expiryDate.getDate() + selectedPlan.duration);
-
-  // Get vehicle type from subscription data (ensure backward compatibility)
-  // Use 'all' to allow access to all vehicle types
-  const vehicleType = subscriptionData.type || 'all';
-
-  // Get student discount settings if needed
-  let studentDiscountPercentage = 0;
-  if (isStudent) {
-    const discountSettings = await this.getStudentDiscountSettings();
-    studentDiscountPercentage = discountSettings.isEnabled ? discountSettings.discountPercent : 0;
-  }
-
-  // Create subscription
-  const subscription = new Subscription({
-    userId: user._id,
-    planId: selectedPlan.id,
-    type: vehicleType,
-    startDate: new Date(),
-    expiryDate,
-    paymentDetails: {
-      amount: selectedPlan.price,
-      referenceNumber: subscriptionData.referenceNumber,
-      paymentDate: new Date(),
-      paymentMethod: subscriptionData.paymentMethod || 'gcash',
-      studentDiscount: {
-        applied: isStudent && studentDiscountPercentage > 0,
-        percentage: studentDiscountPercentage
-      }
-    },
-    isActive: false, // Will be set to true after verification
-    autoRenew: subscriptionData.autoRenew || false,
-    verification: {
-      verified: false,
-      status: 'pending'
+    if (existingReference) {
+      console.log('Reference number already exists:', referenceNumber);
+      throw new Error('Reference number already exists');
     }
-  });
-
-  const savedSubscription = await subscription.save();
-
-  // Also update the user's subscription field so it persists across sessions
-  // This way we can show the "pending" status even after logout/login
-  await User.findByIdAndUpdate(user._id, {
-    'subscription.type': vehicleType,
-    'subscription.plan': selectedPlan.id,
-    'subscription.verified': false, // Not verified yet
-    'subscription.expiryDate': expiryDate,
-    'subscription.referenceNumber': subscriptionData.referenceNumber
-  });
-  
-  // Create notification for admin about new subscription
-  try {
-    await NotificationService.createSystemNotification(
-      null, // Send to all admins
-      'New Subscription Request',
-      `New subscription request from ${user.username} (${user.email}) for ${selectedPlan.name} plan.`,
-      'payment',
-      {
-        subscriptionId: savedSubscription._id,
-        userId: user._id,
-        planId: selectedPlan.id,
-        referenceNumber: subscriptionData.referenceNumber
+    
+    // Get plan ID from subscription data
+    const planId = subscriptionData.planId || subscriptionData.plan || subscriptionData.id;
+    
+    if (!planId) {
+      console.error('Missing plan ID');
+      throw new Error('Plan ID is required');
+    }
+    
+    // Get subscription plan
+    let selectedPlan;
+    
+    // First try to find the plan in the database
+    try {
+      // Try to find by planId field
+      const dbPlan = await SubscriptionPlan.findOne({ planId });
+      
+      if (dbPlan) {
+        console.log('Found plan in database by planId:', dbPlan);
+        selectedPlan = {
+          id: dbPlan.planId,
+          name: dbPlan.name,
+          price: dbPlan.price,
+          duration: dbPlan.duration,
+          features: dbPlan.features
+        };
+      } else {
+        // Try to find by _id
+        const dbPlanById = await SubscriptionPlan.findById(planId);
+        
+        if (dbPlanById) {
+          console.log('Found plan in database by _id:', dbPlanById);
+          selectedPlan = {
+            id: dbPlanById.planId,
+            name: dbPlanById.name,
+            price: dbPlanById.price,
+            duration: dbPlanById.duration,
+            features: dbPlanById.features
+          };
+        } else {
+          // If not found in database, try to find in memory plans
+          selectedPlan = subscriptionPlans.find(plan => plan.id === planId);
+          console.log('Memory plan lookup result:', selectedPlan);
+        }
       }
-    );
-  } catch (error) {
-    console.error('Error creating admin notification:', error);
-    // Don't fail the subscription creation if notification fails
-  }
+    } catch (error) {
+      console.error('Error finding plan in database:', error);
+      // Continue with in-memory plans
+      selectedPlan = subscriptionPlans.find(plan => plan.id === planId);
+      console.log('Memory plan lookup result after DB error:', selectedPlan);
+    }
+    
+    // If no plan found but we have subscription data with price and duration, create a custom plan
+    if (!selectedPlan && (subscriptionData.price !== undefined || subscriptionData.amount !== undefined) && 
+        (subscriptionData.duration !== undefined)) {
+      console.log('Creating custom plan from subscription data:', {
+        id: planId || 'custom',
+        price: subscriptionData.price || subscriptionData.amount,
+        duration: subscriptionData.duration,
+        name: subscriptionData.name || 'Custom Plan'
+      });
+      
+      selectedPlan = {
+        id: planId || 'custom',
+        name: subscriptionData.name || 'Custom Plan',
+        price: parseFloat(subscriptionData.price || subscriptionData.amount) || 0,
+        duration: parseInt(subscriptionData.duration) || 30,
+        features: subscriptionData.features || ['Custom subscription plan']
+      };
+    } else if (!selectedPlan) {
+      console.error('Invalid subscription plan and insufficient data to create custom plan:', planId);
+      throw new Error('Invalid subscription plan');
+    }
 
-  // Create notification for user
-  try {
-    await NotificationService.createUserNotification(
-      user._id,
-      'Subscription Payment Received',
-      `Your payment for the ${selectedPlan.name} plan has been received and is pending verification.`,
-      'payment',
-      {
-        subscriptionId: savedSubscription._id,
-        planId: selectedPlan.id,
-        referenceNumber: subscriptionData.referenceNumber
-      }
-    );
-  } catch (error) {
-    console.error('Error creating user notification:', error);
-    // Don't fail the subscription creation if notification fails
-  }
+    // Check if user is a student
+    const isStudent = user && user.accountType === 'student';
   
-  return savedSubscription;
+    // Calculate expiry date
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + selectedPlan.duration);
+
+    // Get vehicle type from subscription data (ensure backward compatibility)
+    // Use 'all' to allow access to all vehicle types
+    const vehicleType = subscriptionData.type || 'all';
+
+    // Get student discount settings if needed
+    let studentDiscountPercentage = 0;
+    if (isStudent) {
+      const discountSettings = await this.getStudentDiscountSettings();
+      studentDiscountPercentage = discountSettings.isEnabled ? discountSettings.discountPercent : 0;
+    }
+
+    // Calculate payment amount
+    const paymentAmount = subscriptionData.amount || subscriptionData.price || selectedPlan.price;
+    const discountedAmount = isStudent ? paymentAmount * (1 - studentDiscountPercentage / 100) : paymentAmount;
+
+    // Create new subscription
+    const newSubscription = new Subscription({
+      userId: user._id,
+      planId: selectedPlan.id,
+      planName: selectedPlan.name, // Store plan name in the subscription
+      type: vehicleType,
+      startDate: new Date(),
+      expiryDate: expiryDate,
+      paymentDetails: {
+        amount: discountedAmount,
+        referenceNumber: referenceNumber,
+        paymentDate: subscriptionData.paymentDate || new Date(),
+        paymentMethod: subscriptionData.paymentMethod || 'gcash',
+        studentDiscount: {
+          applied: isStudent,
+          percentage: isStudent ? studentDiscountPercentage : 0
+        }
+      },
+      isActive: false, // Set to false until verified
+      autoRenew: subscriptionData.autoRenew || false,
+      verification: {
+        verified: false,
+        verifiedBy: null,
+        verificationDate: null,
+        status: 'pending'
+      }
+    });
+
+    // Save subscription
+    const savedSubscription = await newSubscription.save();
+    console.log('Subscription created:', savedSubscription._id);
+
+    // Create notification for admin
+    try {
+      await NotificationService.createSystemNotification(
+        null, // Send to all admins
+        'New Subscription Request',
+        `New subscription request from ${user.username} (${user.email})`,
+        'payment',
+        {
+          subscriptionId: savedSubscription._id,
+          userId: user._id,
+          username: user.username,
+          email: user.email,
+          referenceNumber: referenceNumber
+        }
+      );
+    } catch (notifyError) {
+      console.error('Error creating admin notification:', notifyError);
+      // Don't fail the subscription creation if notification fails
+    }
+
+    // Update user document with subscription info
+    try {
+      await User.findByIdAndUpdate(user._id, {
+        subscription: {
+          type: vehicleType,
+          plan: selectedPlan.id,
+          planName: selectedPlan.name, // Include plan name in user document
+          verified: false,
+          expiryDate: expiryDate,
+          referenceNumber: referenceNumber
+        }
+      });
+    } catch (userUpdateError) {
+      console.error('Error updating user with subscription info:', userUpdateError);
+      // Don't fail if user update fails
+    }
+
+    return savedSubscription;
+  } catch (error) {
+    console.error('Error creating subscription:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get plan name from planId
+ * @param {String} planId - Plan ID
+ * @returns {String} - Plan name or default name if not found
+ */
+exports.getPlanNameFromId = async (planId) => {
+  try {
+    // Check if it's a MongoDB ObjectId (24 characters, hex)
+    if (planId && planId.length === 24 && /^[0-9a-f]{24}$/i.test(planId)) {
+      // Try to find the plan in the database
+      const plan = await SubscriptionPlan.findById(planId);
+      if (plan && plan.name) {
+        return plan.name;
+      }
+      
+      // If not found by _id, try by planId field
+      const planByPlanId = await SubscriptionPlan.findOne({ planId: planId });
+      if (planByPlanId && planByPlanId.name) {
+        return planByPlanId.name;
+      }
+    }
+    
+    // Check in-memory subscription plans
+    const memoryPlan = subscriptionPlans.find(p => p.id === planId);
+    if (memoryPlan && memoryPlan.name) {
+      return memoryPlan.name;
+    }
+    
+    // Standard plan names as fallback
+    switch (planId.toLowerCase()) {
+      case 'basic':
+        return 'Basic Plan';
+      case 'premium':
+        return 'Premium Plan';
+      case 'annual':
+        return 'Annual Plan';
+      default:
+        // Capitalize first letter as a last resort
+        return planId.charAt(0).toUpperCase() + planId.slice(1);
+    }
+  } catch (error) {
+    console.error('Error getting plan name from ID:', error);
+    // Return capitalized plan ID as fallback
+    return planId.charAt(0).toUpperCase() + planId.slice(1);
+  }
 };
 
 /**
  * Get user's active subscription
- * @param {string} userId - User ID
- * @returns {Promise<Object|null>} - Active subscription or null
+ * @param {String} userId - User ID
+ * @returns {Object|null} - Active subscription or null
  */
 exports.getUserActiveSubscription = async (userId) => {
-  const now = new Date();
-  
-  return Subscription.findOne({
-    userId,
-    isActive: true,
-    expiryDate: { $gt: now }
-  }).sort({ createdAt: -1 });
+  try {
+    // Find active subscription for user
+    const subscription = await Subscription.findOne({
+      userId,
+      isActive: true,
+      expiryDate: { $gt: new Date() }
+    }).populate('userId', 'username email accountType');
+    
+    if (!subscription) {
+      return null;
+    }
+    
+    // Add plan name to subscription object
+    const planName = await exports.getPlanNameFromId(subscription.planId);
+    const subscriptionObj = subscription.toObject();
+    subscriptionObj.planName = planName;
+    
+    return subscriptionObj;
+  } catch (error) {
+    console.error('Error getting user active subscription:', error);
+    return null;
+  }
 };
 
 /**

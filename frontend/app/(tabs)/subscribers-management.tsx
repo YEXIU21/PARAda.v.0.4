@@ -27,6 +27,7 @@ interface Subscription {
     email: string;
   };
   planId: string;
+  planName?: string;
   isActive: boolean;
   expiryDate: string;
   createdAt: string;
@@ -43,7 +44,6 @@ interface Subscription {
     status?: string;
   };
   displayName?: string;
-  planName?: string;
 }
 
 export default function SubscribersManagementScreen() {
@@ -218,12 +218,13 @@ export default function SubscribersManagementScreen() {
       // Try to find this subscription in the subscriptions list
       const subscription = subscriptions.find(sub => sub._id === planId || sub.planId === planId);
       if (subscription) {
-        // Check for displayName or planName fields first
-        if (subscription.displayName) {
-          return subscription.displayName;
-        }
+        // Check for planName field first (from backend)
         if (subscription.planName) {
           return subscription.planName;
+        }
+        // Check for displayName field as fallback
+        if (subscription.displayName) {
+          return subscription.displayName;
         }
       }
     }
@@ -254,6 +255,117 @@ export default function SubscribersManagementScreen() {
            email.includes(searchLower) ||
            reference.includes(searchLower);
   });
+
+  const renderSubscriptionCard = (subscription: Subscription) => {
+    return (
+      <View
+        key={subscription._id}
+        style={[styles.subscriptionCard, { backgroundColor: theme.card }]}
+      >
+        <View style={styles.cardHeader}>
+          <View
+            style={[
+              styles.planBadge,
+              { backgroundColor: getPlanColor(subscription.planId) },
+            ]}
+          >
+            <Text style={styles.planBadgeText}>
+              {subscription.planName || getPlanName(subscription.planId)}
+            </Text>
+          </View>
+          <Text style={[styles.dateText, { color: theme.textSecondary }]}>
+            {formatDate(subscription.createdAt)}
+          </Text>
+        </View>
+
+        <View style={styles.userInfo}>
+          <FontAwesome5 name="user" size={16} color={theme.primary} style={styles.icon} />
+          <Text style={[styles.userName, { color: theme.text }]}>
+            {subscription.userId?.username || 'Unknown User'}
+          </Text>
+        </View>
+
+        <View style={styles.userInfo}>
+          <FontAwesome5 name="envelope" size={16} color={theme.primary} style={styles.icon} />
+          <Text style={[styles.userEmail, { color: theme.textSecondary }]}>
+            {subscription.userId?.email || 'No email'}
+          </Text>
+        </View>
+
+        <View style={styles.subscriptionDetails}>
+          <View style={styles.detailRow}>
+            <FontAwesome5 name="calendar-alt" size={16} color={theme.primary} style={styles.icon} />
+            <Text style={[styles.detailText, { color: theme.textSecondary }]}>
+              Expires: {formatDate(subscription.expiryDate)}
+            </Text>
+          </View>
+          
+          {subscription.paymentDetails?.referenceNumber && (
+            <View style={styles.detailRow}>
+              <FontAwesome5 name="receipt" size={16} color={theme.primary} style={styles.icon} />
+              <Text style={[styles.detailText, { color: theme.textSecondary }]}>
+                Ref: {subscription.paymentDetails.referenceNumber}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.subscriptionStatus}>
+          <Text style={[styles.statusLabel, { color: theme.textSecondary }]}>Status:</Text>
+          <View style={[
+            styles.statusBadge, 
+            { 
+              backgroundColor: subscription.verification?.verified 
+                ? '#4CAF50' 
+                : subscription.isActive 
+                  ? '#2196F3' 
+                  : '#FF9800'
+            }
+          ]}>
+            <Text style={styles.statusText}>
+              {subscription.verification?.verified 
+                ? 'Verified' 
+                : subscription.isActive 
+                  ? 'Active' 
+                  : 'Pending'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.actionButtons}>
+          {!subscription.verification?.verified && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.verifyButton]}
+              onPress={() => handleVerifySubscription(subscription._id)}
+            >
+              <FontAwesome5 name="check-circle" size={16} color="#fff" style={styles.actionIcon} />
+              <Text style={styles.actionButtonText}>Verify</Text>
+            </TouchableOpacity>
+          )}
+          
+          {!subscription.verification?.verified && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.rejectButton]}
+              onPress={() => handleRejectSubscription(subscription._id)}
+            >
+              <FontAwesome5 name="times-circle" size={16} color="#fff" style={styles.actionIcon} />
+              <Text style={styles.actionButtonText}>Reject</Text>
+            </TouchableOpacity>
+          )}
+          
+          {subscription.isActive && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.cancelButton]}
+              onPress={() => handleCancelSubscription(subscription._id)}
+            >
+              <FontAwesome5 name="ban" size={16} color="#fff" style={styles.actionIcon} />
+              <Text style={styles.actionButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
+  };
 
   if (isLoading && !isRefreshing) {
     return (
@@ -405,134 +517,7 @@ export default function SubscribersManagementScreen() {
               </Text>
             </View>
           ) : (
-            filteredSubscriptions.map((subscription) => (
-              <View
-                key={subscription._id}
-                style={[styles.subscriptionCard, { backgroundColor: theme.card }]}
-              >
-                <View style={styles.cardHeader}>
-                  <View
-                    style={[
-                      styles.planBadge,
-                      { backgroundColor: getPlanColor(subscription.planId) },
-                    ]}
-                  >
-                    <Text style={styles.planBadgeText}>
-                      {getPlanName(subscription.planId)}
-                    </Text>
-                  </View>
-                  <Text style={[styles.dateText, { color: theme.textSecondary }]}>
-                    {formatDate(subscription.createdAt)}
-                  </Text>
-                </View>
-
-                <View style={styles.userInfo}>
-                  <FontAwesome5 name="user" size={16} color={theme.primary} style={styles.icon} />
-                  <Text style={[styles.userName, { color: theme.text }]}>
-                    {subscription.userId?.username || 'Unknown User'}
-                  </Text>
-                </View>
-
-                <View style={styles.userInfo}>
-                  <FontAwesome5 name="envelope" size={16} color={theme.primary} style={styles.icon} />
-                  <Text style={[styles.userEmail, { color: theme.textSecondary }]}>
-                    {subscription.userId?.email || 'No email'}
-                  </Text>
-                </View>
-
-                {subscription.paymentDetails && (
-                  <View style={styles.userInfo}>
-                    <FontAwesome5
-                      name="money-check-alt"
-                      size={16}
-                      color={theme.primary}
-                      style={styles.icon}
-                    />
-                    <Text style={[styles.paymentDetails, { color: theme.textSecondary }]}>
-                      Ref: {subscription.paymentDetails.referenceNumber || 'N/A'} | ₱
-                      {(subscription.paymentDetails.amount || 0).toLocaleString()}
-                    </Text>
-                  </View>
-                )}
-
-                <View style={styles.userInfo}>
-                  <FontAwesome5
-                    name="calendar-alt"
-                    size={16}
-                    color={theme.primary}
-                    style={styles.icon}
-                  />
-                  <Text style={[styles.expiryDate, { color: theme.textSecondary }]}>
-                    Expires: {formatDate(subscription.expiryDate)}
-                  </Text>
-                </View>
-
-                <View style={styles.statusContainer}>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      {
-                        backgroundColor: subscription.isActive
-                          ? theme.success + '20'
-                          : theme.warning + '20',
-                      },
-                    ]}
-                  >
-                    <FontAwesome5 
-                      name={subscription.isActive ? "check-circle" : "clock"} 
-                      size={12} 
-                      color={subscription.isActive ? theme.success : theme.warning} 
-                      style={{marginRight: 6}}
-                    />
-                    <Text
-                      style={[
-                        styles.statusText,
-                        {
-                          color: subscription.isActive ? theme.success : theme.warning,
-                        },
-                      ]}
-                    >
-                      {subscription.isActive ? 'Active' : 'Pending'}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={[styles.actionButtons, { borderTopColor: theme.border }]}>
-                  {!subscription.isActive ? (
-                    <>
-                      <TouchableOpacity
-                        style={[styles.verifyButton, { borderColor: theme.success }]}
-                        onPress={() => handleVerifySubscription(subscription._id)}
-                      >
-                        <FontAwesome5 name="check" size={14} color={theme.success} />
-                        <Text style={[styles.verifyText, { color: theme.success }]}>Verify</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.rejectButton, { borderColor: theme.warning }]}
-                        onPress={() => handleRejectSubscription(subscription._id)}
-                      >
-                        <FontAwesome5 name="ban" size={14} color={theme.warning} />
-                        <Text style={[styles.rejectText, { color: theme.warning }]}>Reject</Text>
-                      </TouchableOpacity>
-                    </>
-                  ) : (
-                    <TouchableOpacity
-                      style={[
-                        styles.cancelButton, 
-                        { 
-                          backgroundColor: theme.error + '15',
-                          borderColor: theme.error 
-                        }
-                      ]}
-                      onPress={() => handleCancelSubscription(subscription._id)}
-                    >
-                      <FontAwesome5 name="times" size={14} color={theme.error} />
-                      <Text style={[styles.cancelText, { color: theme.error, fontWeight: 'bold' }]}>Cancel</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-            ))
+            filteredSubscriptions.map((subscription) => renderSubscriptionCard(subscription))
           )}
         </ScrollView>
 
@@ -683,15 +668,24 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 14,
   },
-  paymentDetails: {
+  subscriptionDetails: {
+    marginBottom: 12,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  detailText: {
     fontSize: 14,
   },
-  expiryDate: {
-    fontSize: 14,
-  },
-  statusContainer: {
+  subscriptionStatus: {
     marginTop: 8,
     marginBottom: 12,
+  },
+  statusLabel: {
+    fontWeight: 'bold',
+    fontSize: 12,
   },
   statusBadge: {
     alignSelf: 'flex-start',
@@ -712,45 +706,29 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     borderTopWidth: 1,
   },
-  verifyButton: {
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
-    borderWidth: 1,
     marginRight: 8,
   },
-  verifyText: {
+  actionIcon: {
+    marginRight: 6,
+  },
+  actionButtonText: {
     marginLeft: 6,
     fontWeight: 'bold',
+  },
+  verifyButton: {
+    backgroundColor: '#4CAF50',
   },
   rejectButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginRight: 8,
-  },
-  rejectText: {
-    marginLeft: 6,
-    fontWeight: 'bold',
+    backgroundColor: '#FF9800',
   },
   cancelButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 9,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-    borderWidth: 1,
-    minWidth: 100,
-  },
-  cancelText: {
-    marginLeft: 8,
-    fontSize: 14,
+    backgroundColor: '#FF5733',
   },
   loadingContainer: {
     flex: 1,

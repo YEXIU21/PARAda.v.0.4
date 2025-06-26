@@ -236,8 +236,16 @@ export const getUserSubscription = async () => {
         return null;
       }
       
+      // Ensure planName is available - use planId as fallback
+      if (!subscription.planName && subscription.planId) {
+        console.log('Plan name not provided by API, using planId as fallback');
+        subscription.planName = subscription.planId;
+      }
+      
       return subscription;
     } catch (userError) {
+      console.error('Error fetching from /user endpoint:', userError);
+      
       // If 404 from '/user', try the '/me' endpoint as fallback
       if (userError.response && userError.response.status === 404) {
         console.log('No subscription found at /user endpoint (404), trying /me endpoint');
@@ -281,66 +289,24 @@ export const getUserSubscription = async () => {
             return null;
           }
           
+          // Ensure planName is available - use planId as fallback
+          if (!subscription.planName && subscription.planId) {
+            console.log('Plan name not provided by API, using planId as fallback');
+            subscription.planName = subscription.planId;
+          }
+          
           return subscription;
         } catch (meError) {
-          if (meError.response && meError.response.status === 404) {
-            console.log('No active subscription found at /me endpoint (404)');
-            return null;
-          }
-          
-          // Log detailed error information
-          console.error('Error fetching from /me endpoint:');
-          if (meError.response) {
-            console.error(`Status: ${meError.response.status}`);
-            console.error('Response data:', meError.response.data);
-          } else if (meError.request) {
-            console.error('No response received:', meError.request);
-          } else {
-            console.error('Error message:', meError.message);
-          }
-          
-          // Return null instead of throwing to prevent app crashes
-          console.log('Returning null due to subscription API error');
-          return null;
+          console.error('Error fetching from /me endpoint:', meError);
+          throw meError;
         }
-      }
-      
-      // Log detailed error information
-      console.error('Error fetching from /user endpoint:');
-      if (userError.response) {
-        console.error(`Status: ${userError.response.status}`);
-        console.error('Response data:', userError.response.data);
-      } else if (userError.request) {
-        console.error('No response received:', userError.request);
       } else {
-        console.error('Error message:', userError.message);
+        throw userError;
       }
-      
-      // Return null for any error (not just 404) to prevent app crashes
-      console.log('Returning null due to subscription API error');
-      return null;
     }
   } catch (error) {
-    if (error.response && error.response.status === 404) {
-      // No active subscription
-      console.log('No active subscription found (404)');
-      return null;
-    }
-    
-    // Enhanced error logging
-    console.error('Error fetching user subscription:');
-    if (error.response) {
-      console.error(`Status: ${error.response.status}`);
-      console.error('Response data:', error.response.data);
-    } else if (error.request) {
-      console.error('No response received:', error.request);
-    } else {
-      console.error('Error message:', error.message);
-    }
-    
-    // Return null instead of throwing to prevent app crashes
-    console.log('Returning null due to subscription API error');
-    return null;
+    console.error('Error fetching user subscription:', error);
+    throw error;
   }
 };
 

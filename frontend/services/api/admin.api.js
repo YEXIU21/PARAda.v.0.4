@@ -139,6 +139,38 @@ export const getSubscriptions = async (options = {}) => {
     );
     
     console.log('API Response data:', response.data);
+    
+    // Ensure all subscriptions have planName field
+    if (response.data.subscriptions && Array.isArray(response.data.subscriptions)) {
+      response.data.subscriptions = response.data.subscriptions.map(subscription => {
+        if (!subscription.planName && subscription.planId) {
+          console.log(`Adding missing planName for subscription ${subscription._id} with planId ${subscription.planId}`);
+          
+          // Try to get plan name from standard plans
+          let planName = subscription.planId;
+          
+          // Check standard plan IDs
+          switch (subscription.planId.toLowerCase()) {
+            case 'basic':
+              planName = 'Basic Plan';
+              break;
+            case 'premium':
+              planName = 'Premium Plan';
+              break;
+            case 'annual':
+              planName = 'Annual Plan';
+              break;
+          }
+          
+          return {
+            ...subscription,
+            planName
+          };
+        }
+        return subscription;
+      });
+    }
+    
     return response.data;
   } catch (error) {
     console.error('Error fetching subscriptions:', error);
@@ -159,49 +191,52 @@ export const getSubscriptions = async (options = {}) => {
 
 /**
  * Verify a subscription
- * @param {string} subscriptionId - ID of the subscription to verify
- * @param {boolean} approved - Whether the subscription is approved (defaults to true)
- * @returns {Promise<Object>} - Response from the API
+ * @param {string} subscriptionId - Subscription ID
+ * @returns {Promise<Object>} - Verified subscription
  */
-export const verifySubscription = async (subscriptionId, approved = true) => {
+export const verifySubscription = async (subscriptionId) => {
   try {
-    console.log(`Starting verification process for subscription: ${subscriptionId}, approved: ${approved}`);
-    
     const token = await getAuthToken();
     if (!token) throw new Error('Authentication required');
-    
-    console.log(`Using endpoint: ${BASE_URL}${ENDPOINTS.SUBSCRIPTION.VERIFY}`);
-    
-    const payload = {
-      subscriptionId,
-      approved
-    };
-    console.log('Request payload:', payload);
+
+    console.log(`Verifying subscription: ${subscriptionId}`);
     
     const response = await axios.post(
-      `${BASE_URL}${ENDPOINTS.SUBSCRIPTION.VERIFY}`,
-      payload,
+      `${BASE_URL}${ENDPOINTS.ADMIN.VERIFY_SUBSCRIPTION}/${subscriptionId}`,
+      {},
       {
         headers: { 'x-access-token': token }
       }
     );
     
     console.log('Verification response:', response.data);
+    
+    // Ensure the response includes planName
+    if (response.data.subscription && !response.data.subscription.planName && response.data.subscription.planId) {
+      console.log(`Adding missing planName for verified subscription with planId ${response.data.subscription.planId}`);
+      
+      // Try to get plan name from standard plans
+      let planName = response.data.subscription.planId;
+      
+      // Check standard plan IDs
+      switch (response.data.subscription.planId.toLowerCase()) {
+        case 'basic':
+          planName = 'Basic Plan';
+          break;
+        case 'premium':
+          planName = 'Premium Plan';
+          break;
+        case 'annual':
+          planName = 'Annual Plan';
+          break;
+      }
+      
+      response.data.subscription.planName = planName;
+    }
+    
     return response.data;
   } catch (error) {
     console.error('Error verifying subscription:', error);
-    
-    // More detailed error logging
-    if (error.response) {
-      console.error('Response data:', error.response.data);
-      console.error('Response status:', error.response.status);
-      console.error('Response headers:', error.response.headers);
-    } else if (error.request) {
-      console.error('No response received, request was:', error.request);
-    } else {
-      console.error('Error message:', error.message);
-    }
-    
     throw error;
   }
 };

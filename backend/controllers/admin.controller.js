@@ -345,16 +345,18 @@ exports.getSubscriptions = async (req, res) => {
     // Get total count for pagination
     const total = await Subscription.countDocuments(filter);
     
-    // Get pending count separately
-    const pendingCount = await Subscription.countDocuments({
-      'verification.verified': false,
-      'verification.status': 'pending',
-      cancelledAt: null
-    });
+    // Add plan names to subscriptions
+    const subscriptionService = require('../services/subscription.service');
+    const subscriptionsWithPlanNames = await Promise.all(
+      subscriptions.map(async (subscription) => {
+        const subscriptionObj = subscription.toObject();
+        subscriptionObj.planName = await subscriptionService.getPlanNameFromId(subscription.planId);
+        return subscriptionObj;
+      })
+    );
     
     return res.status(200).json({
-      subscriptions,
-      pendingCount,
+      subscriptions: subscriptionsWithPlanNames,
       pagination: {
         total,
         limit,
@@ -365,7 +367,7 @@ exports.getSubscriptions = async (req, res) => {
   } catch (error) {
     console.error('Error getting subscriptions:', error);
     return res.status(500).json({
-      message: 'Error retrieving subscriptions',
+      message: 'Error getting subscriptions',
       error: error.message
     });
   }

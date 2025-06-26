@@ -65,6 +65,7 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     features: []
   });
   const [newFeature, setNewFeature] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Student discount settings
   const [isStudentDiscountEnabled, setIsStudentDiscountEnabled] = useState(true);
@@ -382,81 +383,92 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     });
   };
 
-  const handleSave = async () => {
+  const handleSubmitPlan = async () => {
     try {
+      setIsSubmitting(true);
+      
       // Validate form data
-      if (!formData.id || !formData.name || formData.price <= 0 || formData.duration <= 0) {
-        Alert.alert(
-          'Validation Error',
-          'Please fill in all required fields with valid values',
-          [{ text: 'OK' }]
-        );
+      if (!formData.id || !formData.name || formData.price === undefined || formData.duration === undefined) {
+        Alert.alert('Validation Error', 'Please fill in all required fields');
+        setIsSubmitting(false);
         return;
       }
-
-      // Ensure features is an array
-      if (!Array.isArray(formData.features)) {
-        formData.features = [];
-      }
-
-      setIsLoading(true);
-      console.log(`${isCreatingPlan ? 'Creating' : 'Updating'} subscription plan:`, formData);
       
-      try {
-        if (isCreatingPlan) {
-          // Create new plan
-          const result = await createSubscriptionPlan(formData);
-          console.log('Create result:', result);
-          
-          Alert.alert(
-            'Success',
-            'Subscription plan created successfully',
-            [{ text: 'OK' }]
-          );
-        } else {
-          // Update existing plan
-          const result = await updateSubscriptionPlan(formData.id, formData);
-          console.log('Update result:', result);
-          
-          Alert.alert(
-            'Success',
-            'Subscription plan updated successfully',
-            [{ text: 'OK' }]
-          );
-        }
+      // Ensure we have a valid price and duration
+      const price = typeof formData.price === 'string' ? parseFloat(formData.price) : formData.price;
+      const duration = typeof formData.duration === 'string' ? parseInt(formData.duration, 10) : formData.duration;
+      
+      if (isNaN(price) || price < 0) {
+        Alert.alert('Validation Error', 'Please enter a valid price');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (isNaN(duration) || duration < 1) {
+        Alert.alert('Validation Error', 'Please enter a valid duration in days');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Prepare data for API
+      const planData = {
+        id: formData.id.trim(),
+        name: formData.name.trim(),
+        price: price,
+        duration: duration,
+        features: formData.features,
+        recommended: formData.recommended || false
+      };
+      
+      console.log('Submitting plan data:', planData);
+      
+      if (isCreatingPlan) {
+        // Create new plan
+        const response = await createSubscriptionPlan(planData);
+        console.log('Plan created:', response);
         
-        // Refresh the plans list
-        await fetchSubscriptionPlans();
+        // Add the new plan to the list with both id and planId for consistency
+        const newPlan = {
+          ...planData,
+          planId: planData.id,
+          _id: response._id || response.id || planData.id
+        };
         
-        // Close the modal
-        setModalVisible(false);
-      } catch (apiError: any) {
-        console.error('API error:', apiError);
+        setSubscriptionPlans([...subscriptionPlans, newPlan]);
+        Alert.alert('Success', 'Subscription plan created successfully');
+      } else {
+        // Update existing plan
+        const response = await updateSubscriptionPlan(formData.id, planData);
+        console.log('Plan updated:', response);
         
-        let errorMessage = 'Failed to save subscription plan';
-        if (apiError.response && apiError.response.data && apiError.response.data.message) {
-          errorMessage = apiError.response.data.message;
-        } else if (apiError.message) {
-          errorMessage = apiError.message;
-        }
-        
-        Alert.alert(
-          'Error',
-          errorMessage,
-          [{ text: 'OK' }]
+        // Update the plan in the list
+        const updatedPlans = subscriptionPlans.map(plan => 
+          plan.id === formData.id ? {
+            ...planData,
+            planId: planData.id,
+            _id: plan._id || plan.id
+          } : plan
         );
+        
+        setSubscriptionPlans(updatedPlans);
+        Alert.alert('Success', 'Subscription plan updated successfully');
       }
-    } catch (err: any) {
-      console.error('Error in handleSave:', err);
-      setError(err.message || 'Failed to save subscription plan');
       
-      Alert.alert(
-        'Error',
-        err.message || 'Failed to save subscription plan',
-        [{ text: 'OK' }]
-      );
+      // Close modal and reset form
+      setModalVisible(false);
+      setFormData({
+        id: '',
+        name: '',
+        price: 0,
+        duration: 30,
+        features: []
+      });
+      setNewFeature('');
+    } catch (error) {
+      console.error('Error submitting plan:', error);
+      Alert.alert('Error', 'Failed to save subscription plan');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -806,7 +818,7 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.saveButton, { backgroundColor: theme.primary }]}
-                  onPress={handleSave}
+                  onPress={handleSubmitPlan}
                 >
                   <Text style={styles.saveButtonText}>Save</Text>
                 </TouchableOpacity>

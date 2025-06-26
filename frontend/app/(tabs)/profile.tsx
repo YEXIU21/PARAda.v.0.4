@@ -567,12 +567,13 @@ export default function ProfileScreen() {
       try {
         const subscriptionData = user?.subscription;
         if (subscriptionData) {
-          // Check for displayName or planName fields first
-          if (subscriptionData.displayName) {
-            return subscriptionData.displayName;
-          }
+          // Check for planName field first (from backend)
           if (subscriptionData.planName) {
             return subscriptionData.planName;
+          }
+          // Check for displayName field as fallback
+          if (subscriptionData.displayName) {
+            return subscriptionData.displayName;
           }
         }
       } catch (error) {

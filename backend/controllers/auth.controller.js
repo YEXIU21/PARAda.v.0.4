@@ -266,6 +266,7 @@ exports.getUserProfile = async (req, res) => {
       userData.subscription = {
         type: activeSubscription.type,
         plan: activeSubscription.planId,
+        planName: activeSubscription.planName,
         verified: activeSubscription.verification.verified,
         expiryDate: activeSubscription.expiryDate,
         referenceNumber: activeSubscription.paymentDetails.referenceNumber
@@ -273,6 +274,11 @@ exports.getUserProfile = async (req, res) => {
     } else if (user.subscription) {
       // Use existing subscription data from user document if no active subscription found
       userData.subscription = user.subscription;
+      
+      // Try to add plan name if not already present
+      if (user.subscription.plan && !user.subscription.planName) {
+        userData.subscription.planName = await subscriptionService.getPlanNameFromId(user.subscription.plan);
+      }
     }
     
     return res.status(200).json({

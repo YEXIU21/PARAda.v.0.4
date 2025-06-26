@@ -220,8 +220,13 @@ exports.getUserSubscription = async (req, res) => {
     if (pendingSubscriptions.length > 0) {
       const pendingSubscription = pendingSubscriptions[0]; // Get the most recent pending subscription
       console.log(`Found pending subscription for user ${userId}: ${pendingSubscription._id}`);
+      
+      // Add plan name to subscription object
+      const pendingSubscriptionObj = pendingSubscription.toObject();
+      pendingSubscriptionObj.planName = await subscriptionService.getPlanNameFromId(pendingSubscription.planId);
+      
       return res.status(200).json({
-        subscription: pendingSubscription,
+        subscription: pendingSubscriptionObj,
         pending: true
       });
     }
@@ -306,38 +311,86 @@ exports.getSubscriptionById = async (req, res) => {
 };
 
 /**
- * Verify a subscription (admin only)
+ * Verify a subscription
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @returns {Object} - Response with verified subscription or error
  */
 exports.verifySubscription = async (req, res) => {
   try {
-    // Validate request
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        message: 'Validation error', 
-        errors: errors.array() 
+    const { id } = req.params;
+    
+    // Get subscription by ID
+    const subscription = await Subscription.findById(id);
+    
+    if (!subscription) {
+      return res.status(404).json({
+        message: 'Subscription not found'
       });
     }
-
-    const { subscriptionId, approved } = req.body;
     
-    // Verify subscription using the service
-    const subscription = await subscriptionService.verifySubscription(
-      subscriptionId, 
-      approved, 
-      req.user._id
-    );
+    // Check if subscription is already verified
+    if (subscription.verification && subscription.verification.verified) {
+      return res.status(400).json({
+        message: 'Subscription is already verified'
+      });
+    }
+    
+    // Update subscription verification status
+    subscription.verification.verified = true;
+    subscription.verification.verifiedBy = req.user._id;
+    subscription.verification.verificationDate = new Date();
+    subscription.verification.status = 'approved';
+    subscription.isActive = true;
+    
+    // Save subscription
+    const verifiedSubscription = await subscription.save();
+    
+    // Get plan name if it exists in the subscription, otherwise get it from the service
+    let planName = subscription.planName;
+    if (!planName) {
+      const subscriptionService = require('../services/subscription.service');
+      planName = await subscriptionService.getPlanNameFromId(subscription.planId);
+    }
+    
+    // Update user's subscription status
+    await User.findByIdAndUpdate(subscription.userId, {
+      'subscription.verified': true,
+      'subscription.plan': subscription.planId,
+      'subscription.planName': planName,
+      'subscription.expiryDate': subscription.expiryDate
+    });
+    
+    // Create notification for user
+    try {
+      await NotificationService.createUserNotification(
+        subscription.userId,
+        'Subscription Verified',
+        `Your subscription has been verified and is now active.`,
+        'subscription',
+        {
+          subscriptionId: subscription._id,
+          planId: subscription.planId,
+          planName: planName,
+          expiryDate: subscription.expiryDate
+        }
+      );
+    } catch (error) {
+      console.error('Error creating user notification:', error);
+      // Don't fail the verification if notification fails
+    }
     
     // Emit real-time event
-    socketService.emitToAdmins('subscription:verified', subscription);
-    socketService.emitToUser(subscription.userId, 'subscription:verified', subscription);
+    socketService.emitToUser(subscription.userId, 'subscription:verified', {
+      subscriptionId: subscription._id,
+      planId: subscription.planId,
+      planName: planName,
+      expiryDate: subscription.expiryDate
+    });
     
     return res.status(200).json({
-      message: `Subscription ${approved ? 'approved' : 'rejected'} successfully`,
-      subscription
+      message: 'Subscription verified successfully',
+      subscription: verifiedSubscription
     });
   } catch (error) {
     console.error('Error verifying subscription:', error);
@@ -349,33 +402,35 @@ exports.verifySubscription = async (req, res) => {
 };
 
 /**
- * Get all pending subscriptions (admin only)
+ * Get pending subscriptions (admin only)
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @returns {Object} - Response with pending subscriptions or error
  */
 exports.getPendingSubscriptions = async (req, res) => {
   try {
-    console.log('Admin requesting pending subscriptions');
-    
-    // Get pending subscriptions using the service
-    const pendingSubscriptions = await subscriptionService.getPendingSubscriptions();
+    // Get pending subscriptions from the database
+    const pendingSubscriptions = await Subscription.find({
+      'verification.verified': false,
+      'verification.status': 'pending',
+      cancelledAt: null
+    })
+      .populate('userId', 'username email accountType')
+      .sort({ createdAt: -1 });
     
     console.log(`Found ${pendingSubscriptions.length} pending subscriptions`);
     
-    // Log the first subscription if available (for debugging)
-    if (pendingSubscriptions.length > 0) {
-      console.log('First pending subscription:', {
-        id: pendingSubscriptions[0]._id,
-        userId: pendingSubscriptions[0].userId,
-        status: pendingSubscriptions[0].verification?.status,
-        verified: pendingSubscriptions[0].verification?.verified,
-        isActive: pendingSubscriptions[0].isActive
-      });
-    }
+    // Add plan names to subscriptions
+    const pendingWithPlanNames = await Promise.all(
+      pendingSubscriptions.map(async (subscription) => {
+        const subscriptionObj = subscription.toObject();
+        subscriptionObj.planName = await subscriptionService.getPlanNameFromId(subscription.planId);
+        return subscriptionObj;
+      })
+    );
     
     return res.status(200).json({
-      subscriptions: pendingSubscriptions
+      subscriptions: pendingWithPlanNames
     });
   } catch (error) {
     console.error('Error getting pending subscriptions:', error);
@@ -489,8 +544,17 @@ exports.getAllSubscriptions = async (req, res) => {
     
     console.log(`Found ${subscriptions.length} total subscriptions`);
     
+    // Add plan names to subscriptions
+    const subscriptionsWithPlanNames = await Promise.all(
+      subscriptions.map(async (subscription) => {
+        const subscriptionObj = subscription.toObject();
+        subscriptionObj.planName = await subscriptionService.getPlanNameFromId(subscription.planId);
+        return subscriptionObj;
+      })
+    );
+    
     return res.status(200).json({
-      subscriptions
+      subscriptions: subscriptionsWithPlanNames
     });
   } catch (error) {
     console.error('Error getting all subscriptions:', error);

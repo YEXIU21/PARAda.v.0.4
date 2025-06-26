@@ -10,6 +10,10 @@ const SubscriptionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  planName: {
+    type: String,
+    default: null
+  },
   type: {
     type: String,
     required: true
