@@ -1196,6 +1196,7 @@ export default function MessagesScreen() {
           horizontal 
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoriesContainer}
+          style={{ marginVertical: 4 }}
         >
           {categories.map((category) => (
             <TouchableOpacity
@@ -1415,9 +1416,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -1430,9 +1431,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   categoriesContainer: {
-    paddingBottom: 8,
-    marginBottom: 6,
-    paddingLeft: 2,
+    paddingVertical: 4,
+    marginBottom: 8,
+    paddingHorizontal: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   categoryButton: {
     flexDirection: 'row',
@@ -1448,6 +1451,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 1,
     elevation: 1,
+    height: 26,
   },
   categoryButtonText: {
     marginLeft: 4,
