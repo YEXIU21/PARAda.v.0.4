@@ -247,7 +247,30 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
     setIsProcessingPayment(true);
 
     try {
-      // Create subscription data
+      // Create local subscription data first to ensure it gets saved even if API fails
+      const now = new Date();
+      const expiry = new Date(now);
+      expiry.setDate(expiry.getDate() + (selectedPlanForPayment.duration || 30));
+      
+      const subscriptionDataLocal = {
+        username: user?.username || 'User',
+        type: 'all',
+        plan: selectedPlanForPayment.id,
+        expiryDate: expiry.toISOString(),
+        referenceNumber: referenceNumber,
+        paymentDate: now.toISOString(),
+        approved: false,
+        verified: false
+      };
+      
+      // Always store in AsyncStorage first before attempting API call
+      await AsyncStorage.setItem('userSubscription', JSON.stringify(subscriptionDataLocal));
+      console.log('Subscription saved to AsyncStorage');
+      
+      // Try to use the backend API for creating a subscription
+      let backendSubscriptionCreated = false;
+      
+      // Prepare API subscription data
       const subscriptionData = {
         planId: selectedPlanForPayment.id,
         type: 'all', // Use 'all' to allow access to all vehicle types
@@ -260,58 +283,41 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
         }
       };
       
-      // Create subscription via API
       try {
+        // Attempt to create subscription via API
         const subscriptionResponse = await createSubscription(subscriptionData);
         console.log('Subscription created successfully via API:', subscriptionResponse);
-        
-        // Local backup - store in AsyncStorage as well
-        const now = new Date();
-        const expiry = new Date(now);
-        expiry.setDate(expiry.getDate() + (selectedPlanForPayment.duration || 30));
-        
-        const subscriptionDataLocal = {
-          username: user?.username || 'User',
-          type: 'all',
-          plan: selectedPlanForPayment.id,
-          expiryDate: expiry.toISOString(),
-          referenceNumber: referenceNumber,
-          paymentDate: now.toISOString(),
-          approved: false,
-          verified: false
-        };
-        
-        await AsyncStorage.setItem('userSubscription', JSON.stringify(subscriptionDataLocal));
-        
-        // Show success message
-        Alert.alert(
-          'Payment Submitted',
-          'Your payment reference has been submitted and is pending admin approval. Your subscription will be activated once approved.',
-          [{ 
-            text: 'OK',
-            onPress: () => {
-              // Close payment modal
-              setShowGCashModal(false);
-              // Reset states
-              setReferenceNumber('');
-              setSelectedPlanForPayment(null);
-              setIsProcessingPayment(false);
-              
-              // Navigate back to home screen
-              router.push('/(tabs)');
-            }
-          }]
-        );
-        
+        backendSubscriptionCreated = true;
       } catch (apiError) {
         console.error('Error creating subscription via API:', apiError);
-        // Show error and let user try again
-        setPaymentError('Error connecting to server. Please try again.');
-        setIsProcessingPayment(false);
+        // We'll continue with the local storage approach
+        backendSubscriptionCreated = false;
       }
+      
+      // Payment submitted successfully
+      Alert.alert(
+        'Payment Submitted',
+        backendSubscriptionCreated
+          ? 'Your payment reference has been submitted and is pending admin approval. Your subscription will be activated once approved.'
+          : 'Your payment has been recorded locally. You may need to show your GCash receipt to an admin for verification.',
+        [{ 
+          text: 'OK',
+          onPress: () => {
+            // Close payment modal
+            setShowGCashModal(false);
+            // Reset states
+            setReferenceNumber('');
+            setSelectedPlanForPayment(null);
+            setIsProcessingPayment(false);
+            
+            // Navigate back to home screen
+            router.push('/(tabs)');
+          }
+        }]
+      );
     } catch (error) {
       console.error('Payment processing error:', error);
-      setPaymentError('Failed to process payment. Please try again.');
+      setPaymentError('An error occurred saving your payment information. Please try again or contact support.');
       setIsProcessingPayment(false);
     }
   };
