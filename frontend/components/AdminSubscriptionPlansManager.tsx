@@ -26,6 +26,7 @@ import {
 interface SubscriptionPlan {
   id: string;
   planId?: string;
+  _id?: string;
   name: string;
   price: number;
   duration: number;
@@ -112,8 +113,24 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
         const plans = await getAdminSubscriptionPlans();
         
         if (plans && Array.isArray(plans)) {
-          console.log('Successfully loaded subscription plans from API:', plans);
-          setSubscriptionPlans(plans);
+          // Debug: Log the exact format of the plans from the API
+          console.log('SUBSCRIPTION PLANS API FORMAT:', JSON.stringify(plans[0], null, 2));
+          console.log('Plan IDs - Standard format:', plans.map(p => p.id));
+          console.log('Plan IDs - MongoDB format:', plans.map(p => p._id));
+          console.log('Plan IDs - Backend format:', plans.map(p => p.planId));
+          
+          // Map the plans to ensure consistent id field for frontend usage
+          const processedPlans = plans.map(plan => ({
+            ...plan,
+            // Ensure we have an id field that's used consistently in the UI
+            id: plan.id || plan.planId || (plan._id ? String(plan._id) : undefined),
+            // Keep the original MongoDB _id and backend planId to use with the API
+            _id: plan._id,
+            planId: plan.planId
+          }));
+          
+          console.log('Successfully loaded subscription plans from API:', processedPlans);
+          setSubscriptionPlans(processedPlans);
           
           // If we got an empty array, show a message but don't use default plans
           if (plans.length === 0) {
@@ -247,9 +264,8 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     // Log the actual plan object for debugging
     console.log('Found plan to delete:', planToDelete);
     
-    // Use the correct ID field based on what the backend expects
-    // Some API responses include both planId and id fields
-    const idToDelete = planToDelete.planId || planId;
+    // Use the backend planId if available, otherwise use _id, and fallback to id
+    const idToDelete = planToDelete.planId || (planToDelete._id ? String(planToDelete._id) : planId);
     console.log('Setting plan ID for deletion:', idToDelete);
     
     // Set the plan ID to delete and show the confirmation modal
@@ -267,7 +283,9 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     
     // Find the plan in the current plans list to ensure it exists
     const planToDeleteObj = subscriptionPlans.find(plan => 
-      plan.id === planToDelete || plan.planId === planToDelete
+      plan.id === planToDelete || 
+      plan.planId === planToDelete || 
+      (plan._id ? String(plan._id) === planToDelete : false)
     );
     
     if (!planToDeleteObj) {
@@ -288,7 +306,7 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
       
       try {
         // Call the API to delete the plan
-        console.log('Calling deleteSubscriptionPlan API...');
+        console.log('Calling deleteSubscriptionPlan API with ID:', planToDelete);
         const result = await deleteSubscriptionPlan(planToDelete);
         console.log('Delete result:', result);
         
