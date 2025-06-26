@@ -788,4 +788,32 @@ export const getAdminSubscriptionPlans = async () => {
     console.error('Error fetching admin subscription plans:', error);
     throw error;
   }
+};
+
+/**
+ * Reject a subscription
+ * @param {string} subscriptionId - Subscription ID
+ * @returns {Promise<Object>} - Rejected subscription
+ */
+export const rejectSubscription = async (subscriptionId) => {
+  try {
+    const token = await getAuthToken();
+    if (!token) throw new Error('Authentication required');
+
+    console.log(`Rejecting subscription: ${subscriptionId}`);
+    
+    const response = await axios.post(
+      `${BASE_URL}${ENDPOINTS.ADMIN.REJECT_SUBSCRIPTION}/${subscriptionId}`,
+      {},
+      {
+        headers: { 'x-access-token': token }
+      }
+    );
+    
+    console.log('Rejection response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error rejecting subscription:', error);
+    throw error;
+  }
 }; 

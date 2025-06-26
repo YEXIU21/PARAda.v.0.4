@@ -120,6 +120,9 @@ export const ENDPOINTS = {
     DRIVERS: '/api/admin/drivers',
     ROUTES: '/api/admin/routes',
     STATISTICS: '/api/admin/statistics',
-    STUDENT_DISCOUNT: '/api/admin/student-discount'
+    STUDENT_DISCOUNT: '/api/admin/student-discount',
+    SUBSCRIPTIONS: '/api/admin/subscriptions',
+    VERIFY_SUBSCRIPTION: '/api/admin/subscriptions/verify',
+    REJECT_SUBSCRIPTION: '/api/admin/subscriptions/reject'
   }
 }; 

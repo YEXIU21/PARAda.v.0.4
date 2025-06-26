@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
-import { getSubscriptions, verifySubscription, cancelSubscription } from '../../services/api/admin.api';
+import { getSubscriptions, verifySubscription, cancelSubscription, rejectSubscription } from '../../services/api/admin.api';
 import { LinearGradient } from 'expo-linear-gradient';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import { defaultSubscriptionPlans } from '../../constants/SubscriptionPlans';
@@ -132,7 +132,7 @@ export default function SubscribersManagementScreen() {
     try {
       setActionLoading(true);
       console.log(`Attempting to verify subscription: ${selectedSubscriptionId}`);
-      await verifySubscription(selectedSubscriptionId, true);
+      await verifySubscription(selectedSubscriptionId);
       console.log(`Verification successful for subscription: ${selectedSubscriptionId}`);
       
       setVerifyModalVisible(false);
@@ -153,7 +153,7 @@ export default function SubscribersManagementScreen() {
     try {
       setActionLoading(true);
       console.log(`Attempting to reject subscription: ${selectedSubscriptionId}`);
-      await verifySubscription(selectedSubscriptionId, false);
+      await rejectSubscription(selectedSubscriptionId);
       console.log(`Rejection successful for subscription: ${selectedSubscriptionId}`);
       
       setRejectModalVisible(false);
