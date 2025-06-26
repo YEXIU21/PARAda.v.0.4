@@ -228,6 +228,22 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
   };
 
   const handleDeletePlan = (planId: string) => {
+    // Validate the plan ID
+    if (!planId) {
+      console.log('Invalid plan ID for deletion');
+      Alert.alert('Error', 'Invalid plan selection');
+      return;
+    }
+    
+    // Check if the plan exists in our current list
+    const planExists = subscriptionPlans.some(plan => plan.id === planId);
+    if (!planExists) {
+      console.log('Plan ID does not exist in current plans list:', planId);
+      Alert.alert('Error', 'The selected plan no longer exists');
+      return;
+    }
+    
+    console.log('Setting plan ID for deletion:', planId);
     // Set the plan ID to delete and show the confirmation modal
     setPlanToDelete(planId);
     setDeleteModalVisible(true);
@@ -237,6 +253,17 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     console.log('confirmDeletePlan called, planToDelete:', planToDelete);
     if (!planToDelete) {
       console.log('No plan to delete');
+      Alert.alert('Error', 'No plan selected for deletion');
+      return;
+    }
+    
+    // Find the plan in the current plans list to ensure it exists
+    const planExists = subscriptionPlans.some(plan => plan.id === planToDelete);
+    if (!planExists) {
+      console.log('Plan ID does not exist in current plans list:', planToDelete);
+      Alert.alert('Error', 'The selected plan no longer exists');
+      setDeleteModalVisible(false);
+      setPlanToDelete(null);
       return;
     }
     
@@ -738,7 +765,10 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
               <View style={styles.formActions}>
                 <TouchableOpacity
                   style={[styles.cancelButton, { backgroundColor: theme.background, borderColor: theme.border }]}
-                  onPress={() => setModalVisible(false)}
+                  onPress={() => {
+                    setDeleteModalVisible(false);
+                    setPlanToDelete(null);
+                  }}
                 >
                   <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
                 </TouchableOpacity>
@@ -767,7 +797,10 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
               <Text style={[styles.modalTitle, { color: theme.text }]}>
                 Confirm Deletion
               </Text>
-              <TouchableOpacity onPress={() => setDeleteModalVisible(false)}>
+              <TouchableOpacity onPress={() => {
+                setDeleteModalVisible(false);
+                setPlanToDelete(null);
+              }}>
                 <FontAwesome5 name="times" size={20} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
@@ -785,7 +818,10 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
             <View style={styles.formActions}>
               <TouchableOpacity
                 style={[styles.cancelButton, { backgroundColor: theme.background, borderColor: theme.border }]}
-                onPress={() => setDeleteModalVisible(false)}
+                onPress={() => {
+                  setDeleteModalVisible(false);
+                  setPlanToDelete(null);
+                }}
               >
                 <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
               </TouchableOpacity>
@@ -793,6 +829,11 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
                 style={[styles.deleteConfirmButton, { backgroundColor: theme.error }]}
                 onPress={() => {
                   console.log('Delete confirm button pressed');
+                  if (!planToDelete) {
+                    console.log('No plan ID set for deletion');
+                    Alert.alert('Error', 'No plan selected for deletion');
+                    return;
+                  }
                   confirmDeletePlan();
                 }}
                 activeOpacity={0.7}
