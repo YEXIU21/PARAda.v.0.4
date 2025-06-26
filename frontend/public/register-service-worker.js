@@ -1,30 +1,5 @@
-// Register service worker for PWA functionality
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    // Use a relative path that works in any deployment environment
-    const swPath = '/service-worker.js';
-    
-    // Check if the service worker file exists before trying to register it
-    fetch(swPath)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Service worker file not found: ${response.status}`);
-        }
-        
-        // File exists, proceed with registration
-        return navigator.serviceWorker.register(swPath);
-      })
-      .then(registration => {
-        console.log('Service Worker registered with scope:', registration.scope);
-      })
-      .catch(error => {
-        console.warn('Service Worker registration failed:', error.message);
-        // Don't throw an error that would break the app
-      });
-  });
-} else {
-  console.log('Service Worker is not supported in this browser');
-}
+// register-service-worker.js
+// This script registers both the PWA service worker and the notification service worker
 
 // Add a custom event to trigger PWA installation
 let deferredPrompt;
@@ -62,4 +37,96 @@ window.triggerPWAInstall = async () => {
 window.isPWAInstalled = () => {
   return window.matchMedia('(display-mode: standalone)').matches ||
          window.navigator.standalone === true;
-}; 
+};
+
+// Check if service workers are supported
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    // Register the main service worker for PWA functionality
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(function(registration) {
+        console.log('PWA Service Worker registered with scope:', registration.scope);
+      })
+      .catch(function(error) {
+        console.error('PWA Service Worker registration failed:', error);
+      });
+      
+    // Register the notification worker for browser notifications
+    navigator.serviceWorker.register('/notification-worker.js')
+      .then(function(registration) {
+        console.log('Notification Service Worker registered with scope:', registration.scope);
+        
+        // Request notification permission if we haven't asked yet
+        if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+          setTimeout(function() {
+            Notification.requestPermission().then(function(permission) {
+              if (permission === 'granted') {
+                console.log('Notification permission granted!');
+                
+                // Store permission in localStorage
+                localStorage.setItem('notificationPermission', 'granted');
+                
+                // Send a welcome notification
+                if (registration.active) {
+                  registration.showNotification('Welcome to PARAda', {
+                    body: 'You will now receive notifications for important updates.',
+                    icon: '/assets/images/PARAda-Logo.png',
+                    badge: '/assets/images/notification-badge.png'
+                  });
+                }
+              } else {
+                console.log('Notification permission denied');
+                localStorage.setItem('notificationPermission', 'denied');
+              }
+            });
+          }, 5000); // Ask after 5 seconds to allow the app to load first
+        }
+      })
+      .catch(function(error) {
+        console.error('Notification Service Worker registration failed:', error);
+      });
+  });
+}
+
+// Add a badge counter updater
+if ('serviceWorker' in navigator) {
+  // Poll for notification counts every 30 seconds
+  setInterval(function() {
+    // Get auth token from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // Make API request to get unread count
+    fetch('/api/notifications/unread-count', {
+      headers: {
+        'x-access-token': token
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data && typeof data.count === 'number') {
+        // Update document title
+        const count = data.count;
+        const originalTitle = 'PARAda Admin Dashboard';
+        document.title = count > 0 ? `(${count}) ${originalTitle}` : originalTitle;
+        
+        // Store count in localStorage
+        localStorage.setItem('notification_unread_count', count.toString());
+        
+        // Trigger custom event that components can listen for
+        window.dispatchEvent(new CustomEvent('notificationCountUpdated', { 
+          detail: { count } 
+        }));
+        
+        // Update favicon badge with a data attribute
+        const favicon = document.querySelector('link[rel="icon"]');
+        if (favicon) {
+          favicon.setAttribute('data-badge', count.toString());
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching notification count:', error);
+    });
+  }, 30000); // 30 seconds
+} 
