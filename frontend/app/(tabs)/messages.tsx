@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -6,11 +6,13 @@ import {
   SafeAreaView,
   TextInput,
   TouchableOpacity,
-  FlatList
+  FlatList,
+  Alert
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
+import { router, usePathname, useLocalSearchParams } from 'expo-router';
 
 // Mock data for messages
 const mockMessages = [
@@ -49,6 +51,38 @@ export default function MessagesScreen() {
   const theme = getThemeColors(isDarkMode);
   const [messages, setMessages] = useState(mockMessages);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  
+  // Get URL parameters to check for router key issues
+  const params = useLocalSearchParams();
+  const pathname = usePathname();
+
+  // Check for router key issues and handle them
+  useEffect(() => {
+    const checkRouterKey = async () => {
+      try {
+        // If '__EXPO_ROUTER_key' param is 'undefined', there's an issue with the route
+        if (params && params.__EXPO_ROUTER_key === 'undefined') {
+          console.log('Invalid router key detected, redirecting to home');
+          // Redirect to home page after a short delay
+          setTimeout(() => {
+            router.replace('/');
+          }, 2000);
+          
+          setHasError(true);
+        }
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error in messages screen:', error);
+        setHasError(true);
+        setIsLoading(false);
+      }
+    };
+    
+    checkRouterKey();
+  }, [params]);
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -94,6 +128,56 @@ export default function MessagesScreen() {
     </TouchableOpacity>
   );
 
+  // If there's a router key error, show error view
+  if (hasError) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <LinearGradient
+          colors={theme.gradientColors}
+          style={styles.header}
+        >
+          <Text style={styles.headerTitle}>Messages</Text>
+        </LinearGradient>
+        
+        <View style={styles.errorContainer}>
+          <FontAwesome5 name="exclamation-triangle" size={50} color={theme.warning} />
+          <Text style={[styles.errorTitle, { color: theme.text }]}>Navigation Error</Text>
+          <Text style={[styles.errorMessage, { color: theme.textSecondary }]}>
+            We're having trouble accessing this page.
+          </Text>
+          <Text style={[styles.errorMessage, { color: theme.textSecondary }]}>
+            Redirecting you to the home screen...
+          </Text>
+          <TouchableOpacity 
+            style={[styles.homeButton, { backgroundColor: theme.primary }]}
+            onPress={() => router.replace('/')}
+          >
+            <Text style={styles.homeButtonText}>Go to Home</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <LinearGradient
+          colors={theme.gradientColors}
+          style={styles.header}
+        >
+          <Text style={styles.headerTitle}>Messages</Text>
+        </LinearGradient>
+        
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: theme.text }]}>Loading messages...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Normal view
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <LinearGradient
@@ -252,5 +336,41 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  errorTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  errorMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  homeButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  homeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
   },
 }); 
