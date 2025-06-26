@@ -25,6 +25,7 @@ import {
 
 interface SubscriptionPlan {
   id: string;
+  planId?: string;
   name: string;
   price: number;
   duration: number;
@@ -247,7 +248,8 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     console.log('Found plan to delete:', planToDelete);
     
     // Use the correct ID field based on what the backend expects
-    const idToDelete = planId;
+    // Some API responses include both planId and id fields
+    const idToDelete = planToDelete.planId || planId;
     console.log('Setting plan ID for deletion:', idToDelete);
     
     // Set the plan ID to delete and show the confirmation modal
@@ -264,7 +266,10 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
     }
     
     // Find the plan in the current plans list to ensure it exists
-    const planToDeleteObj = subscriptionPlans.find(plan => plan.id === planToDelete);
+    const planToDeleteObj = subscriptionPlans.find(plan => 
+      plan.id === planToDelete || plan.planId === planToDelete
+    );
+    
     if (!planToDeleteObj) {
       console.log('Plan ID does not exist in current plans list:', planToDelete);
       Alert.alert('Error', 'The selected plan no longer exists');
