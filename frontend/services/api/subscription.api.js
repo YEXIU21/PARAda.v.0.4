@@ -342,7 +342,13 @@ export const createSubscription = async (subscriptionData) => {
     if (token && parsedUserData) {
       console.log('User is authenticated, using authenticated endpoint');
       // Use the authenticated endpoint
-      const response = await axios.post(ENDPOINTS.SUBSCRIPTION.CREATE, subscriptionData);
+      const response = await axios.post(
+        `${BASE_URL}${ENDPOINTS.SUBSCRIPTION.CREATE}`, 
+        subscriptionData,
+        {
+          headers: { 'x-access-token': token }
+        }
+      );
       return response.data;
     } else {
       console.log('User is not authenticated, using public endpoint');
@@ -355,7 +361,10 @@ export const createSubscription = async (subscriptionData) => {
         userId: parsedUserData?.id || null
       };
       
-      const response = await axios.post(ENDPOINTS.SUBSCRIPTION.PUBLIC_CREATE, publicSubscriptionData);
+      const response = await axios.post(
+        `${BASE_URL}${ENDPOINTS.SUBSCRIPTION.PUBLIC_CREATE}`, 
+        publicSubscriptionData
+      );
       return response.data;
     }
   } catch (error) {
