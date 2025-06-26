@@ -19,6 +19,16 @@ router.get(
 );
 
 /**
+ * @route GET /api/subscriptions/public-plans
+ * @desc Get all subscription plans directly from database without auth
+ * @access Public
+ */
+router.get(
+  '/public-plans',
+  subscriptionController.getPublicPlans
+);
+
+/**
  * @route POST /api/subscriptions
  * @desc Create a new subscription
  * @access Private

@@ -82,7 +82,9 @@ export const ENDPOINTS = {
   
   // Subscription endpoints
   SUBSCRIPTION: {
+    BASE: '/api/subscriptions',
     PLANS: '/api/subscriptions/plans',
+    PUBLIC_PLANS: '/api/subscriptions/public-plans',
     CREATE: '/api/subscriptions',
     ME: '/api/subscriptions/me',
     USER: '/api/subscriptions/user',

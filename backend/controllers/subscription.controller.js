@@ -6,6 +6,7 @@ const { validationResult } = require('express-validator');
 const subscriptionService = require('../services/subscription.service');
 const socketService = require('../services/socket.service');
 const Subscription = require('../models/subscription.model');
+const SubscriptionPlan = require('../models/subscription-plan.model');
 
 /**
  * Get all subscription plans
@@ -26,6 +27,78 @@ exports.getPlans = async (req, res) => {
       message: 'Error getting subscription plans',
       error: error.message
     });
+  }
+};
+
+/**
+ * Get all public subscription plans directly from the database
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} - Response with plans or error
+ */
+exports.getPublicPlans = async (req, res) => {
+  try {
+    console.log('Fetching public subscription plans from database');
+    
+    // First try to get plans directly from the database
+    const dbPlans = await SubscriptionPlan.find().sort({ price: 1 });
+    
+    if (dbPlans && dbPlans.length > 0) {
+      console.log(`Found ${dbPlans.length} subscription plans in database`);
+      
+      // Map plans to required format
+      const formattedPlans = dbPlans.map(plan => ({
+        id: plan._id.toString(),
+        planId: plan.planId,
+        _id: plan._id.toString(),
+        name: plan.name,
+        price: plan.price,
+        duration: plan.duration,
+        features: plan.features,
+        recommended: plan.recommended
+      }));
+      
+      return res.status(200).json(formattedPlans);
+    }
+    
+    // If no plans found in database, use the service's default plans
+    console.log('No subscription plans found in database, using default plans');
+    const defaultPlans = subscriptionService.getSubscriptionPlans();
+    
+    return res.status(200).json(defaultPlans);
+  } catch (error) {
+    console.error('Error getting public subscription plans:', error);
+    
+    // Last resort - return hardcoded default plans
+    const fallbackPlans = [
+      {
+        id: 'basic',
+        planId: 'basic',
+        name: 'Basic',
+        price: 99,
+        duration: 30,
+        features: ['Real-time tracking', 'Schedule access', 'Traffic updates']
+      },
+      {
+        id: 'premium',
+        planId: 'premium',
+        name: 'Premium',
+        price: 199,
+        duration: 30,
+        features: ['All Basic features', 'Priority notifications', 'Offline maps', 'No advertisements'],
+        recommended: true
+      },
+      {
+        id: 'annual',
+        planId: 'annual',
+        name: 'Annual',
+        price: 999,
+        duration: 365,
+        features: ['All Premium features', '24/7 support', 'Schedule alarms', 'Trip history']
+      }
+    ];
+    
+    return res.status(200).json(fallbackPlans);
   }
 };
 

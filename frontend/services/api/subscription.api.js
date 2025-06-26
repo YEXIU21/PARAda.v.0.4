@@ -14,19 +14,16 @@ export const getSubscriptionPlans = async () => {
   try {
     console.log('Fetching subscription plans from public API');
     
-    // Try to get plans from the public endpoint
+    // Try to get plans directly from the new public-plans endpoint first
     try {
-      const response = await axios.get(`${BASE_URL}${ENDPOINTS.SUBSCRIPTION.PLANS}`);
+      console.log('Trying new public-plans endpoint...');
+      const response = await axios.get(`${BASE_URL}${ENDPOINTS.SUBSCRIPTION.BASE}/public-plans`);
       
-      // Debug log full response for troubleshooting
-      console.log('Public API response:', response.data);
-      
-      // Make sure we return the same data structure as admin API
-      if (response.data && Array.isArray(response.data.plans) && response.data.plans.length > 0) {
-        console.log('Successfully fetched subscription plans from public API:', response.data.plans);
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        console.log('Successfully fetched subscription plans from public-plans endpoint:', response.data);
         
-        // Ensure the plans have the same structure as admin plans
-        const normalizedPlans = response.data.plans.map(plan => ({
+        // Ensure the plans have a consistent structure
+        const normalizedPlans = response.data.map(plan => ({
           id: plan.id || plan.planId || plan._id || `plan-${Math.random().toString(36).substr(2, 9)}`,
           planId: plan.planId,
           _id: plan._id,
@@ -37,32 +34,72 @@ export const getSubscriptionPlans = async () => {
           recommended: plan.recommended || false
         }));
         
+        // Log detailed information for debugging
+        if (normalizedPlans.length > 0) {
+          console.log('DEBUG - Subscription plan format from API:', JSON.stringify(normalizedPlans[0], null, 2));
+          console.log('Plan IDs - Standard format:', normalizedPlans.map(p => p.id));
+          console.log('Plan IDs - MongoDB format:', normalizedPlans.map(p => p._id));
+          console.log('Plan IDs - Backend format:', normalizedPlans.map(p => p.planId));
+        }
+        
         return normalizedPlans;
       }
       
-      // If the public API returned an empty or invalid response, throw an error to fall back to the admin API
-      console.warn('Public API returned invalid or empty plans data:', response.data);
-      throw new Error('Invalid data from public API');
-    } catch (publicApiError) {
-      console.warn('Error or invalid data from public API, trying admin API as fallback:', publicApiError);
+      console.warn('Public-plans endpoint returned invalid data:', response.data);
+      throw new Error('Invalid data from public-plans endpoint');
+    } catch (publicPlansError) {
+      console.warn('Error from public-plans endpoint, trying legacy plans endpoint:', publicPlansError);
       
-      // Fallback: Try the admin API endpoint
+      // Try the old plans endpoint as fallback
       try {
-        // Import the admin API function dynamically to avoid circular dependencies
-        const { getAdminSubscriptionPlans } = await import('./admin.api');
-        const adminPlans = await getAdminSubscriptionPlans();
+        const response = await axios.get(`${BASE_URL}${ENDPOINTS.SUBSCRIPTION.PLANS}`);
         
-        if (adminPlans && Array.isArray(adminPlans) && adminPlans.length > 0) {
-          console.log('Successfully fetched subscription plans from admin API:', adminPlans);
-          return adminPlans;
-        } 
+        // Debug log full response for troubleshooting
+        console.log('Public API response:', response.data);
         
-        throw new Error('No valid plans from admin API');
-      } catch (adminApiError) {
-        console.error('Error fetching from admin API:', adminApiError);
+        // Make sure we return the same data structure as admin API
+        if (response.data && Array.isArray(response.data.plans) && response.data.plans.length > 0) {
+          console.log('Successfully fetched subscription plans from public API:', response.data.plans);
+          
+          // Ensure the plans have the same structure as admin plans
+          const normalizedPlans = response.data.plans.map(plan => ({
+            id: plan.id || plan.planId || plan._id || `plan-${Math.random().toString(36).substr(2, 9)}`,
+            planId: plan.planId,
+            _id: plan._id,
+            name: plan.name || 'Unnamed Plan',
+            price: typeof plan.price === 'string' ? parseFloat(plan.price) : (plan.price || 0),
+            duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : (plan.duration || 30),
+            features: Array.isArray(plan.features) ? plan.features : [],
+            recommended: plan.recommended || false
+          }));
+          
+          return normalizedPlans;
+        }
         
-        // If both APIs fail, return default plans from the database
-        return await fetchDefaultPlansFromBackend();
+        // If the public API returned an empty or invalid response, throw an error to fall back to the admin API
+        console.warn('Public API returned invalid or empty plans data:', response.data);
+        throw new Error('Invalid data from public API');
+      } catch (publicApiError) {
+        console.warn('Error or invalid data from public API, trying admin API as fallback:', publicApiError);
+        
+        // Fallback: Try the admin API endpoint
+        try {
+          // Import the admin API function dynamically to avoid circular dependencies
+          const { getAdminSubscriptionPlans } = await import('./admin.api');
+          const adminPlans = await getAdminSubscriptionPlans();
+          
+          if (adminPlans && Array.isArray(adminPlans) && adminPlans.length > 0) {
+            console.log('Successfully fetched subscription plans from admin API:', adminPlans);
+            return adminPlans;
+          } 
+          
+          throw new Error('No valid plans from admin API');
+        } catch (adminApiError) {
+          console.error('Error fetching from admin API:', adminApiError);
+          
+          // If all APIs fail, return default plans from the database
+          return await fetchDefaultPlansFromBackend();
+        }
       }
     }
   } catch (error) {
