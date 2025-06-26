@@ -26,6 +26,7 @@ import { getSocket } from '../../services/socket/socket.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { BASE_URL } from '../../services/api/endpoints';
 
 // Add interface for message categories
 const categories = [
@@ -66,6 +67,7 @@ export default function MessagesScreen() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [showComposeModal, setShowComposeModal] = useState<boolean>(false);
   
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
@@ -127,47 +129,171 @@ export default function MessagesScreen() {
   };
   
   // Fetch messages (admin notifications) on component mount
-  useEffect(() => {
-      fetchMessages();
-      setupSocketListeners();
+  const fetchMessages = async () => {
+    try {
+      setError(null);
+      if (!isRefreshing) {
+        setIsLoading(true);
+      }
       
-      // Check for pending replies when component mounts
-      const socket = getSocket();
-      if (socket && socket.connected) {
-        sendPendingReplies();
+      // Check if user is logged in
+      if (!user || !user.id) {
+        throw new Error('User not authenticated');
+      }
+      
+      console.log(`Fetching messages for user ID: ${user.id} Role: ${user.role}`);
+      
+      // First try to load from storage for faster UI response
+      const storedMessages = await loadMessagesFromStorage();
+      
+      try {
+        // Then fetch from API
+        console.log('Making API call to get notifications');
+        const options = {
+          limit: 100,
+          unreadOnly: false
+        };
+        
+        console.log('Getting notifications with options:', options);
+        const apiUrl = `${BASE_URL}/api/notifications?limit=${options.limit}`;
+        console.log('Fetching notifications from:', apiUrl);
+        
+        const response = await getUserNotifications(options);
+        
+        console.log('API returned notifications:', response?.notifications?.length);
+        if (response?.notifications?.length > 0) {
+          console.log('Sample notification:', JSON.stringify(response.notifications[0]));
+          
+          // Filter out invalid messages
+          const validMessages = response.notifications.filter((msg: any) => {
+            if (!msg) return false;
+            if (!msg._id || !msg.title || !msg.message) return false;
+            return true;
+          });
+          
+          console.log('Valid messages after filtering:', validMessages.length);
+          
+          // Remove duplicates by ID
+          const uniqueMessages = validMessages.filter((msg: any, index: number, self: any[]) => 
+            index === self.findIndex((m) => m._id === msg._id)
+          );
+          
+          console.log('Unique messages after duplicate filtering:', uniqueMessages.length);
+          
+          // Use API data if available
+          if (uniqueMessages.length > 0) {
+            console.log(`Found ${uniqueMessages.length} valid messages`);
+            setMessages(uniqueMessages);
+            saveMessagesToStorage(uniqueMessages);
+          } 
+          // Fall back to stored data if API returned no valid messages
+          else if (storedMessages.length > 0) {
+            console.log(`Loaded ${storedMessages.length} valid messages from storage`);
+            setMessages(storedMessages);
+          }
+          // No messages available
+          else {
+            setMessages([]);
+          }
+        } 
+        // Fall back to stored data if API returned no messages
+        else if (storedMessages.length > 0) {
+          console.log(`Loaded ${storedMessages.length} messages from storage`);
+          setMessages(storedMessages);
+        }
+        // No messages available
+        else {
+          setMessages([]);
+        }
+      } catch (apiError) {
+        console.error('Error fetching messages from API:', apiError);
+        
+        // Fall back to stored data if API call failed
+        if (storedMessages.length > 0) {
+          console.log('Using stored messages due to API error');
+          setMessages(storedMessages);
+        } else {
+          throw new Error('Failed to load messages. Please check your connection and try again.');
+        }
+      }
+      
+      // Clean up deleted message IDs from storage
+      cleanupDeletedMessageIds();
+    } catch (error) {
+      console.error('Error in fetchMessages:', error);
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
+    } finally {
+      setIsLoading(false);
     }
-    
-    return () => {
-      cleanupSocketListeners();
-    };
-  }, []);
+  };
   
   // Set up socket listeners for real-time notifications
   const setupSocketListeners = useCallback(() => {
     try {
       const socket = getSocket();
-      if (!socket || !socket.connected) return;
+      if (!socket) {
+        console.warn('Socket not available for setting up listeners');
+        return;
+      }
       
-      // Listen for new notifications
-      socket.on('new_notification', (data) => {
-        if (data && data.notification && data.notification.data && data.notification.data.fromAdmin) {
+      if (!socket.connected) {
+        console.log('Socket not connected, will set up listeners when connection is established');
+        socket.on('connect', () => {
+          console.log('Socket connected, setting up notification listeners');
+          setupSocketEventHandlers(socket);
+        });
+        return;
+      }
+      
+      setupSocketEventHandlers(socket);
+    } catch (err) {
+      console.error('Error setting up socket listeners:', err);
+    }
+  }, []);
+  
+  // Set up the actual socket event handlers
+  const setupSocketEventHandlers = useCallback((socket) => {
+    // Remove any existing listeners to prevent duplicates
+    socket.off('new_notification');
+    socket.off('connect');
+    
+    // Listen for new notifications
+    socket.on('new_notification', (data) => {
+      if (data && data.notification) {
+        try {
           // Add new message to the list
           setMessages(prevMessages => {
             const updatedMessages = [data.notification, ...prevMessages];
             saveMessagesToStorage(updatedMessages); // Save to storage when new message arrives
             return updatedMessages;
           });
+        } catch (error) {
+          console.error('Error processing new notification:', error);
         }
-      });
-      
-      // Listen for socket reconnection to send pending replies
-      socket.on('connect', () => {
-        console.log('Socket reconnected, checking for pending replies');
-        sendPendingReplies();
-      });
-    } catch (err) {
-      console.error('Error setting up socket listeners:', err);
+      }
+    });
+    
+    // Listen for socket reconnection to send pending replies
+    socket.on('connect', () => {
+      console.log('Socket reconnected, checking for pending replies');
+      sendPendingReplies();
+    });
+  }, []);
+  
+  // Fetch messages on component mount
+  useEffect(() => {
+    fetchMessages();
+    setupSocketListeners();
+    
+    // Check for pending replies when component mounts
+    const socket = getSocket();
+    if (socket && socket.connected) {
+      sendPendingReplies();
     }
+    
+    return () => {
+      cleanupSocketListeners();
+    };
   }, []);
   
   // Send any pending replies when socket reconnects
@@ -268,142 +394,6 @@ export default function MessagesScreen() {
       }
     } catch (error) {
       console.error('Error cleaning up deleted message IDs:', error);
-    }
-  };
-  
-  // Fetch messages from the notifications API
-  const fetchMessages = async () => {
-    try {
-      // Load the list of deleted message IDs
-      const storedDeletedIds = await AsyncStorage.getItem('deletedMessageIds');
-      const deletedMessageIds: string[] = storedDeletedIds ? JSON.parse(storedDeletedIds) : [];
-      
-      setIsLoading(true);
-      setError(null);
-      
-      // Get user info from auth context
-      if (!user || !user.id) {
-        console.error('No user found in fetchMessages');
-        setError('Authentication required');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Set options for API call
-      const options = {
-        limit: 100,
-        unreadOnly: false
-      };
-      
-      console.log('Fetching messages for user ID:', user.id, 'Role:', user.role);
-      
-      let apiMessages: Message[] = [];
-      let fetchSuccess = false;
-      
-      try {
-        console.log('Making API call to get notifications');
-        const result = await getUserNotifications(options);
-        console.log('API returned notifications:', result?.notifications?.length);
-        
-        if (result && result.notifications && Array.isArray(result.notifications)) {
-          if (result.notifications.length > 0) {
-            console.log('Sample notification:', JSON.stringify(result.notifications[0]));
-          }
-          
-          // Filter for valid messages
-          const validMessages = result.notifications.filter(notification => 
-            notification && 
-            notification._id &&
-            notification.title && 
-            notification.message && 
-            notification.title.trim() !== '' && 
-            notification.message.trim() !== '' &&
-            // Filter out messages that were previously deleted locally
-            !deletedMessageIds.includes(notification._id)
-          );
-          
-          console.log('Valid messages after filtering:', validMessages.length);
-          
-          // Track notification IDs to filter out duplicates
-          const processedNotificationIds = new Set<string>();
-          
-          // Filter out duplicate admin messages based on notificationId
-          const uniqueMessages = validMessages.filter(message => {
-            // If this is an admin message with a notificationId
-            if (message.data && message.data.notificationId) {
-              // If we've already processed this notificationId, skip it
-              if (processedNotificationIds.has(message.data.notificationId)) {
-                console.log(`Filtering out duplicate message with notificationId: ${message.data.notificationId}`);
-                return false;
-              }
-              
-              // Otherwise, mark this notificationId as processed and keep the message
-              processedNotificationIds.add(message.data.notificationId);
-              return true;
-            }
-            
-            // For messages without notificationId, always keep them
-            return true;
-          });
-          
-          console.log('Unique messages after duplicate filtering:', uniqueMessages.length);
-          
-          // For driver users, include ALL valid messages
-          apiMessages = uniqueMessages;
-          
-          if (apiMessages.length > 0) {
-            console.log('Found', apiMessages.length, 'valid messages');
-            fetchSuccess = true;
-          } else {
-            console.warn('No valid messages found in API response');
-          }
-        }
-      } catch (apiError) {
-        console.error('API error:', apiError);
-      }
-      
-      // Load from AsyncStorage as backup
-      const storedMessages = await loadMessagesFromStorage();
-      console.log('Loaded', storedMessages.length, 'messages from storage');
-      
-      if (apiMessages.length > 0) {
-        // API returned valid data - use it and update storage
-        console.log('Using API data with', apiMessages.length, 'messages');
-        setMessages(apiMessages);
-        saveMessagesToStorage(apiMessages);
-        setIsLoading(false);
-      } else if (storedMessages.length > 0) {
-        // No API data but we have stored data
-        console.log('Using stored data with', storedMessages.length, 'messages');
-        setMessages(storedMessages);
-        setIsLoading(false);
-        
-        // If API fetch failed completely, show an error
-        if (!fetchSuccess) {
-          setError('Couldn\'t fetch latest messages. Showing cached data.');
-        }
-      } else {
-        // No data anywhere
-        console.log('No messages available');
-        setMessages([]);
-        setError(fetchSuccess ? null : 'No messages found');
-        setIsLoading(false);
-      }
-    } catch (err) {
-      console.error('Error in message flow:', err);
-      setError('Failed to load messages. Please try again.');
-      
-      // Try to load from storage as last resort
-      try {
-        const storedMessages = await loadMessagesFromStorage();
-        if (storedMessages.length > 0) {
-          setMessages(storedMessages);
-        }
-      } catch (storageError) {
-        console.error('Failed to load from storage:', storageError);
-      }
-    } finally {
-      setIsLoading(false);
     }
   };
   
@@ -991,6 +981,16 @@ export default function MessagesScreen() {
       setIsRefreshing(false);
     });
   };
+
+  // Handle compose message
+  const handleComposeMessage = () => {
+    // For now, just show an alert
+    Alert.alert(
+      'Coming Soon',
+      'Message composition will be available in a future update.',
+      [{ text: 'OK', onPress: () => console.log('Compose message dialog closed') }]
+    );
+  };
   
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -1116,10 +1116,7 @@ export default function MessagesScreen() {
       {/* Compose FAB button */}
       <TouchableOpacity 
         style={[styles.composeFab, { backgroundColor: theme.primary }]}
-        onPress={() => {
-          // Handle compose new message
-          Alert.alert('Coming Soon', 'Message composition will be available in a future update.');
-        }}
+        onPress={handleComposeMessage}
       >
         <FontAwesome5 name="pen" size={20} color="#fff" />
       </TouchableOpacity>
