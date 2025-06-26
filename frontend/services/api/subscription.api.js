@@ -338,35 +338,22 @@ export const createSubscription = async (subscriptionData) => {
       console.error('Error parsing user data:', parseError);
     }
     
-    // Check if user is authenticated
-    if (token && parsedUserData) {
-      console.log('User is authenticated, using authenticated endpoint');
-      // Use the authenticated endpoint
-      const response = await axios.post(
-        `${BASE_URL}${ENDPOINTS.SUBSCRIPTION.CREATE}`, 
-        subscriptionData,
-        {
-          headers: { 'x-access-token': token }
-        }
-      );
-      return response.data;
-    } else {
-      console.log('User is not authenticated, using public endpoint');
-      // User is not authenticated, use the public endpoint
-      // Need to include user information in the request
-      const publicSubscriptionData = {
-        ...subscriptionData,
-        username: parsedUserData?.username || 'Guest User',
-        email: parsedUserData?.email || 'guest@email.com',
-        userId: parsedUserData?.id || null
-      };
-      
-      const response = await axios.post(
-        `${BASE_URL}${ENDPOINTS.SUBSCRIPTION.PUBLIC_CREATE}`, 
-        publicSubscriptionData
-      );
-      return response.data;
-    }
+    // For now, always use the public endpoint to avoid auth issues
+    console.log('Using public endpoint for subscription creation');
+    
+    // Include user information in the request
+    const publicSubscriptionData = {
+      ...subscriptionData,
+      username: parsedUserData?.username || 'Guest User',
+      email: parsedUserData?.email || 'guest@email.com',
+      userId: parsedUserData?.id || null
+    };
+    
+    const response = await axios.post(
+      `${BASE_URL}${ENDPOINTS.SUBSCRIPTION.PUBLIC_CREATE}`, 
+      publicSubscriptionData
+    );
+    return response.data;
   } catch (error) {
     console.error('Error creating subscription:', error);
     throw error;
