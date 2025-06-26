@@ -62,6 +62,7 @@ export const ENDPOINTS = {
   NOTIFICATION: {
     ALL: '/api/notifications',
     UNREAD: '/api/notifications/unread',
+    UNREAD_COUNT: '/api/notifications/unread-count',
     READ: (id) => `/api/notifications/${id}/read`,
     READ_ALL: '/api/notifications/read-all',
     SYSTEM: '/api/notifications/system',
