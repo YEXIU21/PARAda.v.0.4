@@ -28,6 +28,9 @@ interface SubscriptionPlan {
   duration: number;
   features: string[];
   recommended?: boolean;
+  // Student discount fields
+  originalPrice?: number;
+  discountPercent?: number;
 }
 
 // Default subscription plans to use as fallback
@@ -133,7 +136,10 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
       planId: plan.planId,
       _id: plan._id,
       price: typeof plan.price === 'string' ? parseFloat(plan.price) : plan.price,
-      duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : plan.duration
+      duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : plan.duration,
+      // Preserve student discount information
+      originalPrice: plan.originalPrice ? (typeof plan.originalPrice === 'string' ? parseFloat(plan.originalPrice) : plan.originalPrice) : undefined,
+      discountPercent: plan.discountPercent ? (typeof plan.discountPercent === 'string' ? parseFloat(plan.discountPercent) : plan.discountPercent) : undefined
     }));
   };
 
@@ -141,6 +147,14 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Log account type for debugging
+      if (user) {
+        console.log(`Fetching plans for user with account type: ${user.accountType || 'standard'}`);
+        console.log(`Student status: ${user.accountType === 'student'}`);
+      } else {
+        console.log('No user logged in, fetching regular prices');
+      }
       
       // Try to get cached plans first for immediate display
       try {
@@ -479,6 +493,20 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
               <Text style={[styles.duration, { color: theme.textSecondary }]}>
                 /{plan.duration === 30 ? 'month' : plan.duration === 90 ? 'quarter' : 'year'}
               </Text>
+              
+              {/* Show original price and discount if available */}
+              {plan.originalPrice && plan.discountPercent && (
+                <View style={styles.discountContainer}>
+                  <Text style={[styles.originalPrice, { color: theme.textSecondary }]}>
+                    ₱{plan.originalPrice}
+                  </Text>
+                  <View style={[styles.discountBadge, { backgroundColor: theme.success + '20', borderColor: theme.success }]}>
+                    <Text style={[styles.discountText, { color: theme.success }]}>
+                      {plan.discountPercent}% STUDENT OFF
+                    </Text>
+                  </View>
+                </View>
+              )}
             </View>
             
             <View style={styles.featuresContainer}>
@@ -544,6 +572,19 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
                 <Text style={[styles.planDetailsText, { color: theme.text }]}>
                   Amount: ₱{selectedPlanForPayment?.price}
                 </Text>
+                
+                {/* Show student discount info if applicable */}
+                {selectedPlanForPayment?.originalPrice && selectedPlanForPayment?.discountPercent && (
+                  <View style={styles.discountInfoContainer}>
+                    <Text style={[styles.discountInfoText, { color: theme.success }]}>
+                      Student discount: {selectedPlanForPayment.discountPercent}% off
+                    </Text>
+                    <Text style={[styles.originalPriceText, { color: theme.textSecondary }]}>
+                      Original price: ₱{selectedPlanForPayment.originalPrice}
+                    </Text>
+                  </View>
+                )}
+                
                 <Text style={[styles.paymentInstructions, { color: theme.textSecondary }]}>
                   Scan the QR code with your GCash app to pay
                 </Text>
@@ -875,6 +916,42 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  // Student discount styles
+  discountContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    marginLeft: 10,
+  },
+  originalPrice: {
+    fontSize: 14,
+    textDecorationLine: 'line-through',
+    marginBottom: 2,
+  },
+  discountBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  discountText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  // Modal discount styles
+  discountInfoContainer: {
+    marginTop: 5,
+    marginBottom: 5,
+    alignItems: 'center',
+  },
+  discountInfoText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  originalPriceText: {
+    fontSize: 12,
+    textDecorationLine: 'line-through',
   },
 });
 

@@ -17,8 +17,29 @@ export const getSubscriptionPlans = async () => {
     
     // Try to get plans directly from the new public-plans endpoint first
     try {
-      console.log('Trying new public-plans endpoint...');
-      const response = await axios.get(`${BASE_URL}${ENDPOINTS.SUBSCRIPTION.BASE}/public-plans`);
+      // Check if we have user data to determine if student status should be included
+      let isStudent = false;
+      let accountType = 'standard';
+      
+      try {
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+          const parsedUserData = JSON.parse(userData);
+          isStudent = parsedUserData.accountType === 'student';
+          accountType = parsedUserData.accountType || 'standard';
+          console.log(`User account type detected: ${accountType}, isStudent: ${isStudent}`);
+        }
+      } catch (userDataError) {
+        console.error('Error getting user data for subscription plans:', userDataError);
+      }
+      
+      console.log('Trying new public-plans endpoint with student status:', isStudent);
+      const response = await axios.get(`${BASE_URL}${ENDPOINTS.SUBSCRIPTION.BASE}/public-plans`, {
+        params: { 
+          isStudent: isStudent,
+          accountType: accountType
+        }
+      });
       
       if (response.data && Array.isArray(response.data) && response.data.length > 0) {
         console.log('Successfully fetched subscription plans from public-plans endpoint:', response.data);
@@ -32,7 +53,10 @@ export const getSubscriptionPlans = async () => {
           price: typeof plan.price === 'string' ? parseFloat(plan.price) : (plan.price || 0),
           duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : (plan.duration || 30),
           features: Array.isArray(plan.features) ? plan.features : [],
-          recommended: plan.recommended || false
+          recommended: plan.recommended || false,
+          // Include student discount information if provided
+          originalPrice: plan.originalPrice,
+          discountPercent: plan.discountPercent
         }));
         
         // Log detailed information for debugging
@@ -71,7 +95,10 @@ export const getSubscriptionPlans = async () => {
             price: typeof plan.price === 'string' ? parseFloat(plan.price) : (plan.price || 0),
             duration: typeof plan.duration === 'string' ? parseInt(plan.duration, 10) : (plan.duration || 30),
             features: Array.isArray(plan.features) ? plan.features : [],
-            recommended: plan.recommended || false
+            recommended: plan.recommended || false,
+            // Include student discount information if provided
+            originalPrice: plan.originalPrice,
+            discountPercent: plan.discountPercent
           }));
           
           return normalizedPlans;

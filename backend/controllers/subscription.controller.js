@@ -43,22 +43,53 @@ exports.getPublicPlans = async (req, res) => {
   try {
     console.log('Fetching public subscription plans from database');
     
+    // Check if we need to apply student discount
+    const isStudent = req.query.isStudent === 'true';
+    console.log(`Request includes student status: ${isStudent}`);
+    
+    // Get user account type from headers or query params
+    const userAccountType = req.query.accountType || 
+                            req.headers['x-account-type'] || 
+                            (isStudent ? 'student' : 'standard');
+    
+    console.log(`User account type for plans: ${userAccountType}`);
+    
     // First try to get plans directly from the database
     const dbPlans = await SubscriptionPlan.find().sort({ price: 1 });
     
     if (dbPlans && dbPlans.length > 0) {
       console.log(`Found ${dbPlans.length} subscription plans in database`);
       
-      // Map plans to required format
-      const formattedPlans = dbPlans.map(plan => ({
-        id: plan._id.toString(),
-        planId: plan.planId,
-        _id: plan._id.toString(),
-        name: plan.name,
-        price: plan.price,
-        duration: plan.duration,
-        features: plan.features,
-        recommended: plan.recommended
+      // Get student discount info 
+      const studentDiscountSettings = await subscriptionService.getStudentDiscountSettings();
+      const shouldApplyDiscount = isStudent && 
+                                 studentDiscountSettings && 
+                                 studentDiscountSettings.isEnabled;
+      
+      // Map plans to required format with discounts applied if needed
+      const formattedPlans = await Promise.all(dbPlans.map(async (plan) => {
+        // Base plan format
+        const formattedPlan = {
+          id: plan._id.toString(),
+          planId: plan.planId,
+          _id: plan._id.toString(),
+          name: plan.name,
+          price: plan.price,
+          duration: plan.duration,
+          features: plan.features,
+          recommended: plan.recommended
+        };
+        
+        // Apply student discount if applicable
+        if (shouldApplyDiscount) {
+          const discountPercent = studentDiscountSettings.discountPercent;
+          formattedPlan.originalPrice = formattedPlan.price;
+          formattedPlan.price = Math.round(formattedPlan.price * (1 - discountPercent / 100));
+          formattedPlan.discountPercent = discountPercent;
+          console.log(`Applied student discount of ${discountPercent}% to plan ${plan.name}`);
+        }
+        
+        return formattedPlan;
       }));
       
       return res.status(200).json(formattedPlans);
@@ -66,7 +97,21 @@ exports.getPublicPlans = async (req, res) => {
     
     // If no plans found in database, use the service's default plans
     console.log('No subscription plans found in database, using default plans');
-    const defaultPlans = subscriptionService.getSubscriptionPlans();
+    const defaultPlans = await subscriptionService.getSubscriptionPlans();
+    
+    // Apply student discount to default plans if needed
+    if (isStudent) {
+      const studentDiscountSettings = await subscriptionService.getStudentDiscountSettings();
+      if (studentDiscountSettings && studentDiscountSettings.isEnabled) {
+        const discountPercent = studentDiscountSettings.discountPercent;
+        defaultPlans.forEach(plan => {
+          plan.originalPrice = plan.price;
+          plan.price = Math.round(plan.price * (1 - discountPercent / 100));
+          plan.discountPercent = discountPercent;
+        });
+        console.log(`Applied student discount to default plans`);
+      }
+    }
     
     return res.status(200).json(defaultPlans);
   } catch (error) {
