@@ -139,13 +139,11 @@ export default function GCashPaymentModal({
         >
           <View style={styles.headerContent}>
             <Text style={styles.headerTitle}>GCash Payment</Text>
-            {!isProcessing && (
-              <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-                <View style={styles.closeButtonCircle}>
-                  <FontAwesome5 name="times" size={18} color="white" />
-                </View>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+              <View style={styles.closeButtonCircle}>
+                <FontAwesome5 name="times" size={18} color="white" />
+              </View>
+            </TouchableOpacity>
           </View>
         </LinearGradient>
 
@@ -211,6 +209,12 @@ export default function GCashPaymentModal({
                 <Text style={[styles.processingText, { color: theme.text }]}>
                   Verifying payment...
                 </Text>
+                <TouchableOpacity 
+                  style={[styles.cancelProcessingButton, { borderColor: theme.border, marginTop: 20 }]}
+                  onPress={handleClose}
+                >
+                  <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>
+                </TouchableOpacity>
               </View>
             ) : (
               <View style={styles.buttonContainer}>
@@ -357,6 +361,13 @@ const styles = StyleSheet.create({
   processingText: {
     marginTop: 15,
     fontSize: 16,
+  },
+  cancelProcessingButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
   },
   buttonContainer: {
     flexDirection: 'row',
