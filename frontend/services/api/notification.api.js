@@ -125,7 +125,7 @@ export const getUnreadCount = async () => {
     if (!token) throw new Error('Authentication required');
     
     const response = await axios.get(
-      `${BASE_URL}${ENDPOINTS.NOTIFICATION.UNREAD}`,
+      `${BASE_URL}${ENDPOINTS.NOTIFICATION.UNREAD_COUNT}`,
       {
         headers: { 'x-access-token': token }
       }
