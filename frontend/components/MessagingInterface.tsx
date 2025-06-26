@@ -12,7 +12,8 @@ import {
   Animated,
   Dimensions,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  SafeAreaView
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useTheme, getThemeColors } from '../context/ThemeContext';
@@ -21,6 +22,7 @@ import { getUserNotifications, markAsRead, deleteNotification } from '../service
 import { formatDistanceToNow } from 'date-fns';
 import { getSocket } from '../services/socket/socket.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface Message {
   _id: string;
@@ -48,6 +50,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
   const [replyText, setReplyText] = useState<string>('');
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [showReplyModal, setShowReplyModal] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
@@ -711,74 +714,60 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
     }
   };
   
+  // Filter messages based on search query
+  const filteredMessages = searchQuery
+    ? messages.filter(msg => 
+        msg.message?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        msg.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : messages;
+  
   // Render message item
-  const renderMessageItem = ({ item }: { item: Message }) => (
-    <TouchableOpacity
-      style={[
-        styles.messageItem,
-        { 
-          backgroundColor: theme.card,
-          borderColor: theme.border,
-          opacity: item.read ? 0.7 : 1
-        }
-      ]}
-      onPress={() => {
-        setSelectedMessage(item);
-        if (!item.read) {
+  const renderMessageItem = ({ item }: { item: Message }) => {
+    // Check if item exists and has required properties
+    if (!item || !item._id || !item.title || !item.message) {
+      console.warn('Invalid message item:', item);
+      return null;
+    }
+    
+    return (
+      <TouchableOpacity 
+        style={[
+          styles.messageItem, 
+          { 
+            backgroundColor: theme.card,
+            borderLeftColor: item.read ? theme.border : theme.primary 
+          }
+        ]}
+        onPress={() => {
+          setSelectedMessage(item);
           handleMarkAsRead(item._id);
-        }
-      }}
-    >
-      <View style={styles.messageHeader}>
-        <View style={styles.messageHeaderLeft}>
-          <FontAwesome5 
-            name="envelope" 
-            size={16} 
-            color={item.read ? theme.textSecondary : theme.primary} 
-            solid={!item.read}
-          />
-          <Text 
-            style={[
-              styles.messageTitle, 
-              { 
-                color: theme.text,
-                fontWeight: item.read ? 'normal' : 'bold'
-              }
-            ]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {item.title}
+        }}
+      >
+        <View style={styles.messageHeader}>
+          <Text style={[styles.senderName, { color: theme.text }]}>
+            {item.title || 'System Message'}
+          </Text>
+          <Text style={[styles.timestamp, { color: theme.textSecondary }]}>
+            {formatDate(item.createdAt)}
           </Text>
         </View>
-        <Text style={[styles.messageDate, { color: theme.textSecondary }]}>
-          {formatDate(item.createdAt)}
-        </Text>
-      </View>
-      
-      <Text 
-        style={[styles.messageContent, { color: theme.text }]}
-        numberOfLines={2}
-      >
-        {item.message}
-      </Text>
-      
-      <View style={styles.messageFooter}>
-        {item.data?.expiresIn && (
-          <Text style={[styles.messageExpiry, { color: theme.textSecondary }]}>
-            {getExpiryTimeRemaining(item.createdAt, item.data?.expiresIn || 2)}
-          </Text>
-        )}
-        
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteMessage(item._id)}
+        <Text 
+          style={[
+            styles.messageContent, 
+            { color: theme.textSecondary },
+            !item.read && { color: theme.text, fontWeight: '500' }
+          ]}
+          numberOfLines={2}
         >
-          <FontAwesome5 name="trash-alt" size={14} color={theme.error} />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
+          {item.message}
+        </Text>
+        {!item.read && (
+          <View style={[styles.unreadIndicator, { backgroundColor: theme.primary }]} />
+        )}
+      </TouchableOpacity>
+    );
+  };
   
   // Render message detail modal
   const renderMessageDetailModal = () => (
@@ -919,58 +908,88 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
     </Modal>
   );
   
-  // Main render
+  if (!isVisible) return null;
+  
   return (
     <Modal
       visible={isVisible}
       animationType="slide"
+      transparent={false}
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.primary }]}>
-          <TouchableOpacity style={styles.backButton} onPress={onClose}>
-            <FontAwesome5 name="arrow-left" size={20} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Messages</Text>
-        </View>
-        
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.primary} />
-            <Text style={[styles.loadingText, { color: theme.text }]}>Loading messages...</Text>
-          </View>
-        ) : error ? (
-          <View style={styles.errorContainer}>
-            <FontAwesome5 name="exclamation-circle" size={40} color={theme.error} />
-            <Text style={[styles.errorText, { color: theme.text }]}>{error}</Text>
-            <TouchableOpacity
-              style={[styles.retryButton, { backgroundColor: theme.primary }]}
-              onPress={fetchMessages}
-            >
-              <Text style={styles.retryButtonText}>Retry</Text>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <LinearGradient
+          colors={theme.gradientColors || ['#4B6BFE', '#2D3AF2']}
+          style={styles.header}
+        >
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={onClose} style={styles.backButton}>
+              <FontAwesome5 name="arrow-left" size={20} color="#fff" />
             </TouchableOpacity>
+            <Text style={styles.headerTitle}>Messages</Text>
           </View>
-        ) : messages.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <FontAwesome5 name="inbox" size={40} color={theme.textSecondary} />
-            <Text style={[styles.emptyText, { color: theme.text }]}>No messages</Text>
-            <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-              You don't have any messages from the admin yet
-            </Text>
+        </LinearGradient>
+
+        <View style={styles.content}>
+          {/* Search bar */}
+          <View style={[styles.searchContainer, { backgroundColor: theme.inputBackground || theme.card }]}>
+            <FontAwesome5 name="search" size={16} color={theme.textSecondary} />
+            <TextInput
+              style={[styles.searchInput, { color: theme.text }]}
+              placeholder="Search messages..."
+              placeholderTextColor={theme.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <FontAwesome5 name="times" size={16} color={theme.textSecondary} />
+              </TouchableOpacity>
+            ) : null}
           </View>
-        ) : (
-          <FlatList
-            data={messages}
-            renderItem={renderMessageItem}
-            keyExtractor={(item) => item._id}
-            contentContainerStyle={styles.messageList}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
-        
-        {renderMessageDetailModal()}
-        {renderReplyModal()}
-      </View>
+
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={theme.primary} />
+              <Text style={[styles.loadingText, { color: theme.text }]}>Loading messages...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <FontAwesome5 name="exclamation-triangle" size={40} color={theme.error} />
+              <Text style={[styles.errorTitle, { color: theme.text }]}>Error</Text>
+              <Text style={[styles.errorMessage, { color: theme.textSecondary }]}>{error}</Text>
+              <TouchableOpacity 
+                style={[styles.retryButton, { backgroundColor: theme.primary }]}
+                onPress={fetchMessages}
+              >
+                <Text style={{ color: '#fff' }}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : filteredMessages.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <FontAwesome5 name="inbox" size={40} color={theme.textSecondary} />
+              <Text style={[styles.emptyText, { color: theme.text }]}>No messages found</Text>
+              <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+                {searchQuery ? 'Try a different search term' : 'Your messages will appear here'}
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredMessages}
+              renderItem={renderMessageItem}
+              keyExtractor={item => item._id || Math.random().toString()}
+              contentContainerStyle={styles.messagesList}
+              style={{ width: '100%' }}
+            />
+          )}
+        </View>
+      </SafeAreaView>
+      
+      {/* Message detail modal */}
+      {renderMessageDetailModal()}
+      
+      {/* Reply modal */}
+      {renderReplyModal()}
     </Modal>
   );
 };
@@ -980,19 +999,87 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    paddingTop: 40,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    justifyContent: 'flex-end',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 50,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
   },
   backButton: {
     marginRight: 15,
+    padding: 5,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+    alignItems: 'center',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginBottom: 16,
+    width: '100%',
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 16,
+  },
+  messagesList: {
+    paddingBottom: 20,
+    width: '100%',
+  },
+  messageItem: {
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  senderName: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  timestamp: {
+    fontSize: 12,
+  },
+  messageContent: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  unreadIndicator: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   loadingContainer: {
     flex: 1,
@@ -1000,29 +1087,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 15,
+    marginTop: 10,
     fontSize: 16,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    marginTop: 15,
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  retryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
@@ -1031,118 +1097,102 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyText: {
-    marginTop: 15,
     fontSize: 18,
     fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
   },
   emptySubtext: {
-    marginTop: 8,
     fontSize: 14,
     textAlign: 'center',
   },
-  messageList: {
-    padding: 15,
-  },
-  messageItem: {
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    borderWidth: 1,
-  },
-  messageHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  messageHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+  errorContainer: {
     flex: 1,
-    marginRight: 10,
-  },
-  messageTitle: {
-    fontSize: 16,
-    marginLeft: 8,
-    flex: 1,
-  },
-  messageDate: {
-    fontSize: 12,
-    flexShrink: 0,
-  },
-  messageContent: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  messageFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  messageExpiry: {
-    fontSize: 12,
-  },
-  deleteButton: {
-    padding: 5,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
   modalContainer: {
     width: '100%',
+    maxHeight: '80%',
     borderRadius: 15,
     overflow: 'hidden',
-    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
+    justifyContent: 'space-between',
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
   },
   closeButton: {
-    padding: 5,
+    padding: 4,
   },
   modalBody: {
-    padding: 15,
+    padding: 16,
+    maxHeight: 500,
   },
   detailTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 8,
   },
   detailDate: {
     fontSize: 14,
-    marginBottom: 15,
+    marginBottom: 16,
   },
   detailContent: {
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 22,
+  },
+  messageExpiry: {
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   modalFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 15,
+    padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    justifyContent: 'space-between',
   },
   replyButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     borderRadius: 8,
     flex: 1,
     marginRight: 10,
@@ -1152,14 +1202,15 @@ const styles = StyleSheet.create({
   },
   replyButtonText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   deleteButtonLarge: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     borderRadius: 8,
     flex: 1,
   },
@@ -1168,17 +1219,19 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   replyToText: {
-    fontSize: 14,
+    fontSize: 16,
     marginBottom: 10,
   },
   replyInput: {
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
-    height: 120,
+    fontSize: 16,
+    minHeight: 120,
     textAlignVertical: 'top',
   },
   cancelButton: {
@@ -1186,31 +1239,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     borderRadius: 8,
     borderWidth: 1,
     flex: 1,
     marginRight: 10,
   },
   cancelButtonText: {
-    fontWeight: '600',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   sendButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     borderRadius: 8,
     flex: 1,
   },
   sendButtonText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   disabledButton: {
-    opacity: 0.5,
-  }
+    opacity: 0.6,
+  },
+  
+  // Original styles for older parts
+  actionButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    marginTop: 8,
+    justifyContent: 'flex-end',
+  },
 });
 
 export default MessagingInterface; 
