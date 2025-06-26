@@ -58,6 +58,7 @@ export default function PaymentApprovalModal({
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
+  const [approvedRefs, setApprovedRefs] = useState<string[]>([]);
 
   // Load pending payments from AsyncStorage
   useEffect(() => {
@@ -65,6 +66,20 @@ export default function PaymentApprovalModal({
       loadPendingPayments();
     }
   }, [isVisible]);
+
+  // Get proper plan name based on plan ID
+  const getPlanName = (planId: string) => {
+    switch (planId.toLowerCase()) {
+      case 'basic':
+        return 'Basic Plan';
+      case 'premium':
+        return 'Premium Plan';
+      case 'annual':
+        return 'Annual Plan';
+      default:
+        return planId.charAt(0).toUpperCase() + planId.slice(1);
+    }
+  };
 
   const loadPendingPayments = async () => {
     setIsLoading(true);
@@ -119,7 +134,7 @@ export default function PaymentApprovalModal({
                 email: `${paymentData.username?.toLowerCase() || 'user'}@example.com`, // Mock email
                 referenceNumber: paymentData.referenceNumber,
                 planId,
-                planName: planId.charAt(0).toUpperCase() + planId.slice(1),
+                planName: getPlanName(planId),
                 price: planId === 'basic' ? '₱99' : planId === 'premium' ? '₱199' : '₱999',
                 vehicleType,
                 timestamp: new Date(parseInt(timestamp)).toLocaleString(),
@@ -154,9 +169,9 @@ export default function PaymentApprovalModal({
                 email,
                 referenceNumber,
                 planId,
-                planName: planId.charAt(0).toUpperCase() + planId.slice(1),
+                planName: getPlanName(planId),
                 price: planId === 'basic' ? '₱99' : planId === 'premium' ? '₱199' : '₱999',
-                  vehicleType: 'latransco', // Default vehicle type for old format
+                vehicleType: 'latransco', // Default vehicle type for old format
                 timestamp: new Date(parseInt(timestamp)).toLocaleString(),
                 status
               });

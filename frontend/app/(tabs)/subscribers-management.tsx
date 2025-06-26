@@ -16,6 +16,7 @@ import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { getSubscriptions, verifySubscription, cancelSubscription } from '../../services/api/admin.api';
 import { LinearGradient } from 'expo-linear-gradient';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import { defaultSubscriptionPlans } from '../../constants/SubscriptionPlans';
 
 // Define interfaces for API data
 interface Subscription {
@@ -208,6 +209,26 @@ export default function SubscribersManagementScreen() {
     }
   };
 
+  // Get proper plan name based on plan ID
+  const getPlanName = (planId: string) => {
+    // First check if it's one of our standard plans
+    switch (planId.toLowerCase()) {
+      case 'basic':
+        return 'Basic Plan';
+      case 'premium':
+        return 'Premium Plan';
+      case 'annual':
+        return 'Annual Plan';
+      default:
+        // Try to find the plan in defaultSubscriptionPlans
+        const plan = defaultSubscriptionPlans.find(p => p.id.toLowerCase() === planId.toLowerCase());
+        if (plan) return plan.name;
+        
+        // If not found, capitalize the first letter of the ID
+        return planId.charAt(0).toUpperCase() + planId.slice(1);
+    }
+  };
+
   // Filter subscriptions based on search text
   const filteredSubscriptions = subscriptions.filter((subscription) => {
     if (!searchText) return true;
@@ -385,7 +406,7 @@ export default function SubscribersManagementScreen() {
                     ]}
                   >
                     <Text style={styles.planBadgeText}>
-                      {subscription.planId.charAt(0).toUpperCase() + subscription.planId.slice(1)}
+                      {getPlanName(subscription.planId)}
                     </Text>
                   </View>
                   <Text style={[styles.dateText, { color: theme.textSecondary }]}>
