@@ -995,7 +995,6 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
               <FontAwesome5 name="arrow-left" size={20} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Inbox</Text>
-            <Text style={styles.headerTitle}>Messages</Text>
           </View>
         </LinearGradient>
 
