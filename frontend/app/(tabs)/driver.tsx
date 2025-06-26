@@ -24,8 +24,8 @@ import { acceptRide, updateRideStatus } from '../../services/api/ride.api';
 import * as driverApi from '../../services/api/driver.api';
 import * as routeApi from '../../services/api/route.api';
 import { useAuth } from '../../context/AuthContext';
-import MessagingInterface from '../../components/MessagingInterface';
 import { BASE_URL } from '../../services/api/endpoints';
+import { router } from 'expo-router';
 
 // Helper functions for vehicle icons and colors
 const getVehicleIcon = (vehicleType: string) => {
@@ -111,10 +111,7 @@ export default function DriverScreen() {
   const { user } = useAuth();
   const [showRouteRequestModal, setShowRouteRequestModal] = useState(false);
   const [routeRequestText, setRouteRequestText] = useState("From [start location] to [end location] via [major landmarks]");
-  const [showMessages, setShowMessages] = useState(false);
-  // Add state for custom confirmation modal
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  // Add state for route removal confirmation
   const [showRemoveRouteModal, setShowRemoveRouteModal] = useState(false);
   const [routeToRemove, setRouteToRemove] = useState<{id: string, name: string, isCompleted: boolean} | null>(null);
   const isMounted = useRef(true);
@@ -1528,7 +1525,7 @@ export default function DriverScreen() {
         <View style={styles.actionButtonsRow}>
         <TouchableOpacity
             style={[styles.actionCardButton, { backgroundColor: '#4B6BFE' }]}
-          onPress={() => setShowMessages(true)}
+          onPress={() => router.push('/messages')}
         >
             <FontAwesome5 name="envelope" size={20} color="#fff" />
             <Text style={styles.actionCardButtonText}>Messages</Text>
@@ -1941,14 +1938,6 @@ export default function DriverScreen() {
           ))
         )}
       </ScrollView>
-
-      {/* MessagingInterface Modal */}
-      {showMessages && (
-        <MessagingInterface
-          isVisible={showMessages}
-          onClose={() => setShowMessages(false)}
-        />
-      )}
 
       {/* Available Routes Modal */}
       <Modal
