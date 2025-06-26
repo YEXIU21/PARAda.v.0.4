@@ -32,6 +32,7 @@ const categories = [
   { id: 'route', label: 'Routes', icon: 'route' },
   { id: 'user', label: 'Users', icon: 'user' },
   { id: 'payment', label: 'Payments', icon: 'credit-card' },
+  { id: 'notification', label: 'Notifications', icon: 'bell-slash' },
   { id: 'promo', label: 'Promotions', icon: 'tag' }
 ];
 
@@ -42,7 +43,7 @@ interface Message {
   createdAt: string;
   read: boolean;
   type?: 'info' | 'success' | 'warning' | 'error';
-  category?: 'system' | 'route' | 'user' | 'payment' | 'promo';
+  category?: 'system' | 'route' | 'user' | 'payment' | 'notification' | 'promo';
   data?: {
     fromAdmin?: boolean;
     expiresIn?: number;
@@ -768,7 +769,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
       );
     }
     
-    return true;
+    return true; // If no search query and passes category filter, include it
   });
   
   // Render each message item with the new design
@@ -779,7 +780,17 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
       return null;
     }
     
-    const messageCategory = item.category || item.data?.category || 'system';
+    // Determine message category - if title contains "notification" or message contains "notification", 
+    // categorize as notification
+    let messageCategory = item.category || item.data?.category || 'system';
+    if (
+      item.title?.toLowerCase().includes('notification') || 
+      item.message?.toLowerCase().includes('notification') ||
+      item.title?.toLowerCase().includes('alert')
+    ) {
+      messageCategory = 'notification';
+    }
+    
     const messageType = item.type || 'info';
     
     return (
@@ -994,7 +1005,10 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
             <TouchableOpacity onPress={onClose} style={styles.backButton}>
               <FontAwesome5 name="arrow-left" size={20} color="#fff" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Inbox</Text>
+            <Text style={styles.headerTitle}>Messages</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <FontAwesome5 name="times" size={20} color="#fff" />
+            </TouchableOpacity>
           </View>
         </LinearGradient>
 
@@ -1013,6 +1027,11 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
                   selectedCategory === category.id && {
                     backgroundColor: `${theme.primary}20`,
                     borderColor: theme.primary
+                  },
+                  // Make the notification category more prominent
+                  category.id === 'notification' && {
+                    borderWidth: 2,
+                    borderColor: category.id === selectedCategory ? theme.primary : '#FF9500',
                   }
                 ]}
                 onPress={() => setSelectedCategory(category.id)}
@@ -1020,12 +1039,12 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ isVisible, onCl
                 <FontAwesome5 
                   name={category.icon} 
                   size={14} 
-                  color={selectedCategory === category.id ? theme.primary : theme.textSecondary} 
+                  color={selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary)} 
                 />
                 <Text 
                   style={[
                     styles.categoryButtonText,
-                    { color: selectedCategory === category.id ? theme.primary : theme.textSecondary }
+                    { color: selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary) }
                   ]}
                 >
                   {category.label}
@@ -1107,28 +1126,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 40,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    justifyContent: 'flex-end',
+    paddingTop: 20,
+    paddingBottom: 15,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 10,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  backButton: {
-    marginRight: 15,
-    padding: 5,
+    justifyContent: 'space-between',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  backButton: {
+    padding: 8,
+  },
+  closeButton: {
+    padding: 8,
   },
   content: {
     flex: 1,
@@ -1139,15 +1163,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginBottom: 16,
-    width: '100%',
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginHorizontal: 16,
+    marginVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   searchInput: {
     flex: 1,
     marginLeft: 10,
-    fontSize: 16,
+    fontSize: 15,
   },
   messagesList: {
     paddingBottom: 20,
@@ -1155,13 +1184,13 @@ const styles = StyleSheet.create({
   },
   messageItem: {
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 12,
     borderLeftWidth: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
     elevation: 2,
   },
   messageHeader: {
@@ -1171,8 +1200,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   senderName: {
-    fontWeight: 'bold',
     fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
   },
   timestamp: {
     fontSize: 12,
@@ -1193,83 +1223,96 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 40,
   },
   loadingText: {
-    marginTop: 10,
+    marginTop: 16,
     fontSize: 16,
+    fontWeight: '500',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: 60,
+    paddingHorizontal: 20,
   },
   emptyText: {
+    marginTop: 16,
     fontSize: 18,
     fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 8,
+    textAlign: 'center',
   },
   emptySubtext: {
+    marginTop: 8,
     fontSize: 14,
     textAlign: 'center',
+    maxWidth: 250,
+    lineHeight: 20,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: 60,
+    paddingHorizontal: 20,
   },
   errorTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
     marginTop: 16,
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   errorMessage: {
-    fontSize: 16,
+    marginTop: 8,
+    fontSize: 14,
     textAlign: 'center',
-    marginBottom: 16,
+    maxWidth: 250,
+    lineHeight: 20,
+    marginBottom: 20,
   },
   retryButton: {
-    paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContainer: {
-    width: '100%',
-    maxHeight: '80%',
-    borderRadius: 15,
+    width: '90%',
+    maxWidth: 500,
+    borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 8,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
   },
-  closeButton: {
-    padding: 4,
-  },
   modalBody: {
-    padding: 16,
+    padding: 20,
     maxHeight: 500,
   },
   detailTitle: {
@@ -1283,7 +1326,7 @@ const styles = StyleSheet.create({
   },
   detailContent: {
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   messageExpiry: {
     fontSize: 14,
@@ -1388,21 +1431,27 @@ const styles = StyleSheet.create({
   categoriesContainer: {
     paddingVertical: 10,
     paddingHorizontal: 16,
+    backgroundColor: 'rgba(0,0,0,0.03)',
   },
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    marginRight: 8,
+    marginRight: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   categoryButtonText: {
-    marginLeft: 6,
-    fontSize: 12,
-    fontWeight: '500',
+    marginLeft: 8,
+    fontSize: 13,
+    fontWeight: '600',
   },
   messageFooter: {
     flexDirection: 'row',
@@ -1411,16 +1460,23 @@ const styles = StyleSheet.create({
   categoryBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    elevation: 1,
   },
   categoryIcon: {
     marginRight: 4,
   },
   categoryText: {
-    fontSize: 10,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
+    marginLeft: 2,
+    textTransform: 'uppercase',
   },
 });
 
