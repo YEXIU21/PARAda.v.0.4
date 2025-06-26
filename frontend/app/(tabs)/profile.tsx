@@ -559,6 +559,20 @@ export default function ProfileScreen() {
     }
   };
 
+  // Get proper plan name based on plan ID
+  const getPlanName = (planId: string) => {
+    switch (planId.toLowerCase()) {
+      case 'basic':
+        return 'Basic Plan';
+      case 'premium':
+        return 'Premium Plan';
+      case 'annual':
+        return 'Annual Plan';
+      default:
+        return planId.charAt(0).toUpperCase() + planId.slice(1);
+    }
+  };
+
   // Handle menu item click
   const handleMenuItemClick = (item: string) => {
     switch (item) {
@@ -654,8 +668,9 @@ export default function ProfileScreen() {
                       <Text style={[styles.subscriptionLabel, { color: theme.textSecondary }]}>Plan:</Text>
                       <Text style={[styles.subscriptionValue, { color: theme.text }]}>
                         {subscriptionStatus.plan ? 
-                         (subscriptionStatus.plan.charAt(0).toUpperCase() + subscriptionStatus.plan.slice(1)) 
-                         : 'Basic'}
+                          getPlanName(subscriptionStatus.plan)
+                          : 'Unknown'
+                        }
                       </Text>
                     </View>
                     
