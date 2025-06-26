@@ -475,24 +475,51 @@ exports.createPublicSubscription = async (req, res) => {
 
     console.log('Creating public subscription for:', req.body.username, req.body.email);
     console.log('Subscription data received:', JSON.stringify({
-      planId: req.body.planId || req.body.plan,
+      planId: req.body.planId || req.body.plan || req.body.id || 'custom',
       email: req.body.email,
       username: req.body.username,
       amount: req.body.amount,
+      price: req.body.price,
+      duration: req.body.duration,
+      name: req.body.name,
       referenceNumber: req.body.referenceNumber,
       paymentMethod: req.body.paymentMethod
     }));
     
+    // Ensure we have the minimum required data
+    if (!req.body.referenceNumber) {
+      return res.status(400).json({
+        message: 'Validation error',
+        error: 'Reference number is required'
+      });
+    }
+    
     // Find or create user
     let user;
-    if (req.body.userId) {
-      // Try to find user by ID first
-      user = await User.findById(req.body.userId);
+    // Use any user ID field that might be provided (userId, id, _id)
+    const userId = req.body.userId || req.body.id || req.body._id;
+    
+    if (userId) {
+      try {
+        // Try to find user by ID first - handle invalid ObjectId gracefully
+        console.log('Searching for user by ID:', userId);
+        user = await User.findById(userId);
+        if (user) {
+          console.log('Found user by ID:', user.username);
+        }
+      } catch (idError) {
+        console.log('Error searching for user by ID:', idError.message);
+        // Continue to email search
+      }
     }
     
     if (!user && req.body.email) {
       // If no user found by ID, try to find by email
+      console.log('Searching for user by email:', req.body.email);
       user = await User.findOne({ email: req.body.email });
+      if (user) {
+        console.log('Found user by email:', user.username);
+      }
     }
     
     // If no user found, create a pending record
@@ -503,12 +530,14 @@ exports.createPublicSubscription = async (req, res) => {
       const pendingSubscription = new Subscription({
         // Use a temporary userId for now
         userId: new mongoose.Types.ObjectId(),
-        planId: req.body.planId || req.body.plan || 'custom',
+        // Allow any of id/planId/plan fields for maximum compatibility
+        planId: req.body.planId || req.body.plan || req.body.id || 'custom',
         type: req.body.type || 'all',
         startDate: new Date(),
         expiryDate: new Date(Date.now() + (req.body.duration || 30) * 24 * 60 * 60 * 1000),
         paymentDetails: {
-          amount: req.body.amount || 0,
+          // Use price if available, fall back to amount
+          amount: req.body.price || req.body.amount || 0,
           referenceNumber: req.body.referenceNumber,
           paymentDate: new Date(),
           paymentMethod: req.body.paymentMethod || 'gcash'
@@ -522,7 +551,14 @@ exports.createPublicSubscription = async (req, res) => {
         publicUserData: {
           username: req.body.username,
           email: req.body.email,
-          isPublicSubmission: true
+          isPublicSubmission: true,
+          planName: req.body.name || 'Custom Plan',
+          planDuration: req.body.duration || 30,
+          // Always include both price fields for consistency
+          planPrice: req.body.price || req.body.amount || 0,
+          planAmount: req.body.amount || req.body.price || 0,
+          // Include IDs for reference
+          planId: req.body.planId || req.body.plan || req.body.id || 'custom'
         }
       });
       
@@ -555,10 +591,30 @@ exports.createPublicSubscription = async (req, res) => {
     }
     
     // User found, use the regular subscription service with the found user
+    // Ensure all required fields are present and properly formatted
     const subscriptionData = {
       ...req.body,
-      planId: req.body.planId || req.body.plan
+      planId: req.body.planId || req.body.plan || req.body.id || 'custom',
+      // Include all possible ID fields for maximum compatibility
+      plan: req.body.plan || req.body.planId || req.body.id || 'custom',
+      id: req.body.id || req.body.planId || req.body.plan || 'custom',
+      // Make sure price and amount are consistent
+      price: req.body.price || req.body.amount || 0,
+      amount: req.body.amount || req.body.price || 0,
+      // Make sure duration is present
+      duration: req.body.duration || 30,
+      // Make sure name is present
+      name: req.body.name || 'Custom Plan'
     };
+    
+    console.log('Creating subscription with processed data:', {
+      planId: subscriptionData.planId,
+      price: subscriptionData.price,
+      amount: subscriptionData.amount,
+      duration: subscriptionData.duration,
+      name: subscriptionData.name,
+      user: user ? { id: user._id, username: user.username } : 'No user'
+    });
     
     // Create subscription using the service
     const subscription = await subscriptionService.createSubscription(subscriptionData, user);

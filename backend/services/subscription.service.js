@@ -296,15 +296,50 @@ exports.getSubscriptionPlanWithDiscount = async (planId, isStudent) => {
  * @returns {Promise<Object>} - Created subscription
  */
 exports.createSubscription = async (subscriptionData, user) => {
-  // Allow both 'plan' and 'planId' parameters for backward compatibility
-  const planId = subscriptionData.planId || subscriptionData.plan;
+  // Extract planId from multiple possible sources
+  const planId = subscriptionData.planId || subscriptionData.plan || 'custom';
+  
+  // Log the data we're working with for debugging
+  console.log('Creating subscription with data:', {
+    planId: planId,
+    price: subscriptionData.price || subscriptionData.amount,
+    duration: subscriptionData.duration,
+    name: subscriptionData.name,
+    user: user ? { id: user._id, email: user.email, accountType: user.accountType } : 'No user data'
+  });
   
   // Check if user is a student
-  const isStudent = user.accountType === 'student';
+  const isStudent = user && user.accountType === 'student';
   
-  // Find the plan with discount applied if student
-  const selectedPlan = await this.getSubscriptionPlanWithDiscount(planId, isStudent);
-  if (!selectedPlan) {
+  // Try to find the plan in the database
+  let selectedPlan = null;
+  
+  try {
+    selectedPlan = await this.getSubscriptionPlanWithDiscount(planId, isStudent);
+  } catch (error) {
+    console.log('Error getting plan with discount, will try to create custom plan:', error.message);
+    // Continue execution - we'll create a custom plan below
+  }
+  
+  // If no plan found but we have subscription data with price and duration, create a custom plan
+  if (!selectedPlan && (subscriptionData.price !== undefined || subscriptionData.amount !== undefined) && 
+      (subscriptionData.duration !== undefined)) {
+    console.log('Creating custom plan from subscription data:', {
+      id: planId || 'custom',
+      price: subscriptionData.price || subscriptionData.amount,
+      duration: subscriptionData.duration,
+      name: subscriptionData.name || 'Custom Plan'
+    });
+    
+    selectedPlan = {
+      id: planId || 'custom',
+      name: subscriptionData.name || 'Custom Plan',
+      price: parseFloat(subscriptionData.price || subscriptionData.amount) || 0,
+      duration: parseInt(subscriptionData.duration) || 30,
+      features: subscriptionData.features || ['Custom subscription plan']
+    };
+  } else if (!selectedPlan) {
+    console.error('Invalid subscription plan and insufficient data to create custom plan:', planId);
     throw new Error('Invalid subscription plan');
   }
 

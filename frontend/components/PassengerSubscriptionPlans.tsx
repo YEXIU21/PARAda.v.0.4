@@ -293,23 +293,37 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
       // Try to use the backend API for creating a subscription
       let backendSubscriptionCreated = false;
       
-      // Prepare API subscription data - ensure all required fields are present
+      // Prepare complete API subscription data with all required fields
+      // Make sure all field types and values are consistent and clear
       const subscriptionData = {
+        // Plan identification - send all possible IDs to ensure the backend can find it
+        id: selectedPlanForPayment.id || selectedPlanForPayment.planId || selectedPlanForPayment._id || 'custom', 
         planId: selectedPlanForPayment.id || selectedPlanForPayment.planId || selectedPlanForPayment._id || 'custom', 
-        plan: selectedPlanForPayment.planId || selectedPlanForPayment.id || 'custom', // Fallback for API
+        plan: selectedPlanForPayment.planId || selectedPlanForPayment.id || selectedPlanForPayment._id || 'custom',
+        
+        // Plan details for custom plan creation if needed
+        name: selectedPlanForPayment.name || 'Selected Plan',
+        price: selectedPlanForPayment.price || 0,
+        amount: selectedPlanForPayment.price || 0, // Ensure both price and amount are set
+        duration: selectedPlanForPayment.duration || 30,
+        features: selectedPlanForPayment.features || ['Custom subscription plan'],
+        
+        // Payment and subscription details
         type: 'all', // Use 'all' to allow access to all vehicle types
         referenceNumber: referenceNumber.trim(),
         paymentMethod: 'gcash',
         autoRenew: false,
+        
+        // Student discount info
         studentDiscount: {
           applied: user?.accountType === 'student',
           percentage: 20 // Default student discount percentage
         },
-        // Include user information for public API
+        
+        // User information for public API
         username: user?.username || 'Guest User',
         email: user?.email || 'guest@example.com', // Ensure email is never empty
-        duration: selectedPlanForPayment.duration || 30,
-        amount: selectedPlanForPayment.price || 0
+        userId: user?.id || null
       };
       
       try {

@@ -341,18 +341,54 @@ export const createSubscription = async (subscriptionData) => {
     // For now, always use the public endpoint to avoid auth issues
     console.log('Using public endpoint for subscription creation');
     
-    // Include user information in the request
+    // Include user information in the request and ensure all required fields
     const publicSubscriptionData = {
       ...subscriptionData,
-      username: parsedUserData?.username || 'Guest User',
-      email: parsedUserData?.email || 'guest@email.com',
-      userId: parsedUserData?.id || null
+      username: parsedUserData?.username || subscriptionData.username || 'Guest User',
+      email: parsedUserData?.email || subscriptionData.email || 'guest@example.com',
+      userId: parsedUserData?.id || null,
+      
+      // Ensure we have both price and amount (backend may use either)
+      price: subscriptionData.price || subscriptionData.amount || 0,
+      amount: subscriptionData.amount || subscriptionData.price || 0,
+      
+      // Ensure we have a duration
+      duration: subscriptionData.duration || 30,
+      
+      // Ensure we have a name for the plan
+      name: subscriptionData.name || 'Custom Plan',
+      
+      // Ensure plan ID is properly set and consistent
+      planId: subscriptionData.planId || subscriptionData.id || 'custom',
+      plan: subscriptionData.plan || subscriptionData.planId || subscriptionData.id || 'custom',
+      
+      // Always include referenceNumber
+      referenceNumber: subscriptionData.referenceNumber || ''
     };
     
-    // Ensure planId is a string
+    // Ensure all IDs and numbers are properly formatted
     if (publicSubscriptionData.planId && typeof publicSubscriptionData.planId !== 'string') {
       publicSubscriptionData.planId = String(publicSubscriptionData.planId);
     }
+    
+    if (publicSubscriptionData.plan && typeof publicSubscriptionData.plan !== 'string') {
+      publicSubscriptionData.plan = String(publicSubscriptionData.plan);
+    }
+    
+    // Ensure numerical values are actually numbers
+    publicSubscriptionData.price = parseFloat(publicSubscriptionData.price) || 0;
+    publicSubscriptionData.amount = parseFloat(publicSubscriptionData.amount) || 0;
+    publicSubscriptionData.duration = parseInt(publicSubscriptionData.duration) || 30;
+    
+    // Log the data being sent
+    console.log('Sending subscription data to API:', {
+      planId: publicSubscriptionData.planId,
+      plan: publicSubscriptionData.plan,
+      price: publicSubscriptionData.price,
+      amount: publicSubscriptionData.amount,
+      duration: publicSubscriptionData.duration,
+      referenceNumber: publicSubscriptionData.referenceNumber
+    });
     
     // Add a timeout to the request
     const controller = new AbortController();
