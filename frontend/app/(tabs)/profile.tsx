@@ -22,6 +22,7 @@ import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { ThemeColors } from '../../types/ThemeTypes';
 import FeedbackForm from '../../components/FeedbackForm';
 import MessagingInterface from '../../components/MessagingInterface';
+import NotificationBadge from '../../components/ui/NotificationBadge';
 
 // Define types for modal props
 interface ModalProps {
@@ -120,6 +121,7 @@ const NotificationsModal = ({ visible, onClose, theme }: ModalProps) => {
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [rideUpdates, setRideUpdates] = useState(true);
   const [promotions, setPromotions] = useState(true);
+  const [activeTab, setActiveTab] = useState('settings'); // 'settings' or 'list'
   
   return (
     <Modal
@@ -137,64 +139,110 @@ const NotificationsModal = ({ visible, onClose, theme }: ModalProps) => {
             </TouchableOpacity>
           </View>
           
-          <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
-            <View style={styles.settingTextContainer}>
-              <Text style={[styles.settingTitle, { color: theme.text }]}>Push Notifications</Text>
-              <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>Receive notifications on your device</Text>
-            </View>
-            <Switch
-              value={pushEnabled}
-              onValueChange={setPushEnabled}
-              trackColor={{ false: "#767577", true: `${theme.primary}33` }}
-              thumbColor={pushEnabled ? theme.primary : "#f4f3f4"}
-            />
+          <View style={styles.tabContainer}>
+            <TouchableOpacity 
+              style={[
+                styles.tab, 
+                activeTab === 'list' && { borderBottomColor: theme.primary, borderBottomWidth: 2 }
+              ]}
+              onPress={() => setActiveTab('list')}
+            >
+              <Text style={[
+                styles.tabText, 
+                { color: activeTab === 'list' ? theme.primary : theme.textSecondary }
+              ]}>
+                Notifications
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[
+                styles.tab, 
+                activeTab === 'settings' && { borderBottomColor: theme.primary, borderBottomWidth: 2 }
+              ]}
+              onPress={() => setActiveTab('settings')}
+            >
+              <Text style={[
+                styles.tabText, 
+                { color: activeTab === 'settings' ? theme.primary : theme.textSecondary }
+              ]}>
+                Settings
+              </Text>
+            </TouchableOpacity>
           </View>
           
-          <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
-            <View style={styles.settingTextContainer}>
-              <Text style={[styles.settingTitle, { color: theme.text }]}>Email Notifications</Text>
-              <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>Receive notifications via email</Text>
+          {activeTab === 'settings' ? (
+            <>
+              <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
+                <View style={styles.settingTextContainer}>
+                  <Text style={[styles.settingTitle, { color: theme.text }]}>Push Notifications</Text>
+                  <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>Receive notifications on your device</Text>
+                </View>
+                <Switch
+                  value={pushEnabled}
+                  onValueChange={setPushEnabled}
+                  trackColor={{ false: "#767577", true: `${theme.primary}33` }}
+                  thumbColor={pushEnabled ? theme.primary : "#f4f3f4"}
+                />
+              </View>
+              
+              <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
+                <View style={styles.settingTextContainer}>
+                  <Text style={[styles.settingTitle, { color: theme.text }]}>Email Notifications</Text>
+                  <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>Receive notifications via email</Text>
+                </View>
+                <Switch
+                  value={emailEnabled}
+                  onValueChange={setEmailEnabled}
+                  trackColor={{ false: "#767577", true: `${theme.primary}33` }}
+                  thumbColor={emailEnabled ? theme.primary : "#f4f3f4"}
+                />
+              </View>
+              
+              <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
+                <View style={styles.settingTextContainer}>
+                  <Text style={[styles.settingTitle, { color: theme.text }]}>Ride Updates</Text>
+                  <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>Get notified about ride status changes</Text>
+                </View>
+                <Switch
+                  value={rideUpdates}
+                  onValueChange={setRideUpdates}
+                  trackColor={{ false: "#767577", true: `${theme.primary}33` }}
+                  thumbColor={rideUpdates ? theme.primary : "#f4f3f4"}
+                />
+              </View>
+              
+              <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
+                <View style={styles.settingTextContainer}>
+                  <Text style={[styles.settingTitle, { color: theme.text }]}>Promotions</Text>
+                  <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>Receive offers and promotional updates</Text>
+                </View>
+                <Switch
+                  value={promotions}
+                  onValueChange={setPromotions}
+                  trackColor={{ false: "#767577", true: `${theme.primary}33` }}
+                  thumbColor={promotions ? theme.primary : "#f4f3f4"}
+                />
+              </View>
+              
+              <TouchableOpacity 
+                style={[styles.saveButton, { backgroundColor: theme.primary }]}
+                onPress={onClose}
+              >
+                <Text style={styles.saveButtonText}>Save Preferences</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.notificationListContainer}>
+              {/* Embedded NotificationBadge component in full display mode */}
+              <NotificationBadge 
+                theme={theme}
+                hideCount={false}
+                size={22}
+                embedded={true}
+              />
             </View>
-            <Switch
-              value={emailEnabled}
-              onValueChange={setEmailEnabled}
-              trackColor={{ false: "#767577", true: `${theme.primary}33` }}
-              thumbColor={emailEnabled ? theme.primary : "#f4f3f4"}
-            />
-          </View>
-          
-          <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
-            <View style={styles.settingTextContainer}>
-              <Text style={[styles.settingTitle, { color: theme.text }]}>Ride Updates</Text>
-              <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>Get notified about ride status changes</Text>
-            </View>
-            <Switch
-              value={rideUpdates}
-              onValueChange={setRideUpdates}
-              trackColor={{ false: "#767577", true: `${theme.primary}33` }}
-              thumbColor={rideUpdates ? theme.primary : "#f4f3f4"}
-            />
-          </View>
-          
-          <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
-            <View style={styles.settingTextContainer}>
-              <Text style={[styles.settingTitle, { color: theme.text }]}>Promotions</Text>
-              <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>Receive offers and promotional updates</Text>
-            </View>
-            <Switch
-              value={promotions}
-              onValueChange={setPromotions}
-              trackColor={{ false: "#767577", true: `${theme.primary}33` }}
-              thumbColor={promotions ? theme.primary : "#f4f3f4"}
-            />
-          </View>
-          
-          <TouchableOpacity 
-            style={[styles.saveButton, { backgroundColor: theme.primary }]}
-            onPress={onClose}
-          >
-            <Text style={styles.saveButtonText}>Save Preferences</Text>
-          </TouchableOpacity>
+          )}
         </View>
       </View>
     </Modal>
@@ -523,7 +571,15 @@ export default function ProfileScreen() {
         colors={theme.gradientColors}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>My Profile</Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>My Profile</Text>
+          <TouchableOpacity 
+            style={styles.notificationButton}
+            onPress={() => setShowNotifications(true)}
+          >
+            <NotificationBadge theme={theme} size={22} />
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
       
       <ScrollView style={styles.content}>
@@ -772,18 +828,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 40,
-    paddingBottom: 20,
+    paddingTop: 50,
+    paddingBottom: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 20,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
+  },
+  notificationButton: {
+    padding: 8,
   },
   content: {
     flex: 1,
@@ -1053,5 +1119,24 @@ const styles = StyleSheet.create({
   refreshingIcon: {
     opacity: 1,
     transform: [{ rotate: '45deg' }],
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    marginBottom: 15,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  notificationListContainer: {
+    flex: 1,
+    minHeight: 300,
   },
 }); 

@@ -4,7 +4,6 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { useTheme, getThemeColors } from '../context/ThemeContext';
-import NotificationBadge from './ui/NotificationBadge';
 
 interface NavItem {
   name: string;
@@ -49,34 +48,6 @@ export default function RoleBasedNavBar() {
   const renderNavItem = (item: NavItem) => {
     const isActive = currentPath === item.route;
     
-    // For the Messages item, wrap it with the NotificationBadge
-    if (item.name === 'Messages') {
-      return (
-        <TouchableOpacity
-          key={item.name}
-          style={styles.navItem}
-          onPress={() => router.push(item.route)}
-        >
-          <View style={styles.notificationContainer}>
-            <NotificationBadge 
-              theme={theme} 
-              hideCount={true}
-              size={18}
-            />
-          </View>
-          <Text
-            style={[
-              styles.navLabel,
-              { color: isActive ? theme.primary : theme.textSecondary }
-            ]}
-          >
-            {item.name}
-          </Text>
-        </TouchableOpacity>
-      );
-    }
-    
-    // For other nav items, render normally
     return (
       <TouchableOpacity
         key={item.name}
@@ -132,12 +103,5 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 12,
     fontWeight: '500',
-  },
-  notificationContainer: {
-    position: 'relative',
-    height: 20,
-    width: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 }); 

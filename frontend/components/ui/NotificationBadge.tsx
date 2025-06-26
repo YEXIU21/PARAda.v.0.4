@@ -30,12 +30,14 @@ interface NotificationBadgeProps {
   };
   size?: number;
   hideCount?: boolean;
+  embedded?: boolean;
 }
 
 const NotificationBadge: React.FC<NotificationBadgeProps> = ({ 
   theme, 
   size = 22, 
-  hideCount = false 
+  hideCount = false,
+  embedded = false
 }) => {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -348,22 +350,48 @@ const NotificationBadge: React.FC<NotificationBadgeProps> = ({
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.iconContainer}
-        onPress={() => {
-          if (Platform.OS === 'web') {
-            setIsDropdownOpen(!isDropdownOpen);
-          } else {
-            setIsModalOpen(true);
-          }
-        }}
-      >
-        {renderNotificationIcon()}
-        {renderNotificationBadge()}
-      </TouchableOpacity>
-      
-      {Platform.OS === 'web' && renderDropdown()}
-      {renderModal()}
+      {embedded && Platform.OS === 'web' ? (
+        // If embedded is true and we're on web, render the full notification list
+        <View style={{ flex: 1, width: '100%' }}>
+          {notifications.length === 0 ? (
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+              No notifications
+            </Text>
+          ) : (
+            notifications.map(renderNotificationItem)
+          )}
+          {notifications.length > 0 && (
+            <TouchableOpacity 
+              style={[styles.markAllReadButton, { marginTop: 10 }]}
+              onPress={handleMarkAllAsRead}
+            >
+              <Text style={[styles.markAllReadText, { color: theme.primary }]}>
+                Mark all as read
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ) : (
+        // Otherwise render the normal notification badge
+        <>
+          <TouchableOpacity
+            style={styles.iconContainer}
+            onPress={() => {
+              if (Platform.OS === 'web') {
+                setIsDropdownOpen(!isDropdownOpen);
+              } else {
+                setIsModalOpen(true);
+              }
+            }}
+          >
+            {renderNotificationIcon()}
+            {renderNotificationBadge()}
+          </TouchableOpacity>
+          
+          {Platform.OS === 'web' && renderDropdown()}
+          {renderModal()}
+        </>
+      )}
     </View>
   );
 };
