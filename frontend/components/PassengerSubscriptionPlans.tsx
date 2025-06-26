@@ -544,18 +544,17 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
           <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: theme.text }]}>GCash Payment</Text>
-              {!isProcessingPayment && (
-                <TouchableOpacity 
-                  onPress={() => {
-                    setShowGCashModal(false);
-                    setReferenceNumber('');
-                    setPaymentError(null);
-                  }}
-                  style={styles.closeButton}
-                >
-                  <FontAwesome5 name="times" size={20} color={theme.textSecondary} />
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity 
+                onPress={() => {
+                  setShowGCashModal(false);
+                  setReferenceNumber('');
+                  setPaymentError(null);
+                  setIsProcessingPayment(false);
+                }}
+                style={styles.closeButton}
+              >
+                <FontAwesome5 name="times" size={20} color={theme.textSecondary} />
+              </TouchableOpacity>
             </View>
             
             <View style={styles.qrContainer}>
@@ -629,6 +628,15 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
                   <Text style={[styles.processingText, { color: theme.text }]}>
                     Verifying payment...
                   </Text>
+                  <TouchableOpacity 
+                    style={[styles.cancelButton, { borderColor: theme.border, marginTop: 20 }]}
+                    onPress={() => {
+                      setIsProcessingPayment(false);
+                      setReferenceNumber('');
+                    }}
+                  >
+                    <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>
+                  </TouchableOpacity>
                 </View>
               ) : (
                 <TouchableOpacity 
@@ -905,7 +913,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   processingText: {
-    marginTop: 12,
+    marginTop: 15,
     fontSize: 16,
   },
   paymentSubmitButton: {
@@ -953,6 +961,17 @@ const styles = StyleSheet.create({
   originalPriceText: {
     fontSize: 12,
     textDecorationLine: 'line-through',
+  },
+  cancelButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 
