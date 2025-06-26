@@ -252,29 +252,53 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
       const expiry = new Date(now);
       expiry.setDate(expiry.getDate() + (selectedPlanForPayment.duration || 30));
       
+      // Create a comprehensive local record
       const subscriptionDataLocal = {
         username: user?.username || 'User',
+        email: user?.email || 'guest@example.com',
+        userId: user?.id || null,
         type: 'all',
         plan: selectedPlanForPayment.id,
+        planId: selectedPlanForPayment.id || selectedPlanForPayment.planId || selectedPlanForPayment._id,
+        planName: selectedPlanForPayment.name,
+        planPrice: selectedPlanForPayment.price,
+        planDuration: selectedPlanForPayment.duration,
+        startDate: now.toISOString(),
         expiryDate: expiry.toISOString(),
         referenceNumber: referenceNumber,
         paymentDate: now.toISOString(),
+        paymentMethod: 'gcash',
+        amount: selectedPlanForPayment.price,
         approved: false,
-        verified: false
+        verified: false,
+        createdAt: now.toISOString(),
+        pendingApi: true // Mark as pending API submission
       };
       
       // Always store in AsyncStorage first before attempting API call
       await AsyncStorage.setItem('userSubscription', JSON.stringify(subscriptionDataLocal));
       console.log('Subscription saved to AsyncStorage');
       
+      // Also store in subscription history for offline access
+      try {
+        const historyString = await AsyncStorage.getItem('subscriptionHistory');
+        const history = historyString ? JSON.parse(historyString) : [];
+        history.push(subscriptionDataLocal);
+        await AsyncStorage.setItem('subscriptionHistory', JSON.stringify(history));
+        console.log('Subscription added to history in AsyncStorage');
+      } catch (historyError) {
+        console.error('Error saving subscription to history:', historyError);
+      }
+      
       // Try to use the backend API for creating a subscription
       let backendSubscriptionCreated = false;
       
-      // Prepare API subscription data
+      // Prepare API subscription data - ensure all required fields are present
       const subscriptionData = {
-        planId: selectedPlanForPayment.id,
+        planId: selectedPlanForPayment.id || selectedPlanForPayment.planId || selectedPlanForPayment._id || 'custom', 
+        plan: selectedPlanForPayment.planId || selectedPlanForPayment.id || 'custom', // Fallback for API
         type: 'all', // Use 'all' to allow access to all vehicle types
-        referenceNumber: referenceNumber,
+        referenceNumber: referenceNumber.trim(),
         paymentMethod: 'gcash',
         autoRenew: false,
         studentDiscount: {
@@ -283,9 +307,9 @@ const PassengerSubscriptionPlans: React.FC<PassengerSubscriptionPlansProps> = ({
         },
         // Include user information for public API
         username: user?.username || 'Guest User',
-        email: user?.email || '',
-        duration: selectedPlanForPayment.duration,
-        amount: selectedPlanForPayment.price
+        email: user?.email || 'guest@example.com', // Ensure email is never empty
+        duration: selectedPlanForPayment.duration || 30,
+        amount: selectedPlanForPayment.price || 0
       };
       
       try {

@@ -474,6 +474,14 @@ exports.createPublicSubscription = async (req, res) => {
     }
 
     console.log('Creating public subscription for:', req.body.username, req.body.email);
+    console.log('Subscription data received:', JSON.stringify({
+      planId: req.body.planId || req.body.plan,
+      email: req.body.email,
+      username: req.body.username,
+      amount: req.body.amount,
+      referenceNumber: req.body.referenceNumber,
+      paymentMethod: req.body.paymentMethod
+    }));
     
     // Find or create user
     let user;
@@ -495,7 +503,7 @@ exports.createPublicSubscription = async (req, res) => {
       const pendingSubscription = new Subscription({
         // Use a temporary userId for now
         userId: new mongoose.Types.ObjectId(),
-        planId: req.body.planId || req.body.plan,
+        planId: req.body.planId || req.body.plan || 'custom',
         type: req.body.type || 'all',
         startDate: new Date(),
         expiryDate: new Date(Date.now() + (req.body.duration || 30) * 24 * 60 * 60 * 1000),
@@ -513,7 +521,8 @@ exports.createPublicSubscription = async (req, res) => {
         },
         publicUserData: {
           username: req.body.username,
-          email: req.body.email
+          email: req.body.email,
+          isPublicSubmission: true
         }
       });
       
@@ -564,9 +573,28 @@ exports.createPublicSubscription = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating public subscription:', error);
+    // Provide more detailed error information
+    const errorDetails = {
+      message: 'Error creating subscription',
+      error: error.message,
+      stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
+      details: {
+        requestBody: {
+          planId: req.body.planId || req.body.plan,
+          email: req.body.email,
+          username: req.body.username,
+          amount: req.body.amount,
+          referenceNumber: req.body.referenceNumber
+        }
+      }
+    };
+    
+    console.error('Detailed error information:', JSON.stringify(errorDetails));
+    
     return res.status(500).json({
       message: 'Error creating subscription',
-      error: error.message
+      error: error.message,
+      errorType: error.name || 'UnknownError'
     });
   }
 };

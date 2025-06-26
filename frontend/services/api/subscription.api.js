@@ -349,11 +349,37 @@ export const createSubscription = async (subscriptionData) => {
       userId: parsedUserData?.id || null
     };
     
-    const response = await axios.post(
-      `${BASE_URL}${ENDPOINTS.SUBSCRIPTION.PUBLIC_CREATE}`, 
-      publicSubscriptionData
-    );
-    return response.data;
+    // Ensure planId is a string
+    if (publicSubscriptionData.planId && typeof publicSubscriptionData.planId !== 'string') {
+      publicSubscriptionData.planId = String(publicSubscriptionData.planId);
+    }
+    
+    // Add a timeout to the request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
+    try {
+      const response = await axios.post(
+        `${BASE_URL}${ENDPOINTS.SUBSCRIPTION.PUBLIC_CREATE}`, 
+        publicSubscriptionData,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeoutId);
+      return response.data;
+    } catch (axiosError) {
+      clearTimeout(timeoutId);
+      // Detailed error logging
+      console.error('Subscription API error:');
+      if (axiosError.response) {
+        console.error('Status:', axiosError.response.status);
+        console.error('Data:', axiosError.response.data);
+      } else if (axiosError.request) {
+        console.error('No response received');
+      } else {
+        console.error('Error message:', axiosError.message);
+      }
+      throw axiosError;
+    }
   } catch (error) {
     console.error('Error creating subscription:', error);
     throw error;
