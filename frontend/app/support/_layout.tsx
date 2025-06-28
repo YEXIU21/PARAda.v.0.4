@@ -14,7 +14,11 @@ export default function SupportLayout() {
       // User not logged in
       Alert.alert('Authentication Required', 'Please log in to access this page.');
       router.replace('/auth/login');
-    } else if (user.role !== 'support' && user.role !== 'admin') {
+      return;
+    }
+    
+    // Use strict comparison with string literals for type safety
+    if (user.role !== 'support' && user.role !== 'admin') {
       // User doesn't have support or admin role
       Alert.alert('Access Denied', 'You do not have permission to access this page.');
       router.replace('/(tabs)');

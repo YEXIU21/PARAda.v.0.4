@@ -217,6 +217,18 @@ const AuditLogsScreen = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <FontAwesome5 name="arrow-left" size={20} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Audit Logs</Text>
+        <View style={styles.headerRight} />
+      </View>
+      
       <View style={styles.content}>
         {isLoading && auditLogs.length === 0 ? (
           <View style={styles.loadingContainer}>
@@ -358,6 +370,22 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     fontWeight: '500',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 16,
+  },
+  headerRight: {
+    flex: 1,
   },
 });
 

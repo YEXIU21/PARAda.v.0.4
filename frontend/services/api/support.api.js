@@ -100,7 +100,7 @@ export const getAuditLogs = async (options = {}) => {
     if (options.endDate) queryParams.append('endDate', options.endDate);
 
     const response = await axios.get(
-      `${BASE_URL}/api/audit/logs?${queryParams.toString()}`,
+      `${BASE_URL}${ENDPOINTS.AUDIT.LOGS}?${queryParams.toString()}`,
       {
         headers: { 'x-access-token': token }
       }

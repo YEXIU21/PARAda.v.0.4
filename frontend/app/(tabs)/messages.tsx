@@ -45,7 +45,7 @@ interface User {
   id: string;
   username: string;
   email: string;
-  role?: 'admin' | 'driver' | 'passenger' | 'support';
+  role: 'admin' | 'driver' | 'passenger' | 'support';
   // other user properties
 }
 
