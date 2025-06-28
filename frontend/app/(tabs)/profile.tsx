@@ -1103,6 +1103,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#4CAF50',
     borderRadius: 5,
+    marginLeft: 'auto',
   },
   verifiedText: {
     color: '#4CAF50',

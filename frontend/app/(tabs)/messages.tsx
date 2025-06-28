@@ -1198,38 +1198,46 @@ export default function MessagesScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoriesContainer}
           >
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryButton,
-                  selectedCategory === category.id && {
-                    backgroundColor: `${theme.primary}20`,
-                    borderColor: theme.primary
-                  },
-                  // Make the notification category more prominent
-                  category.id === 'notification' && {
-                    borderWidth: 1.5,
-                    borderColor: category.id === selectedCategory ? theme.primary : '#FF9500',
-                  }
-                ]}
-                onPress={() => setSelectedCategory(category.id)}
-              >
-                <FontAwesome5 
-                  name={category.icon} 
-                  size={14} 
-                  color={selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary)} 
-                />
-                <Text 
+            {categories.map((category) => {
+              const isSelected = selectedCategory === category.id;
+              return (
+                <TouchableOpacity
+                  key={category.id}
                   style={[
-                    styles.categoryButtonText,
-                    { color: selectedCategory === category.id ? theme.primary : (category.id === 'notification' ? '#FF9500' : theme.textSecondary) }
+                    styles.categoryButton,
+                    isSelected && styles.categoryButtonSelected,
+                    isSelected && {
+                      backgroundColor: theme.primary,
+                      borderColor: theme.primary,
+                      shadowColor: theme.primary,
+                    },
+                    // Make the notification category more prominent
+                    category.id === 'notification' && {
+                      borderWidth: 1.5,
+                      borderColor: category.id === selectedCategory ? theme.primary : '#FF9500',
+                    }
                   ]}
+                  onPress={() => setSelectedCategory(category.id)}
+                  activeOpacity={0.7}
                 >
-                  {category.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <View style={styles.categoryIconContainer}>
+                    <FontAwesome5 
+                      name={category.icon} 
+                      size={14} 
+                      color={isSelected ? '#FFFFFF' : (category.id === 'notification' ? '#FF9500' : theme.textSecondary)} 
+                    />
+                  </View>
+                  <Text 
+                    style={[
+                      styles.categoryButtonText,
+                      { color: isSelected ? '#FFFFFF' : (category.id === 'notification' ? '#FF9500' : theme.textSecondary) }
+                    ]}
+                  >
+                    {category.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
         </View>
 
@@ -1432,11 +1440,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   filterContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
     width: '100%',
   },
   categoriesContainer: {
-    paddingVertical: 4,
+    paddingVertical: 6,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1445,22 +1453,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 18,
+    paddingHorizontal: 16,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    marginRight: 10,
+    marginRight: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 1,
-    elevation: 1,
-    height: 36,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    height: 38,
+    backgroundColor: 'transparent',
+  },
+  categoryButtonSelected: {
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  categoryIconContainer: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   categoryButtonText: {
     marginLeft: 8,
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
   },
   messagesList: {
     paddingBottom: 80, // Extra space for FAB

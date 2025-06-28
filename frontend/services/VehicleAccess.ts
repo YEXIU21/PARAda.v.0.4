@@ -27,10 +27,13 @@ export const hasAccessToVehicleType = (
   
   // Check if subscription is valid - either verified flag is true or isActive is true
   // This ensures that if either field is properly set, the user gets access
-  const isSubscriptionValid = user.subscription.verified === true || 
-                             (user.subscription as any).isActive === true;
+  const isSubscriptionValid = 
+    user.subscription.verified === true || 
+    user.subscription.isActive === true || 
+    (user.subscription as any).isActive === true;
   
   if (!isSubscriptionValid) {
+    console.log('Subscription not valid for vehicle access:', user.subscription);
     return false;
   }
   
@@ -56,10 +59,13 @@ export const getAccessibleVehicleTypes = (user: User | null): VehicleTypeId[] =>
   }
   
   // Check if subscription is valid - either verified flag is true or isActive is true
-  const isSubscriptionValid = user.subscription.verified === true || 
-                             (user.subscription as any).isActive === true;
+  const isSubscriptionValid = 
+    user.subscription.verified === true || 
+    user.subscription.isActive === true || 
+    (user.subscription as any).isActive === true;
   
   if (!isSubscriptionValid) {
+    console.log('Subscription not valid for vehicle types access:', user.subscription);
     return [];
   }
   
@@ -89,10 +95,13 @@ export const isRouteAccessible = (
   }
   
   // Check if subscription is valid - either verified flag is true or isActive is true
-  const isSubscriptionValid = user.subscription.verified === true || 
-                             (user.subscription as any).isActive === true;
+  const isSubscriptionValid = 
+    user.subscription.verified === true || 
+    user.subscription.isActive === true ||
+    (user.subscription as any).isActive === true;
   
   if (!isSubscriptionValid) {
+    console.log('Subscription not valid:', user.subscription);
     return false;
   }
   
