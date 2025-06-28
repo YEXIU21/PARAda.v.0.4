@@ -342,7 +342,10 @@ export default function LandingPage() {
               Connect
             </Text>
             <View style={styles.socialLinks}>
-              <TouchableOpacity style={styles.socialIcon}>
+              <TouchableOpacity 
+                style={styles.socialIcon}
+                onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61574439785965')}
+              >
                 <FontAwesome5 name="facebook" size={20} color={isDarkMode ? '#BBBBBB' : '#666666'} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.socialIcon}>
