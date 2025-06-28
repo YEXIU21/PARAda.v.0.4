@@ -35,8 +35,7 @@ export const ENDPOINTS = {
     ALL: '/api/users',
     DRIVERS: '/api/users/drivers',
     PASSENGERS: '/api/users/passengers',
-    PROFILE: '/api/users/profile',
-    SEARCH: '/api/users/search'
+    PROFILE: '/api/users/profile'
   },
   
   SUBSCRIPTION: {
@@ -77,9 +76,7 @@ export const ENDPOINTS = {
     GET_HISTORY: (userId) => `/api/messages/${userId}`,
     READ: (id) => `/api/messages/${id}/read`,
     DELETE: (id) => `/api/messages/${id}`,
-    UNREAD_COUNT: '/api/messages/unread',
-    GET_BY_ID: (id) => `/api/messages/${id}`,
-    REPLY: (id) => `/api/messages/${id}/reply`
+    UNREAD_COUNT: '/api/messages/unread'
   },
   
   LOCATION: {
@@ -142,21 +139,5 @@ export const ENDPOINTS = {
     ASSIGN_DRIVER: (routeId) => `/api/routes/${routeId}/drivers`,
     UNASSIGN_DRIVER: (routeId, driverId) => `/api/routes/${routeId}/drivers/${driverId}`,
     REQUEST_CUSTOM: '/api/routes/request-custom'
-  },
-  
-  SUPPORT: {
-    DASHBOARD: '/api/support/dashboard',
-    TICKETS: '/api/support/tickets',
-    TICKET_BY_ID: (id) => `/api/support/tickets/${id}`,
-    UPDATE_TICKET: (id) => `/api/support/tickets/${id}`,
-    REPLY_TO_TICKET: (id) => `/api/support/tickets/${id}/reply`,
-    USERS: '/api/support/users',
-    AUDIT_LOGS: '/api/audit/logs'
-  },
-  
-  AUDIT: {
-    LOGS: '/api/audit/logs',
-    STATS: '/api/audit/stats',
-    USER_LOGS: (userId) => `/api/audit/logs/user/${userId}`
   }
 }; 

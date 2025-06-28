@@ -6,7 +6,7 @@ import { refreshUserData } from '../services/api/auth.api';
 import { initializeSocket, disconnectSocket } from '../services/socket/socket.service';
 
 // Define types for user roles and authentication context
-export type UserRole = 'admin' | 'driver' | 'passenger' | 'support' | null;
+export type UserRole = 'admin' | 'driver' | 'passenger' | null;
 export type AccountType = 'regular' | 'student';
 
 export interface User {

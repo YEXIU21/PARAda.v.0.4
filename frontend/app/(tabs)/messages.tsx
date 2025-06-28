@@ -45,7 +45,7 @@ interface User {
   id: string;
   username: string;
   email: string;
-  role: 'admin' | 'driver' | 'passenger' | 'support';
+  role?: 'admin' | 'driver' | 'passenger' | 'support';
   // other user properties
 }
 
@@ -1540,17 +1540,15 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   categoryIconContainer: {
-    width: 16,
+    width: 24,
     height: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    display: 'flex',
   },
   categoryButtonText: {
-    marginLeft: 4,
+    marginLeft: 8,
     fontSize: 14,
     fontWeight: '600',
-    alignSelf: 'center',
   },
   messagesList: {
     paddingBottom: 80, // Extra space for FAB
