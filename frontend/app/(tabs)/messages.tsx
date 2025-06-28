@@ -1012,17 +1012,10 @@ export default function MessagesScreen() {
 
   // Handle compose message
   const handleComposeMessage = () => {
-    // Show the compose modal with support as default recipient for general users
+    // Show the compose modal without pre-filling the recipient
     setComposeSubject('');
     setComposeText('');
-    
-    // Default to support for regular users
-    // Only admin users should use direct messaging to other users
-    if (user?.role !== 'admin') {
-      setComposeRecipient('support@parada.com');
-    } else {
-      setComposeRecipient('');
-    }
+    setComposeRecipient(''); // No longer pre-filling with support email
     
     setShowComposeModal(true);
   };
@@ -1112,7 +1105,7 @@ export default function MessagesScreen() {
                 />
                 {user?.role !== 'admin' && (
                   <Text style={[styles.recipientHint, { color: theme.textSecondary }]}>
-                    For general inquiries, please contact support@parada.com
+                    For support, contact: support@parada.com, help@parada.com, or customerservice@parada.com
                   </Text>
                 )}
               </View>

@@ -31,6 +31,7 @@ const adminRoutes = require('./routes/admin.routes');
 const mongodbRoutes = require('./routes/mongodb.routes');
 const destinationRoutes = require('./routes/destination.routes');
 const vehicleRoutes = require('./routes/vehicle.routes');
+const auditRoutes = require('./routes/audit.routes');
 
 // Import socket service
 const socketService = require('./services/socket.service');
@@ -155,6 +156,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/mongodb', mongodbRoutes);
 app.use('/api/destinations', destinationRoutes);
 app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/audit', auditRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {

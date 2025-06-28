@@ -6,6 +6,7 @@ const { body } = require('express-validator');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
 const authMiddleware = require('../middleware/auth.middleware');
+const auditLogger = require('../middleware/audit-logger');
 
 /**
  * @route POST /api/auth/register
@@ -51,6 +52,7 @@ router.post(
       .exists()
       .withMessage('Password is required')
   ],
+  auditLogger.logAuthentication('login'),
   authController.login
 );
 
@@ -87,6 +89,7 @@ router.post(
       .isEmail()
       .withMessage('Please provide a valid email')
   ],
+  auditLogger.logAuthentication('password-reset-request'),
   authController.requestPasswordReset
 );
 
@@ -105,6 +108,7 @@ router.post(
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters')
   ],
+  auditLogger.logAuthentication('password-reset'),
   authController.resetPassword
 );
 

@@ -7,6 +7,7 @@ const router = express.Router();
 const { check } = require('express-validator');
 const messageController = require('../controllers/message.controller');
 const authMiddleware = require('../middleware/auth.middleware');
+const auditLogger = require('../middleware/audit-logger');
 
 /**
  * @route   POST /api/messages
@@ -20,6 +21,7 @@ router.post(
     check('recipientId', 'Recipient ID is required').not().isEmpty(),
     check('message', 'Message content is required').not().isEmpty()
   ],
+  auditLogger.logMessageActivity('send'),
   messageController.sendMessage
 );
 
@@ -31,6 +33,7 @@ router.post(
 router.get(
   '/:userId',
   authMiddleware.verifyToken,
+  auditLogger.logDataAccess('view-history', 'message'),
   messageController.getMessageHistory
 );
 
@@ -42,6 +45,7 @@ router.get(
 router.put(
   '/:messageId/read',
   authMiddleware.verifyToken,
+  auditLogger.logMessageActivity('mark-read'),
   messageController.markAsRead
 );
 
@@ -53,6 +57,7 @@ router.put(
 router.delete(
   '/:messageId',
   authMiddleware.verifyToken,
+  auditLogger.logMessageActivity('delete'),
   messageController.deleteMessage
 );
 

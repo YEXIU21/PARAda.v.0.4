@@ -10,7 +10,10 @@ import { getAuthToken } from './auth.api';
 const ADMIN_ID = '684fedc6e5eadd76e619f887';
 
 // Support account ID - created by the script
+// Support account IDs - created by the script
 const SUPPORT_ID = '685fb303bce74865309f692e';
+const HELP_ID = '685fc671b5863c8e291c8d13';
+const CUSTOMERSERVICE_ID = '685fc672b5863c8e291c8d16';
 
 // Known system user IDs that regular users can't search for
 const SYSTEM_USERS = {
@@ -18,11 +21,13 @@ const SYSTEM_USERS = {
   'admin@parada.com': ADMIN_ID,
   'admin': ADMIN_ID,
   
-  // Support users - dedicated support account
+  // Support users - dedicated support accounts
   'support@parada.com': SUPPORT_ID,
   'support': SUPPORT_ID,
-  'help@parada.com': SUPPORT_ID,
-  'customerservice@parada.com': SUPPORT_ID,
+  'help@parada.com': HELP_ID,
+  'help': HELP_ID,
+  'customerservice@parada.com': CUSTOMERSERVICE_ID,
+  'customerservice': CUSTOMERSERVICE_ID,
   
   // System notifications
   'system': ADMIN_ID,

@@ -824,4 +824,138 @@ export const rejectSubscription = async (subscriptionId) => {
     console.error('Error rejecting subscription:', error);
     throw error;
   }
+};
+
+/**
+ * Get audit logs with filtering and pagination
+ * @param {string} queryParams - Query parameters for filtering and pagination
+ * @returns {Promise<Object>} - Audit logs response
+ */
+export const getAuditLogs = async (queryParams = '') => {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      console.error('No auth token available');
+      throw new Error('Authentication required');
+    }
+
+    console.log(`Fetching audit logs with params: ${queryParams}`);
+    
+    const response = await axios.get(
+      `${BASE_URL}/api/audit/logs?${queryParams}`,
+      {
+        headers: { 
+          'x-access-token': token,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    console.log('Audit logs fetched successfully');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching audit logs:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get audit logs for a specific user
+ * @param {string} userId - User ID to get logs for
+ * @param {string} queryParams - Query parameters for pagination
+ * @returns {Promise<Object>} - User audit logs response
+ */
+export const getUserAuditLogs = async (userId, queryParams = '') => {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      console.error('No auth token available');
+      throw new Error('Authentication required');
+    }
+
+    console.log(`Fetching audit logs for user ${userId}`);
+    
+    const response = await axios.get(
+      `${BASE_URL}/api/audit/user/${userId}?${queryParams}`,
+      {
+        headers: { 
+          'x-access-token': token,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    console.log('User audit logs fetched successfully');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user audit logs:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get audit log statistics
+ * @param {string} queryParams - Query parameters for date range
+ * @returns {Promise<Object>} - Audit statistics response
+ */
+export const getAuditStats = async (queryParams = '') => {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      console.error('No auth token available');
+      throw new Error('Authentication required');
+    }
+
+    console.log('Fetching audit statistics');
+    
+    const response = await axios.get(
+      `${BASE_URL}/api/audit/stats?${queryParams}`,
+      {
+        headers: { 
+          'x-access-token': token,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    console.log('Audit statistics fetched successfully');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching audit statistics:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete audit logs older than a specified date
+ * @param {string} olderThan - ISO date string
+ * @returns {Promise<Object>} - Delete response
+ */
+export const deleteOldAuditLogs = async (olderThan) => {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      console.error('No auth token available');
+      throw new Error('Authentication required');
+    }
+
+    console.log(`Deleting audit logs older than ${olderThan}`);
+    
+    const response = await axios.delete(
+      `${BASE_URL}/api/audit/logs`,
+      {
+        headers: { 
+          'x-access-token': token,
+          'Content-Type': 'application/json'
+        },
+        data: { olderThan }
+      }
+    );
+    
+    console.log('Old audit logs deleted successfully');
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting old audit logs:', error);
+    throw error;
+  }
 }; 

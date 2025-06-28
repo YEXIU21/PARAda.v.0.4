@@ -309,6 +309,21 @@ export default function LandingPage() {
           
           <View style={styles.footerColumn}>
             <Text style={[styles.footerColumnTitle, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}>
+              Support
+            </Text>
+            <TouchableOpacity onPress={() => Linking.openURL('mailto:support@parada.com')}>
+              <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>support@parada.com</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => Linking.openURL('mailto:help@parada.com')}>
+              <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>help@parada.com</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => Linking.openURL('mailto:customerservice@parada.com')}>
+              <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>customerservice@parada.com</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.footerColumn}>
+            <Text style={[styles.footerColumnTitle, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}>
               Resources
             </Text>
             <TouchableOpacity>
