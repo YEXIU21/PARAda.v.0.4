@@ -287,6 +287,14 @@ export default function RegisterScreen() {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
+  // Reset student status when switching to driver role
+  useEffect(() => {
+    if (selectedRole === 'driver' && isStudent) {
+      setIsStudent(false);
+      setStudentId('');
+    }
+  }, [selectedRole]);
+
   const RoleButton = ({ role, title }: { role: UserRole; title: string }) => (
     <TouchableOpacity
       style={[
@@ -440,29 +448,34 @@ export default function RegisterScreen() {
             />
           )}
 
-          <View style={styles.switchContainer}>
-            <Text style={[styles.switchLabel, { color: theme.text }]}>I am a student</Text>
-            <Switch
-              value={isStudent}
-              onValueChange={setIsStudent}
-              trackColor={{ false: theme.border, true: theme.primary }}
-              thumbColor={Platform.OS === 'ios' ? '#FFFFFF' : isStudent ? theme.primary : '#f4f3f4'}
-            />
-          </View>
+          {/* Only show student toggle for passenger role */}
+          {selectedRole === 'passenger' && (
+            <>
+              <View style={styles.switchContainer}>
+                <Text style={[styles.switchLabel, { color: theme.text }]}>I am a student</Text>
+                <Switch
+                  value={isStudent}
+                  onValueChange={setIsStudent}
+                  trackColor={{ false: theme.border, true: theme.primary }}
+                  thumbColor={Platform.OS === 'ios' ? '#FFFFFF' : isStudent ? theme.primary : '#f4f3f4'}
+                />
+              </View>
 
-          {isStudent && (
-            <CustomInputField
-              value={studentId}
-              onChangeText={setStudentId}
-              placeholder="Student ID"
-              icon="id-card"
-              autoCapitalize="none"
-              isFocused={focusedInput === 'studentId'}
-              onFocus={() => setFocusedInput('studentId')}
-              onBlur={() => setFocusedInput(null)}
-              theme={theme}
-              rightElement={null}
-            />
+              {isStudent && (
+                <CustomInputField
+                  value={studentId}
+                  onChangeText={setStudentId}
+                  placeholder="Student ID"
+                  icon="id-card"
+                  autoCapitalize="none"
+                  isFocused={focusedInput === 'studentId'}
+                  onFocus={() => setFocusedInput('studentId')}
+                  onBlur={() => setFocusedInput(null)}
+                  theme={theme}
+                  rightElement={null}
+                />
+              )}
+            </>
           )}
 
           <TouchableOpacity
