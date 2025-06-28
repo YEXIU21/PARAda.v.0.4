@@ -824,7 +824,7 @@ export const rejectSubscription = async (subscriptionId) => {
     console.error('Error rejecting subscription:', error);
     throw error;
   }
-};
+}; 
 
 /**
  * Get audit logs with filtering and pagination

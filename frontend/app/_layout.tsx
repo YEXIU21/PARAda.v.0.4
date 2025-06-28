@@ -156,6 +156,8 @@ export default function RootLayout() {
               <Stack.Screen name="+not-found" options={{ title: 'Not Found', headerShown: true }} />
               <Stack.Screen name="auth/login" options={{ title: 'Login' }} />
               <Stack.Screen name="auth/register" options={{ title: 'Register' }} />
+              <Stack.Screen name="support" options={{ headerShown: false }} />
+              <Stack.Screen name="support/ticket/[id]" options={{ headerShown: false }} />
             </Stack>
             <ThemedStatusBar />
             {/* Only show PWA install prompt on pages other than landing page */}
