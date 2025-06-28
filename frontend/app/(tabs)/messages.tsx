@@ -21,6 +21,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { getUserNotifications, markAsRead, deleteNotification } from '../../services/api/notification.api';
+import { sendMessage as apiSendMessage } from '../../services/api/message.api';
 import { formatDistanceToNow } from 'date-fns';
 import { getSocket } from '../../services/socket/socket.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -72,6 +73,7 @@ export default function MessagesScreen() {
   const [composeSubject, setComposeSubject] = useState<string>('');
   const [composeRecipient, setComposeRecipient] = useState<string>('');
   const [showHeaderMenu, setShowHeaderMenu] = useState<boolean>(false);
+  const [isSending, setIsSending] = useState<boolean>(false);
   
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
@@ -1003,8 +1005,24 @@ export default function MessagesScreen() {
     }
     
     try {
-      // In a real implementation, this would send the message to the server
-      // For now, just show a success message and close the modal
+      setIsSending(true);
+      
+      // Find user by username/email
+      // Note: In a real implementation, you would have a proper user search API
+      // For now, we'll assume composeRecipient is a valid user ID
+      const recipientId = composeRecipient;
+      
+      // Send message using the API service
+      const response = await apiSendMessage(
+        recipientId,
+        composeSubject,
+        composeText,
+        { fromScreen: 'messages' }
+      );
+      
+      console.log('Message sent response:', response);
+      
+      // Show success message and close modal
       Alert.alert(
         'Message Sent',
         'Your message has been sent successfully.',
@@ -1015,9 +1033,14 @@ export default function MessagesScreen() {
       setComposeSubject('');
       setComposeText('');
       setComposeRecipient('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
-      Alert.alert('Error', 'Failed to send message. Please try again.');
+      Alert.alert(
+        'Error',
+        error.response?.data?.message || 'Failed to send message. Please try again.'
+      );
+    } finally {
+      setIsSending(false);
     }
   };
   
@@ -1040,6 +1063,7 @@ export default function MessagesScreen() {
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setShowComposeModal(false)}
+                disabled={isSending}
               >
                 <FontAwesome5 name="times" size={20} color={theme.textSecondary} />
               </TouchableOpacity>
@@ -1054,6 +1078,7 @@ export default function MessagesScreen() {
                   placeholderTextColor={theme.textSecondary}
                   value={composeRecipient}
                   onChangeText={setComposeRecipient}
+                  editable={!isSending}
                 />
               </View>
               
@@ -1065,6 +1090,7 @@ export default function MessagesScreen() {
                   placeholderTextColor={theme.textSecondary}
                   value={composeSubject}
                   onChangeText={setComposeSubject}
+                  editable={!isSending}
                 />
               </View>
               
@@ -1082,15 +1108,27 @@ export default function MessagesScreen() {
                   multiline={true}
                   numberOfLines={6}
                   textAlignVertical="top"
+                  editable={!isSending}
                 />
               </View>
               
               <TouchableOpacity
-                style={[styles.sendButton, { backgroundColor: theme.primary }]}
+                style={[
+                  styles.sendButton, 
+                  { backgroundColor: theme.primary },
+                  isSending && styles.disabledButton
+                ]}
                 onPress={handleSendMessage}
+                disabled={isSending}
               >
-                <FontAwesome5 name="paper-plane" size={16} color="#fff" style={styles.sendIcon} />
-                <Text style={styles.sendButtonText}>Send Message</Text>
+                {isSending ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <FontAwesome5 name="paper-plane" size={16} color="#fff" style={styles.sendIcon} />
+                    <Text style={styles.sendButtonText}>Send Message</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
           </View>
