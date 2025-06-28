@@ -7,14 +7,11 @@ import { BASE_URL, ENDPOINTS } from './endpoints';
 import { getAuthToken } from './auth.api';
 
 /**
- * Send a message to another user
- * @param {string} recipientId - ID of the recipient user
- * @param {string} subject - Message subject
- * @param {string} message - Message content
- * @param {Object} data - Additional data (optional)
- * @returns {Promise<Object>} - Sent message
+ * Find a user by email or username
+ * @param {string} query - Email or username to search for
+ * @returns {Promise<Object>} - User object or null
  */
-export const sendMessage = async (recipientId, subject, message, data = {}) => {
+export const findUserByEmailOrUsername = async (query) => {
   try {
     const token = await getAuthToken();
     if (!token) {
@@ -22,7 +19,61 @@ export const sendMessage = async (recipientId, subject, message, data = {}) => {
       throw new Error('Authentication required');
     }
 
-    console.log('Sending message to recipient:', recipientId);
+    console.log('Searching for user with query:', query);
+
+    // Search for user
+    const response = await axios.get(
+      `${BASE_URL}/api/users/search?query=${encodeURIComponent(query)}`,
+      {
+        headers: { 
+          'x-access-token': token,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000 // 10 second timeout
+      }
+    );
+    
+    console.log('User search results:', response.data);
+    return response.data.users && response.data.users.length > 0 ? response.data.users[0] : null;
+  } catch (error) {
+    console.error('Error finding user:', error);
+    console.error('Error details:', error.response?.data || error.message);
+    return null;
+  }
+};
+
+/**
+ * Send a message to another user
+ * @param {string} recipient - Recipient email, username, or ID
+ * @param {string} subject - Message subject
+ * @param {string} message - Message content
+ * @param {Object} data - Additional data (optional)
+ * @returns {Promise<Object>} - Sent message
+ */
+export const sendMessage = async (recipient, subject, message, data = {}) => {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      console.error('No auth token available');
+      throw new Error('Authentication required');
+    }
+
+    let recipientId = recipient;
+    
+    // If recipient looks like an email or username (not a MongoDB ObjectId)
+    if (recipient.includes('@') || !recipient.match(/^[0-9a-fA-F]{24}$/)) {
+      console.log('Recipient appears to be an email or username, searching for user ID');
+      const user = await findUserByEmailOrUsername(recipient);
+      
+      if (!user) {
+        throw new Error(`User not found with email/username: ${recipient}`);
+      }
+      
+      recipientId = user._id;
+      console.log(`Found user ID ${recipientId} for recipient ${recipient}`);
+    }
+
+    console.log('Sending message to recipient ID:', recipientId);
 
     const response = await axios.post(
       `${BASE_URL}${ENDPOINTS.MESSAGE.SEND}`,
