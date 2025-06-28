@@ -6,21 +6,27 @@ import axios from 'axios';
 import { BASE_URL, ENDPOINTS } from './endpoints';
 import { getAuthToken } from './auth.api';
 
+// Admin account ID - this definitely exists
+const ADMIN_ID = '684fedc6e5eadd76e619f887';
+
+// Support account ID - created by the script
+const SUPPORT_ID = '685fb303bce74865309f692e';
+
 // Known system user IDs that regular users can't search for
 const SYSTEM_USERS = {
   // Admin users - full system access
-  'admin@parada.com': '684fedc6e5eadd76e619f887',
-  'admin': '684fedc6e5eadd76e619f887',
+  'admin@parada.com': ADMIN_ID,
+  'admin': ADMIN_ID,
   
-  // Support users - customer service only
-  'support@parada.com': '685fa5401c0503d4d6e95f29', // Dedicated support account
-  'support': '685fa5401c0503d4d6e95f29',
-  'help@parada.com': '685fa5401c0503d4d6e95f29',
-  'customerservice@parada.com': '685fa5401c0503d4d6e95f29',
+  // Support users - dedicated support account
+  'support@parada.com': SUPPORT_ID,
+  'support': SUPPORT_ID,
+  'help@parada.com': SUPPORT_ID,
+  'customerservice@parada.com': SUPPORT_ID,
   
   // System notifications
-  'system': '684fedc6e5eadd76e619f887',
-  'noreply@parada.com': '684fedc6e5eadd76e619f887'
+  'system': ADMIN_ID,
+  'noreply@parada.com': ADMIN_ID
 };
 
 /**
@@ -168,6 +174,11 @@ export const sendMessage = async (recipient, subject, message, data = {}) => {
                         lowerRecipient.includes('customerservice') ? 'support' : 'admin';
         
         console.log(`Using known system user ID for ${recipient}: ${recipientId} (${recipientRole})`);
+        
+        // Add a note if sending to support but it's actually going to admin
+        if (recipientRole === 'support' && recipientId === ADMIN_ID) {
+          console.log('Note: Support messages are currently routed to admin until a dedicated support account is created');
+        }
       } else {
         // Try to find user by email or username
         const user = await findUserByEmailOrUsername(recipient);
@@ -198,6 +209,12 @@ export const sendMessage = async (recipient, subject, message, data = {}) => {
       messageData.supportRequest = true;
       messageData.category = data.category || 'general';
       messageData.priority = data.priority || 'normal';
+      
+      // Add a tag to indicate this was sent to support but routed to admin
+      if (recipientId === ADMIN_ID) {
+        messageData.routedToAdmin = true;
+        messageData.originalRecipient = recipient;
+      }
     }
 
     const response = await axios.post(
