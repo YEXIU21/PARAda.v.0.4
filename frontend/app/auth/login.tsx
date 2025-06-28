@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   TextInput as RNTextInput,
   TextInputProps,
+  Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -20,7 +21,7 @@ import { Link, router } from 'expo-router';
 import axios from 'axios';
 
 // Define props interface for CustomTextInput
-interface CustomTextInputProps extends TextInputProps {
+interface CustomTextInputProps extends Omit<TextInputProps, 'style'> {
   value: string;
   onChangeText: (text: string) => void;
   placeholder: string;
@@ -30,9 +31,10 @@ interface CustomTextInputProps extends TextInputProps {
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad' | 'number-pad';
   onFocus?: () => void;
   onBlur?: () => void;
+  style?: any;
 }
 
-// Custom TextInput component to avoid selection highlight issues
+// Custom TextInput component to completely eliminate highlight selector
 const CustomTextInput: React.FC<CustomTextInputProps> = ({ 
   value, 
   onChangeText, 
@@ -46,23 +48,36 @@ const CustomTextInput: React.FC<CustomTextInputProps> = ({
   onBlur,
   ...rest
 }) => {
-  // Create a transparent selection color to completely remove the highlight
+  const inputRef = useRef<RNTextInput>(null);
+  
+  // Handle container press to focus the input
+  const handleContainerPress = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   return (
-    <RNTextInput
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      secureTextEntry={secureTextEntry}
-      autoCapitalize={autoCapitalize}
-      keyboardType={keyboardType}
-      style={style}
-      placeholderTextColor={placeholderTextColor}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      selectionColor="transparent"
-      cursorColor="#4B6BFE" // Use primary color for cursor
-      {...rest}
-    />
+    <Pressable onPress={handleContainerPress} style={{ flex: 1 }}>
+      <RNTextInput
+        ref={inputRef}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        secureTextEntry={secureTextEntry}
+        autoCapitalize={autoCapitalize}
+        keyboardType={keyboardType}
+        style={style}
+        placeholderTextColor={placeholderTextColor}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        selectionColor="transparent"
+        cursorColor="#4B6BFE" // Use primary color for cursor
+        caretHidden={false}
+        underlineColorAndroid="transparent"
+        {...rest}
+      />
+    </Pressable>
   );
 };
 
