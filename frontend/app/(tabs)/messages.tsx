@@ -1540,15 +1540,17 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   categoryIconContainer: {
-    width: 24,
+    width: 16,
     height: 24,
     justifyContent: 'center',
     alignItems: 'center',
+    display: 'flex',
   },
   categoryButtonText: {
-    marginLeft: 8,
+    marginLeft: 4,
     fontSize: 14,
     fontWeight: '600',
+    alignSelf: 'center',
   },
   messagesList: {
     paddingBottom: 80, // Extra space for FAB
