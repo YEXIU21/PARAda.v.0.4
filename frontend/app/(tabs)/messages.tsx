@@ -40,6 +40,15 @@ const categories = [
   { id: 'promo', label: 'Promotions', icon: 'tag' }
 ];
 
+// Update the user type to include support role
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  role?: 'admin' | 'driver' | 'passenger' | 'support';
+  // other user properties
+}
+
 interface Message {
   _id: string;
   title: string;
@@ -1003,10 +1012,18 @@ export default function MessagesScreen() {
 
   // Handle compose message
   const handleComposeMessage = () => {
-    // Show the compose modal
+    // Show the compose modal with support as default recipient for general users
     setComposeSubject('');
     setComposeText('');
-    setComposeRecipient('');
+    
+    // Default to support for regular users
+    // Only admin users should use direct messaging to other users
+    if (user?.role !== 'admin') {
+      setComposeRecipient('support@parada.com');
+    } else {
+      setComposeRecipient('');
+    }
+    
     setShowComposeModal(true);
   };
   
@@ -1093,6 +1110,11 @@ export default function MessagesScreen() {
                   onChangeText={setComposeRecipient}
                   editable={!isSending}
                 />
+                {user?.role !== 'admin' && (
+                  <Text style={[styles.recipientHint, { color: theme.textSecondary }]}>
+                    For general inquiries, please contact support@parada.com
+                  </Text>
+                )}
               </View>
               
               <View style={styles.inputGroup}>
@@ -1863,5 +1885,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'transparent',
     zIndex: 9998,
+  },
+  recipientHint: {
+    fontSize: 12,
+    marginTop: 4,
+    fontStyle: 'italic'
   },
 }); 

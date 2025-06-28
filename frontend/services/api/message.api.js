@@ -6,6 +6,23 @@ import axios from 'axios';
 import { BASE_URL, ENDPOINTS } from './endpoints';
 import { getAuthToken } from './auth.api';
 
+// Known system user IDs that regular users can't search for
+const SYSTEM_USERS = {
+  // Admin users - full system access
+  'admin@parada.com': '684fedc6e5eadd76e619f887',
+  'admin': '684fedc6e5eadd76e619f887',
+  
+  // Support users - customer service only
+  'support@parada.com': '685fa5401c0503d4d6e95f29', // Dedicated support account
+  'support': '685fa5401c0503d4d6e95f29',
+  'help@parada.com': '685fa5401c0503d4d6e95f29',
+  'customerservice@parada.com': '685fa5401c0503d4d6e95f29',
+  
+  // System notifications
+  'system': '684fedc6e5eadd76e619f887',
+  'noreply@parada.com': '684fedc6e5eadd76e619f887'
+};
+
 /**
  * Find a user by email or username
  * @param {string} query - Email or username to search for
@@ -13,6 +30,24 @@ import { getAuthToken } from './auth.api';
  */
 export const findUserByEmailOrUsername = async (query) => {
   try {
+    // Check for known system users first (like admin or support)
+    const lowerQuery = query.toLowerCase();
+    if (SYSTEM_USERS[lowerQuery]) {
+      console.log(`Found known system user for ${query}: ${SYSTEM_USERS[lowerQuery]}`);
+      
+      // Determine if this is admin or support based on the email
+      const isSupport = lowerQuery.includes('support') || 
+                        lowerQuery.includes('help') || 
+                        lowerQuery.includes('customerservice');
+      
+      return { 
+        _id: SYSTEM_USERS[lowerQuery], 
+        email: query, 
+        username: query.split('@')[0],
+        role: isSupport ? 'support' : 'admin'
+      };
+    }
+    
     const token = await getAuthToken();
     if (!token) {
       console.error('No auth token available');
@@ -41,30 +76,54 @@ export const findUserByEmailOrUsername = async (query) => {
       console.log('Falling back to getting all users and filtering');
       
       // Fallback: Get all users and filter
-      const allUsersResponse = await axios.get(
-        `${BASE_URL}${ENDPOINTS.USER.ALL}`,
-        {
-          headers: { 
-            'x-access-token': token,
-            'Content-Type': 'application/json'
-          },
-          timeout: 10000 // 10 second timeout
+      try {
+        const allUsersResponse = await axios.get(
+          `${BASE_URL}${ENDPOINTS.USER.ALL}`,
+          {
+            headers: { 
+              'x-access-token': token,
+              'Content-Type': 'application/json'
+            },
+            timeout: 10000 // 10 second timeout
+          }
+        );
+        
+        if (!allUsersResponse.data || !allUsersResponse.data.users) {
+          console.error('Failed to get users list');
+          return null;
         }
-      );
-      
-      if (!allUsersResponse.data || !allUsersResponse.data.users) {
-        console.error('Failed to get users list');
+        
+        // Filter users by email or username
+        const matchedUser = allUsersResponse.data.users.find(user => 
+          (user.email && user.email.toLowerCase() === query.toLowerCase()) || 
+          (user.username && user.username.toLowerCase() === query.toLowerCase())
+        );
+        
+        console.log('User match result:', matchedUser ? 'Found' : 'Not found');
+        return matchedUser || null;
+      } catch (allUsersError) {
+        console.error('Error getting all users:', allUsersError);
+        console.error('Error details:', allUsersError.response?.data || allUsersError.message);
+        
+        // Check again for known users in case the search failed due to permissions
+        if (SYSTEM_USERS[lowerQuery]) {
+          console.log(`Using known system user for ${query} after search failed`);
+          
+          // Determine if this is admin or support based on the email
+          const isSupport = lowerQuery.includes('support') || 
+                            lowerQuery.includes('help') || 
+                            lowerQuery.includes('customerservice');
+          
+          return { 
+            _id: SYSTEM_USERS[lowerQuery], 
+            email: query, 
+            username: query.split('@')[0],
+            role: isSupport ? 'support' : 'admin'
+          };
+        }
+        
         return null;
       }
-      
-      // Filter users by email or username
-      const matchedUser = allUsersResponse.data.users.find(user => 
-        (user.email && user.email.toLowerCase() === query.toLowerCase()) || 
-        (user.username && user.username.toLowerCase() === query.toLowerCase())
-      );
-      
-      console.log('User match result:', matchedUser ? 'Found' : 'Not found');
-      return matchedUser || null;
     }
   } catch (error) {
     console.error('Error finding user:', error);
@@ -90,83 +149,56 @@ export const sendMessage = async (recipient, subject, message, data = {}) => {
     }
 
     let recipientId = recipient;
+    let isSystemUser = false;
+    let recipientRole = null;
     
     // If recipient looks like an email or username (not a MongoDB ObjectId)
     if (recipient.includes('@') || !recipient.match(/^[0-9a-fA-F]{24}$/)) {
       console.log('Recipient appears to be an email or username, searching for user ID');
-      const user = await findUserByEmailOrUsername(recipient);
       
-      if (!user) {
-        // Instead of using a hardcoded ID, we'll try an alternative approach
-        console.warn(`User not found with email/username: ${recipient}. Trying to create a temporary user.`);
+      // Check for known system users first (like admin or support)
+      const lowerRecipient = recipient.toLowerCase();
+      if (SYSTEM_USERS[lowerRecipient]) {
+        recipientId = SYSTEM_USERS[lowerRecipient];
+        isSystemUser = true;
         
-        // Try to create a temporary user or get user by email directly
-        try {
-          // Option 1: Try to use a special endpoint that can look up or create users by email
-          const lookupResponse = await axios.post(
-            `${BASE_URL}/api/users/lookup`,
-            { 
-              email: recipient.includes('@') ? recipient : null,
-              username: !recipient.includes('@') ? recipient : null
-            },
-            {
-              headers: { 
-                'x-access-token': token,
-                'Content-Type': 'application/json'
-              },
-              timeout: 10000
-            }
-          );
-          
-          if (lookupResponse.data && lookupResponse.data.user && lookupResponse.data.user._id) {
-            recipientId = lookupResponse.data.user._id;
-            console.log(`Found/created user with ID ${recipientId} for recipient ${recipient}`);
-          } else {
-            throw new Error('Lookup endpoint did not return a valid user');
-          }
-        } catch (lookupError) {
-          console.error('Error looking up/creating user:', lookupError);
-          
-          // Option 2: Fall back to sending message with email directly
-          // This requires backend support for handling email recipients
-          try {
-            console.log('Trying to send message with email directly');
-            
-            const response = await axios.post(
-              `${BASE_URL}${ENDPOINTS.MESSAGE.SEND_BY_EMAIL}`,
-              {
-                recipientEmail: recipient.includes('@') ? recipient : null,
-                recipientUsername: !recipient.includes('@') ? recipient : null,
-                subject,
-                message,
-                data: {
-                  ...data,
-                  subject
-                }
-              },
-              {
-                headers: { 
-                  'x-access-token': token,
-                  'Content-Type': 'application/json'
-                },
-                timeout: 10000
-              }
-            );
-            
-            console.log('Message sent by email/username successfully:', response.data);
-            return response.data;
-          } catch (emailSendError) {
-            console.error('Error sending message by email/username:', emailSendError);
-            throw new Error(`User not found with email/username: ${recipient}. Please check the recipient and try again.`);
-          }
-        }
+        // Determine if this is admin or support based on the email
+        recipientRole = lowerRecipient.includes('support') || 
+                        lowerRecipient.includes('help') || 
+                        lowerRecipient.includes('customerservice') ? 'support' : 'admin';
+        
+        console.log(`Using known system user ID for ${recipient}: ${recipientId} (${recipientRole})`);
       } else {
-        recipientId = user._id;
-        console.log(`Found user ID ${recipientId} for recipient ${recipient}`);
+        // Try to find user by email or username
+        const user = await findUserByEmailOrUsername(recipient);
+        
+        if (!user) {
+          // Suggest contacting support instead if user not found
+          console.error(`User not found with email/username: ${recipient}`);
+          throw new Error(`User not found with email/username: ${recipient}. Please check the recipient or contact support@parada.com instead.`);
+        } else {
+          recipientId = user._id;
+          recipientRole = user.role;
+          console.log(`Found user ID ${recipientId} for recipient ${recipient} (${recipientRole || 'unknown role'})`);
+        }
       }
     }
 
     console.log('Sending message to recipient ID:', recipientId);
+
+    // Add special metadata for system users
+    const messageData = {
+      ...data,
+      subject,
+      recipientRole
+    };
+    
+    // If sending to support, add support-specific metadata
+    if (recipientRole === 'support') {
+      messageData.supportRequest = true;
+      messageData.category = data.category || 'general';
+      messageData.priority = data.priority || 'normal';
+    }
 
     const response = await axios.post(
       `${BASE_URL}${ENDPOINTS.MESSAGE.SEND}`,
@@ -174,10 +206,7 @@ export const sendMessage = async (recipient, subject, message, data = {}) => {
         recipientId,
         subject,
         message,
-        data: {
-          ...data,
-          subject
-        }
+        data: messageData
       },
       {
         headers: { 
