@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,9 +11,10 @@ import {
   Switch,
   Alert,
   Image,
-  TextInput as RNTextInput,
-  TextInputProps,
+  TextInput,
   Pressable,
+  KeyboardTypeOptions,
+  TextStyle,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -23,67 +24,123 @@ import { Link, router } from 'expo-router';
 import { UserRole } from '../../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { ThemeColors } from '../../types/ThemeTypes';
 
 // Extended user type with account type
 export type AccountType = 'regular' | 'student';
 
-// Define props interface for CustomTextInput
-interface CustomTextInputProps extends Omit<TextInputProps, 'style'> {
+// Define props interface for CustomInputField
+interface CustomInputFieldProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder: string;
-  placeholderTextColor?: string;
+  icon: string;
   secureTextEntry?: boolean;
+  keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad' | 'number-pad';
-  onFocus?: () => void;
-  onBlur?: () => void;
-  style?: any;
+  isFocused: boolean;
+  onFocus: () => void;
+  onBlur: () => void;
+  rightElement?: React.ReactNode;
+  theme: ThemeColors;
 }
 
-// Custom TextInput component to completely eliminate highlight selector
-const CustomTextInput: React.FC<CustomTextInputProps> = ({ 
-  value, 
-  onChangeText, 
-  placeholder, 
-  secureTextEntry, 
-  autoCapitalize, 
-  keyboardType,
-  style,
-  placeholderTextColor,
+// Custom Input Field Component
+const CustomInputField: React.FC<CustomInputFieldProps> = ({
+  value,
+  onChangeText,
+  placeholder,
+  icon,
+  secureTextEntry = false,
+  keyboardType = 'default',
+  autoCapitalize = 'none',
+  isFocused,
   onFocus,
   onBlur,
-  ...rest
+  rightElement,
+  theme,
 }) => {
-  const inputRef = useRef<RNTextInput>(null);
+  const inputRef = useRef<TextInput>(null);
   
-  // Handle container press to focus the input
+  // Force the input to use a specific style that eliminates selection highlight
+  useEffect(() => {
+    if (Platform.OS === 'web' && inputRef.current) {
+      // For web platform, apply direct CSS to eliminate selection highlight
+      const inputElement = inputRef.current as any;
+      if (inputElement && inputElement.style) {
+        // Apply inline styles to eliminate selection highlight
+        inputElement.style.webkitTapHighlightColor = 'rgba(0,0,0,0)';
+        inputElement.style.outline = 'none';
+        inputElement.style.caretColor = theme.primary;
+      }
+    }
+  }, [inputRef.current, theme.primary]);
+  
   const handleContainerPress = () => {
     if (inputRef.current) {
       inputRef.current.focus();
+      if (onFocus) onFocus();
     }
   };
 
+  // Define additional styles for web platform
+  const additionalStyles = Platform.OS === 'web' ? {
+    // Use any to bypass TypeScript checking for web-specific styles
+    // that aren't part of the standard TextStyle type
+    ...(Platform.OS === 'web' ? {
+      WebkitUserSelect: 'text',
+      WebkitTouchCallout: 'none',
+      WebkitTapHighlightColor: 'rgba(0,0,0,0)',
+    } : {})
+  } : {};
+
   return (
-    <Pressable onPress={handleContainerPress} style={{ flex: 1 }}>
-      <RNTextInput
+    <Pressable
+      onPress={handleContainerPress}
+      style={[
+        styles.inputContainer,
+        {
+          borderColor: isFocused ? theme.primary : theme.border,
+          backgroundColor: theme.card,
+          borderWidth: isFocused ? 2 : 1,
+        },
+      ]}
+    >
+      <FontAwesome5
+        name={icon}
+        size={20}
+        color={isFocused ? theme.primary : theme.textSecondary}
+        style={styles.inputIcon}
+      />
+      
+      <TextInput
         ref={inputRef}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
+        placeholderTextColor={theme.textSecondary}
         secureTextEntry={secureTextEntry}
-        autoCapitalize={autoCapitalize}
         keyboardType={keyboardType}
-        style={style}
-        placeholderTextColor={placeholderTextColor}
-        onFocus={onFocus}
-        onBlur={onBlur}
+        autoCapitalize={autoCapitalize}
+        style={[
+          styles.input,
+          { color: theme.text },
+          additionalStyles as TextStyle
+        ]}
+        onFocus={() => {
+          if (onFocus) onFocus();
+        }}
+        onBlur={() => {
+          if (onBlur) onBlur();
+        }}
         selectionColor="transparent"
-        cursorColor="#4B6BFE" // Use primary color for cursor
-        caretHidden={false}
+        cursorColor={theme.primary}
         underlineColorAndroid="transparent"
-        {...rest}
+        caretHidden={false}
+        textAlignVertical="center"
       />
+      
+      {rightElement}
     </Pressable>
   );
 };
@@ -274,7 +331,7 @@ export default function RegisterScreen() {
               />
             </View>
             <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>PARAda</Text>
+              <Text style={styles.headerTitle}>PARAda</Text>
               <Text style={styles.headerSubtitle}>Real-Time Transportation Tracking</Text>
             </View>
           </View>
@@ -291,126 +348,76 @@ export default function RegisterScreen() {
             </View>
           ) : null}
 
-          <View style={[
-            styles.inputContainer, 
-            { 
-              borderColor: focusedInput === 'username' ? theme.primary : theme.border, 
-              backgroundColor: theme.card,
-              borderWidth: focusedInput === 'username' ? 2 : 1
-            }
-          ]}>
-            <FontAwesome5 
-              name="user" 
-              size={20} 
-              color={focusedInput === 'username' ? theme.primary : theme.textSecondary} 
-              style={styles.inputIcon} 
-            />
-            <CustomTextInput
-              style={[styles.input, { color: theme.text }]}
-              placeholder="Username"
-              placeholderTextColor={theme.textSecondary}
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              onFocus={() => setFocusedInput('username')}
-              onBlur={() => setFocusedInput(null)}
-            />
-          </View>
+          <CustomInputField
+            value={username}
+            onChangeText={setUsername}
+            placeholder="Username"
+            icon="user"
+            autoCapitalize="none"
+            isFocused={focusedInput === 'username'}
+            onFocus={() => setFocusedInput('username')}
+            onBlur={() => setFocusedInput(null)}
+            theme={theme}
+            rightElement={null}
+          />
 
-          <View style={[
-            styles.inputContainer, 
-            { 
-              borderColor: focusedInput === 'email' ? theme.primary : theme.border, 
-              backgroundColor: theme.card,
-              borderWidth: focusedInput === 'email' ? 2 : 1
-            }
-          ]}>
-            <FontAwesome5 
-              name="envelope" 
-              size={20} 
-              color={focusedInput === 'email' ? theme.primary : theme.textSecondary} 
-              style={styles.inputIcon} 
-            />
-            <CustomTextInput
-              style={[styles.input, { color: theme.text }]}
-              placeholder="Email"
-              placeholderTextColor={theme.textSecondary}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              onFocus={() => setFocusedInput('email')}
-              onBlur={() => setFocusedInput(null)}
-            />
-          </View>
+          <CustomInputField
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email"
+            icon="envelope"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            isFocused={focusedInput === 'email'}
+            onFocus={() => setFocusedInput('email')}
+            onBlur={() => setFocusedInput(null)}
+            theme={theme}
+            rightElement={null}
+          />
 
-          <View style={[
-            styles.inputContainer, 
-            { 
-              borderColor: focusedInput === 'password' ? theme.primary : theme.border, 
-              backgroundColor: theme.card,
-              borderWidth: focusedInput === 'password' ? 2 : 1
+          <CustomInputField
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password"
+            icon="lock"
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            isFocused={focusedInput === 'password'}
+            onFocus={() => setFocusedInput('password')}
+            onBlur={() => setFocusedInput(null)}
+            theme={theme}
+            rightElement={
+              <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
+                <FontAwesome5 
+                  name={showPassword ? "eye" : "eye-slash"} 
+                  size={18} 
+                  color={focusedInput === 'password' ? theme.primary : theme.textSecondary} 
+                />
+              </TouchableOpacity>
             }
-          ]}>
-            <FontAwesome5 
-              name="lock" 
-              size={20} 
-              color={focusedInput === 'password' ? theme.primary : theme.textSecondary} 
-              style={styles.inputIcon} 
-            />
-            <CustomTextInput
-              style={[styles.input, { color: theme.text }]}
-              placeholder="Password"
-              placeholderTextColor={theme.textSecondary}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              onFocus={() => setFocusedInput('password')}
-              onBlur={() => setFocusedInput(null)}
-            />
-            <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
-              <FontAwesome5 
-                name={showPassword ? "eye" : "eye-slash"} 
-                size={18} 
-                color={focusedInput === 'password' ? theme.primary : theme.textSecondary} 
-              />
-            </TouchableOpacity>
-          </View>
+          />
 
-          <View style={[
-            styles.inputContainer, 
-            { 
-              borderColor: focusedInput === 'confirmPassword' ? theme.primary : theme.border, 
-              backgroundColor: theme.card,
-              borderWidth: focusedInput === 'confirmPassword' ? 2 : 1
+          <CustomInputField
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            placeholder="Confirm Password"
+            icon="lock"
+            secureTextEntry={!showConfirmPassword}
+            autoCapitalize="none"
+            isFocused={focusedInput === 'confirmPassword'}
+            onFocus={() => setFocusedInput('confirmPassword')}
+            onBlur={() => setFocusedInput(null)}
+            theme={theme}
+            rightElement={
+              <TouchableOpacity onPress={toggleConfirmPasswordVisibility} style={styles.eyeIcon}>
+                <FontAwesome5 
+                  name={showConfirmPassword ? "eye" : "eye-slash"} 
+                  size={18} 
+                  color={focusedInput === 'confirmPassword' ? theme.primary : theme.textSecondary} 
+                />
+              </TouchableOpacity>
             }
-          ]}>
-            <FontAwesome5 
-              name="lock" 
-              size={20} 
-              color={focusedInput === 'confirmPassword' ? theme.primary : theme.textSecondary} 
-              style={styles.inputIcon} 
-            />
-            <CustomTextInput
-              style={[styles.input, { color: theme.text }]}
-              placeholder="Confirm Password"
-              placeholderTextColor={theme.textSecondary}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry={!showConfirmPassword}
-              autoCapitalize="none"
-              onFocus={() => setFocusedInput('confirmPassword')}
-              onBlur={() => setFocusedInput(null)}
-            />
-            <TouchableOpacity onPress={toggleConfirmPasswordVisibility} style={styles.eyeIcon}>
-              <FontAwesome5 
-                name={showConfirmPassword ? "eye" : "eye-slash"} 
-                size={18} 
-                color={focusedInput === 'confirmPassword' ? theme.primary : theme.textSecondary} 
-              />
-            </TouchableOpacity>
-          </View>
+          />
 
           <Text style={[styles.sectionTitle, { color: theme.text }]}>I am a:</Text>
           <View style={styles.roleContainer}>
@@ -419,32 +426,18 @@ export default function RegisterScreen() {
           </View>
 
           {selectedRole === 'driver' && (
-            <View style={[
-              styles.inputContainer, 
-              { 
-                borderColor: focusedInput === 'licensePlate' ? theme.primary : theme.border, 
-                backgroundColor: theme.card,
-                borderWidth: focusedInput === 'licensePlate' ? 2 : 1,
-                marginTop: 16
-              }
-            ]}>
-              <FontAwesome5 
-                name="car" 
-                size={20} 
-                color={focusedInput === 'licensePlate' ? theme.primary : theme.textSecondary} 
-                style={styles.inputIcon} 
-              />
-              <CustomTextInput
-                style={[styles.input, { color: theme.text }]}
-                placeholder="License Plate Number"
-                placeholderTextColor={theme.textSecondary}
-                value={licensePlate}
-                onChangeText={setLicensePlate}
-                autoCapitalize="characters"
-                onFocus={() => setFocusedInput('licensePlate')}
-                onBlur={() => setFocusedInput(null)}
-              />
-            </View>
+            <CustomInputField
+              value={licensePlate}
+              onChangeText={setLicensePlate}
+              placeholder="License Plate Number"
+              icon="car"
+              autoCapitalize="characters"
+              isFocused={focusedInput === 'licensePlate'}
+              onFocus={() => setFocusedInput('licensePlate')}
+              onBlur={() => setFocusedInput(null)}
+              theme={theme}
+              rightElement={null}
+            />
           )}
 
           <View style={styles.switchContainer}>
@@ -458,31 +451,18 @@ export default function RegisterScreen() {
           </View>
 
           {isStudent && (
-            <View style={[
-              styles.inputContainer, 
-              { 
-                borderColor: focusedInput === 'studentId' ? theme.primary : theme.border, 
-                backgroundColor: theme.card,
-                borderWidth: focusedInput === 'studentId' ? 2 : 1
-              }
-            ]}>
-              <FontAwesome5 
-                name="id-card" 
-                size={20} 
-                color={focusedInput === 'studentId' ? theme.primary : theme.textSecondary} 
-                style={styles.inputIcon} 
-              />
-              <CustomTextInput
-                style={[styles.input, { color: theme.text }]}
-                placeholder="Student ID"
-                placeholderTextColor={theme.textSecondary}
-                value={studentId}
-                onChangeText={setStudentId}
-                autoCapitalize="none"
-                onFocus={() => setFocusedInput('studentId')}
-                onBlur={() => setFocusedInput(null)}
-              />
-            </View>
+            <CustomInputField
+              value={studentId}
+              onChangeText={setStudentId}
+              placeholder="Student ID"
+              icon="id-card"
+              autoCapitalize="none"
+              isFocused={focusedInput === 'studentId'}
+              onFocus={() => setFocusedInput('studentId')}
+              onBlur={() => setFocusedInput(null)}
+              theme={theme}
+              rightElement={null}
+            />
           )}
 
           <TouchableOpacity
