@@ -3,7 +3,6 @@ import {
   StyleSheet,
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +11,8 @@ import {
   Switch,
   Alert,
   Image,
+  TextInput as RNTextInput,
+  TextInputProps,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -24,6 +25,53 @@ import axios from 'axios';
 
 // Extended user type with account type
 export type AccountType = 'regular' | 'student';
+
+// Define props interface for CustomTextInput
+interface CustomTextInputProps extends TextInputProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder: string;
+  placeholderTextColor?: string;
+  secureTextEntry?: boolean;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad' | 'number-pad';
+  onFocus?: () => void;
+  onBlur?: () => void;
+}
+
+// Custom TextInput component to avoid selection highlight issues
+const CustomTextInput: React.FC<CustomTextInputProps> = ({ 
+  value, 
+  onChangeText, 
+  placeholder, 
+  secureTextEntry, 
+  autoCapitalize, 
+  keyboardType,
+  style,
+  placeholderTextColor,
+  onFocus,
+  onBlur,
+  ...rest
+}) => {
+  // Create a transparent selection color to completely remove the highlight
+  return (
+    <RNTextInput
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      secureTextEntry={secureTextEntry}
+      autoCapitalize={autoCapitalize}
+      keyboardType={keyboardType}
+      style={style}
+      placeholderTextColor={placeholderTextColor}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      selectionColor="transparent"
+      cursorColor="#4B6BFE" // Use primary color for cursor
+      {...rest}
+    />
+  );
+};
 
 export default function RegisterScreen() {
   const [username, setUsername] = useState('');
@@ -242,7 +290,7 @@ export default function RegisterScreen() {
               color={focusedInput === 'username' ? theme.primary : theme.textSecondary} 
               style={styles.inputIcon} 
             />
-            <TextInput
+            <CustomTextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Username"
               placeholderTextColor={theme.textSecondary}
@@ -268,7 +316,7 @@ export default function RegisterScreen() {
               color={focusedInput === 'email' ? theme.primary : theme.textSecondary} 
               style={styles.inputIcon} 
             />
-            <TextInput
+            <CustomTextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Email"
               placeholderTextColor={theme.textSecondary}
@@ -295,13 +343,14 @@ export default function RegisterScreen() {
               color={focusedInput === 'password' ? theme.primary : theme.textSecondary} 
               style={styles.inputIcon} 
             />
-            <TextInput
+            <CustomTextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Password"
               placeholderTextColor={theme.textSecondary}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
+              autoCapitalize="none"
               onFocus={() => setFocusedInput('password')}
               onBlur={() => setFocusedInput(null)}
             />
@@ -328,13 +377,14 @@ export default function RegisterScreen() {
               color={focusedInput === 'confirmPassword' ? theme.primary : theme.textSecondary} 
               style={styles.inputIcon} 
             />
-            <TextInput
+            <CustomTextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Confirm Password"
               placeholderTextColor={theme.textSecondary}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry={!showConfirmPassword}
+              autoCapitalize="none"
               onFocus={() => setFocusedInput('confirmPassword')}
               onBlur={() => setFocusedInput(null)}
             />
@@ -369,7 +419,7 @@ export default function RegisterScreen() {
                 color={focusedInput === 'licensePlate' ? theme.primary : theme.textSecondary} 
                 style={styles.inputIcon} 
               />
-              <TextInput
+              <CustomTextInput
                 style={[styles.input, { color: theme.text }]}
                 placeholder="License Plate Number"
                 placeholderTextColor={theme.textSecondary}
@@ -407,12 +457,13 @@ export default function RegisterScreen() {
                 color={focusedInput === 'studentId' ? theme.primary : theme.textSecondary} 
                 style={styles.inputIcon} 
               />
-              <TextInput
+              <CustomTextInput
                 style={[styles.input, { color: theme.text }]}
                 placeholder="Student ID"
                 placeholderTextColor={theme.textSecondary}
                 value={studentId}
                 onChangeText={setStudentId}
+                autoCapitalize="none"
                 onFocus={() => setFocusedInput('studentId')}
                 onBlur={() => setFocusedInput(null)}
               />

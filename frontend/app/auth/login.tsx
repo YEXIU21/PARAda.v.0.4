@@ -3,13 +3,14 @@ import {
   StyleSheet,
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   ActivityIndicator,
+  TextInput as RNTextInput,
+  TextInputProps,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -17,6 +18,53 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { Link, router } from 'expo-router';
 import axios from 'axios';
+
+// Define props interface for CustomTextInput
+interface CustomTextInputProps extends TextInputProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder: string;
+  placeholderTextColor?: string;
+  secureTextEntry?: boolean;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad' | 'number-pad';
+  onFocus?: () => void;
+  onBlur?: () => void;
+}
+
+// Custom TextInput component to avoid selection highlight issues
+const CustomTextInput: React.FC<CustomTextInputProps> = ({ 
+  value, 
+  onChangeText, 
+  placeholder, 
+  secureTextEntry, 
+  autoCapitalize, 
+  keyboardType,
+  style,
+  placeholderTextColor,
+  onFocus,
+  onBlur,
+  ...rest
+}) => {
+  // Create a transparent selection color to completely remove the highlight
+  return (
+    <RNTextInput
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      secureTextEntry={secureTextEntry}
+      autoCapitalize={autoCapitalize}
+      keyboardType={keyboardType}
+      style={style}
+      placeholderTextColor={placeholderTextColor}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      selectionColor="transparent"
+      cursorColor="#4B6BFE" // Use primary color for cursor
+      {...rest}
+    />
+  );
+};
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -126,7 +174,7 @@ export default function LoginScreen() {
               color={focusedInput === 'email' ? theme.primary : theme.textSecondary} 
               style={styles.inputIcon} 
             />
-            <TextInput
+            <CustomTextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Email"
               placeholderTextColor={theme.textSecondary}
@@ -153,13 +201,15 @@ export default function LoginScreen() {
               color={focusedInput === 'password' ? theme.primary : theme.textSecondary} 
               style={styles.inputIcon} 
             />
-            <TextInput
+            <CustomTextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Password"
               placeholderTextColor={theme.textSecondary}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              keyboardType="default"
               onFocus={() => setFocusedInput('password')}
               onBlur={() => setFocusedInput(null)}
             />
