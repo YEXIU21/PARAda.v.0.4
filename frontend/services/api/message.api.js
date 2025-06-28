@@ -97,16 +97,68 @@ export const sendMessage = async (recipient, subject, message, data = {}) => {
       const user = await findUserByEmailOrUsername(recipient);
       
       if (!user) {
-        // For demo purposes, if we can't find the user, we'll use a hardcoded ID
-        // This is just for testing and should be removed in production
-        console.warn(`User not found with email/username: ${recipient}. Using demo ID for testing.`);
+        // Instead of using a hardcoded ID, we'll try an alternative approach
+        console.warn(`User not found with email/username: ${recipient}. Trying to create a temporary user.`);
         
-        // Check if the recipient is one of our test users
-        if (recipient.toLowerCase() === 'kris@gmail.com') {
-          recipientId = '6859bb31d387942a22313bad'; // Demo ID for kris@gmail.com
-          console.log(`Using demo ID ${recipientId} for kris@gmail.com`);
-        } else {
-          throw new Error(`User not found with email/username: ${recipient}`);
+        // Try to create a temporary user or get user by email directly
+        try {
+          // Option 1: Try to use a special endpoint that can look up or create users by email
+          const lookupResponse = await axios.post(
+            `${BASE_URL}/api/users/lookup`,
+            { 
+              email: recipient.includes('@') ? recipient : null,
+              username: !recipient.includes('@') ? recipient : null
+            },
+            {
+              headers: { 
+                'x-access-token': token,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000
+            }
+          );
+          
+          if (lookupResponse.data && lookupResponse.data.user && lookupResponse.data.user._id) {
+            recipientId = lookupResponse.data.user._id;
+            console.log(`Found/created user with ID ${recipientId} for recipient ${recipient}`);
+          } else {
+            throw new Error('Lookup endpoint did not return a valid user');
+          }
+        } catch (lookupError) {
+          console.error('Error looking up/creating user:', lookupError);
+          
+          // Option 2: Fall back to sending message with email directly
+          // This requires backend support for handling email recipients
+          try {
+            console.log('Trying to send message with email directly');
+            
+            const response = await axios.post(
+              `${BASE_URL}${ENDPOINTS.MESSAGE.SEND_BY_EMAIL}`,
+              {
+                recipientEmail: recipient.includes('@') ? recipient : null,
+                recipientUsername: !recipient.includes('@') ? recipient : null,
+                subject,
+                message,
+                data: {
+                  ...data,
+                  subject
+                }
+              },
+              {
+                headers: { 
+                  'x-access-token': token,
+                  'Content-Type': 'application/json'
+                },
+                timeout: 10000
+              }
+            );
+            
+            console.log('Message sent by email/username successfully:', response.data);
+            return response.data;
+          } catch (emailSendError) {
+            console.error('Error sending message by email/username:', emailSendError);
+            throw new Error(`User not found with email/username: ${recipient}. Please check the recipient and try again.`);
+          }
         }
       } else {
         recipientId = user._id;

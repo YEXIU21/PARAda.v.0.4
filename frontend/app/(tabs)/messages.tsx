@@ -74,6 +74,7 @@ export default function MessagesScreen() {
   const [composeRecipient, setComposeRecipient] = useState<string>('');
   const [showHeaderMenu, setShowHeaderMenu] = useState<boolean>(false);
   const [isSending, setIsSending] = useState<boolean>(false);
+  const [isReplying, setIsReplying] = useState<boolean>(false);
   
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
@@ -567,7 +568,7 @@ export default function MessagesScreen() {
       console.log(`Sending reply to message ${selectedMessage._id}`);
       
       // Show loading indicator
-      setIsLoading(true);
+      setIsReplying(true);
       
       // Create a reply message
       const replyData = {
@@ -593,14 +594,14 @@ export default function MessagesScreen() {
       if (!socket) {
         console.error('Socket not initialized for sending reply');
         queueReplyForLater(replyData);
-        setIsLoading(false);
+        setIsReplying(false);
         return;
       }
       
       if (!socket.connected) {
         console.error('Socket exists but not connected for sending reply');
         queueReplyForLater(replyData);
-        setIsLoading(false);
+        setIsReplying(false);
         return;
       }
       
@@ -653,7 +654,6 @@ export default function MessagesScreen() {
           
           // Store the reply for later sending
           queueReplyForLater(replyData);
-          setIsLoading(false);
         }
       } else {
         // Socket not connected
@@ -661,9 +661,8 @@ export default function MessagesScreen() {
         
         // Store the reply for later sending
         queueReplyForLater(replyData);
-        setIsLoading(false);
       }
-      } catch (error) {
+    } catch (error) {
       console.error('Error in handleReply:', error);
       
       // Show error message
@@ -672,11 +671,11 @@ export default function MessagesScreen() {
         'Failed to send reply. Please try again later.',
         [{ text: 'OK' }]
       );
-      
-        setIsLoading(false);
-      }
-    };
-    
+    } finally {
+      setIsReplying(false);
+    }
+  };
+  
   // Queue a reply for later sending when socket reconnects
   const queueReplyForLater = async (replyData: any) => {
     try {
@@ -927,6 +926,7 @@ export default function MessagesScreen() {
             <TouchableOpacity 
               onPress={() => setShowReplyModal(false)}
               style={styles.closeButton}
+              disabled={isReplying}
             >
               <FontAwesome5 name="times" size={20} color={theme.textSecondary} />
             </TouchableOpacity>
@@ -952,6 +952,7 @@ export default function MessagesScreen() {
               numberOfLines={5}
               value={replyText}
               onChangeText={setReplyText}
+              editable={!isReplying}
             />
           </View>
           
@@ -959,22 +960,34 @@ export default function MessagesScreen() {
             <TouchableOpacity
               style={[styles.cancelButton, { borderColor: theme.border }]}
               onPress={() => setShowReplyModal(false)}
+              disabled={isReplying}
             >
-              <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
+              <Text style={[
+                styles.cancelButtonText, 
+                { color: theme.text },
+                isReplying && { opacity: 0.5 }
+              ]}>Cancel</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
               style={[
-                styles.sendButton,
+                styles.replyButton,
                 { backgroundColor: theme.primary },
-                !replyText.trim() && styles.disabledButton
+                (!replyText.trim() || isReplying) && styles.disabledButton
               ]}
               onPress={handleReply}
-              disabled={!replyText.trim()}
+              disabled={!replyText.trim() || isReplying}
             >
-              <Text style={styles.sendButtonText}>Send</Text>
+              {isReplying ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <FontAwesome5 name="reply" size={16} color="#fff" style={styles.replyIcon} />
+                  <Text style={styles.replyButtonText}>Send</Text>
+                </>
+              )}
             </TouchableOpacity>
-        </View>
+          </View>
         </View>
       </View>
     </Modal>
