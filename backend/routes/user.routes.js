@@ -121,7 +121,7 @@ router.put(
     authMiddleware.verifyToken,
     authMiddleware.isAdmin,
     body('role')
-      .isIn(['admin', 'driver', 'passenger'])
+      .isIn(['admin', 'driver', 'passenger', 'support'])
       .withMessage('Invalid role')
   ],
   userController.changeUserRole

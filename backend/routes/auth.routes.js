@@ -27,7 +27,7 @@ router.post(
       .withMessage('Password must be at least 6 characters'),
     body('role')
       .optional()
-      .isIn(['admin', 'driver', 'passenger'])
+      .isIn(['admin', 'driver', 'passenger', 'support'])
       .withMessage('Invalid role'),
     body('accountType')
       .optional()
