@@ -24,8 +24,8 @@ export default function RootLayout() {
       try {
         // Check if we're on the landing page
         const isLandingPage = Platform.OS === 'web' && 
-          window.location.pathname === '/' || 
-          window.location.pathname === '/index.html';
+          (window.location.pathname === '/' || 
+           window.location.pathname === '/index.html');
         
         // If on landing page, don't redirect to login
         if (isLandingPage) {
@@ -40,33 +40,63 @@ export default function RootLayout() {
         
         // For other pages, check authentication
         const token = await AsyncStorage.getItem('token');
-        const userDataString = await AsyncStorage.getItem('userData');
+        const userDataString = await AsyncStorage.getItem('user');
+        
+        // Check if we're already on the login page to avoid redirect loops
+        const isLoginPage = Platform.OS === 'web' && 
+          window.location.pathname.includes('/auth/login');
         
         if (!token || !userDataString) {
-          // No token or user data, redirect to login after a delay
-          setTimeout(() => {
-            router.replace('/auth/login');
-          }, 1000);
+          // No token or user data, redirect to login after a delay if not already there
+          if (!isLoginPage) {
+            console.log('No auth data found, redirecting to login');
+            setTimeout(() => {
+              router.replace('/auth/login');
+            }, 500);
+          } else {
+            // Already on login page, just hide splash screen
+            setTimeout(() => {
+              SplashScreen.hideAsync().catch(err => {
+                console.warn('Error hiding splash screen:', err);
+              });
+            }, 500);
+          }
           return;
         }
         
         // Parse user data
-        const userData = JSON.parse(userDataString);
-        
-        if (!userData || !userData.id) {
-          // Invalid user data, redirect to login
-          setTimeout(() => {
-            router.replace('/auth/login');
-          }, 1000);
+        let userData;
+        try {
+          userData = JSON.parse(userDataString);
+          
+          if (!userData || !userData.id) {
+            throw new Error('Invalid user data');
+          }
+        } catch (parseError) {
+          console.error('Error parsing user data:', parseError);
+          
+          // Invalid user data, redirect to login if not already there
+          if (!isLoginPage) {
+            setTimeout(() => {
+              router.replace('/auth/login');
+            }, 500);
+          } else {
+            // Already on login page, just hide splash screen
+            setTimeout(() => {
+              SplashScreen.hideAsync().catch(err => {
+                console.warn('Error hiding splash screen:', err);
+              });
+            }, 500);
+          }
           return;
         }
         
         // User is authenticated, initialize socket connection
         try {
           await initializeSocket();
-          console.log('Socket connection initialized');
+          console.log('Socket connection initialized in root layout');
         } catch (error) {
-          console.error('Failed to initialize socket:', error);
+          console.error('Failed to initialize socket in root layout:', error);
           // Continue even if socket initialization fails
         }
         
@@ -78,16 +108,13 @@ export default function RootLayout() {
         }, 500);
       } catch (error) {
         console.error('Error checking auth:', error);
-        // On error, redirect to login only if not on landing page
-        const isLandingPage = Platform.OS === 'web' && 
-          window.location.pathname === '/' || 
-          window.location.pathname === '/index.html';
-        
-        if (!isLandingPage) {
-          setTimeout(() => {
-            router.replace('/auth/login');
-          }, 1000);
-        }
+        // On error, hide splash screen but don't redirect
+        // This helps prevent logout on network issues
+        setTimeout(() => {
+          SplashScreen.hideAsync().catch(err => {
+            console.warn('Error hiding splash screen:', err);
+          });
+        }, 500);
       }
     };
     

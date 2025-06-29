@@ -13,16 +13,26 @@ export default function TabLayout() {
   useEffect(() => {
     const checkUserSession = async () => {
       try {
+        // First check if the user is already in the AuthContext
+        if (user) {
+          setIsCheckingStorage(false);
+          return;
+        }
+        
+        // If not, check AsyncStorage
         const storedUser = await AsyncStorage.getItem('user');
+        const token = await AsyncStorage.getItem('token');
         
-        // If no user in context but we have one in storage, we shouldn't redirect yet
-        if (!user && !storedUser) {
+        // If we have both user data and token in storage, don't redirect yet
+        // The AuthContext will handle loading the user and validating the token
+        if (!storedUser || !token) {
+          console.log('No user data or token in storage, redirecting to login');
           router.replace('/auth/login');
-    }
-        
-        setIsCheckingStorage(false);
+        }
       } catch (error) {
         console.error('Error checking user session:', error);
+        // On error, don't redirect - let the AuthContext handle it
+      } finally {
         setIsCheckingStorage(false);
       }
     };
@@ -37,7 +47,7 @@ export default function TabLayout() {
   // Common tab options for styling
   const tabScreenOptions = {
     headerShown: false,
-    tabBarStyle: { display: 'none' as const }, // Fix the type error by explicitly setting the type
+    tabBarStyle: { display: 'none' as const },
   };
 
   return (

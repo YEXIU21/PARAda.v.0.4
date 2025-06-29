@@ -63,30 +63,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const token = await AsyncStorage.getItem('token');
         
         if (storedUser && token) {
-          // Validate token with backend
+          // First set the user from storage to avoid flashing login screen
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          
+          // Then validate token with backend
           try {
             const response = await axios.post(`${API_URL}/api/auth/verify`, { token });
-            if (response.data.valid) {
-              const parsedUser = JSON.parse(storedUser);
-              setUser(parsedUser);
-              
-              // Initialize socket connection for authenticated user
-              try {
-                await initializeSocket();
-                console.log('Socket connection initialized on app start');
-              } catch (socketError) {
-                console.error('Failed to initialize socket on app start:', socketError);
-              }
-            } else {
-              // Token invalid, clear storage
+            if (!response.data.valid) {
+              // Token invalid, clear storage but only after validation fails
+              console.log('Token validation failed, logging out');
               await AsyncStorage.removeItem('user');
               await AsyncStorage.removeItem('token');
+              setUser(null);
+              return;
+            }
+            
+            // Token is valid, initialize socket connection for authenticated user
+            try {
+              await initializeSocket();
+              console.log('Socket connection initialized on app start');
+            } catch (socketError) {
+              console.error('Failed to initialize socket on app start:', socketError);
             }
           } catch (error) {
-            console.error('Token validation failed:', error);
-            // Clear storage on error
-            await AsyncStorage.removeItem('user');
-            await AsyncStorage.removeItem('token');
+            // Only clear storage if there's a 401 Unauthorized error
+            if (axios.isAxiosError(error) && error.response && error.response.status === 401) {
+              console.error('Token unauthorized, clearing storage:', error);
+              await AsyncStorage.removeItem('user');
+              await AsyncStorage.removeItem('token');
+              setUser(null);
+            } else {
+              // For other errors (like network issues), keep the user logged in
+              console.error('Token validation error, but keeping user session:', error);
+              // We already set the user from storage above, so no need to do it again
+            }
           }
         }
       } catch (error) {
