@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../context/ThemeContext';
+import IOSInstallPrompt from '../components/IOSInstallPrompt';
 
 // PWA installation detection
 interface BeforeInstallPromptEvent extends Event {
@@ -122,13 +123,26 @@ export default function LandingPage() {
       if (isMobile && !installAttempted && Platform.OS === 'web') {
         const userAgent = navigator.userAgent || '';
         if (/iPhone|iPad|iPod/.test(userAgent)) {
-          // iOS Safari
+          // iOS Safari - Show detailed instructions with visual cues
           Alert.alert(
-            "Install PARAda",
-            "To install our app: tap the Share button, then 'Add to Home Screen'",
-            [{ text: "OK", onPress: () => router.push('/auth/login') }]
+            "Install PARAda App",
+            "To install our app on your iOS device:\n\n1. Tap the Share button (rectangle with arrow) at the bottom of the screen\n\n2. Scroll down and tap 'Add to Home Screen'\n\n3. Tap 'Add' in the top right corner",
+            [
+              { 
+                text: "Show Me How", 
+                onPress: () => {
+                  // This would ideally show a visual guide, but for now we'll just set a flag
+                  // that our IOSInstallPrompt component can use
+                  if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem('showIOSInstallInstructions', 'true');
+                    // Force a re-render to show instructions
+                    setInstallAttempted(true);
+                  }
+                } 
+              },
+              { text: "Later", onPress: () => router.push('/auth/login') }
+            ]
           );
-          setInstallAttempted(true);
           return;
         } else if (/Android/.test(userAgent) && /Chrome/.test(userAgent)) {
           // Android Chrome
@@ -184,6 +198,9 @@ export default function LandingPage() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      
+      {/* iOS Install Prompt */}
+      <IOSInstallPrompt />
       
       {/* Header */}
       <LinearGradient
