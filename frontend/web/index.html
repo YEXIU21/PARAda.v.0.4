@@ -14,42 +14,39 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="PARAda" />
   
-  <!-- iOS icons -->
+  <!-- iOS icons - Standard sizes that work across all iOS devices -->
   <link rel="apple-touch-icon" href="/assets/images/PARAda-Logo.png" />
   <link rel="apple-touch-icon" sizes="152x152" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/PARAda-Logo.png" />
   <link rel="apple-touch-icon" sizes="167x167" href="/assets/images/PARAda-Logo.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/PARAda-Logo.png" />
   
-  <!-- iOS splash screens - Current models -->
-  <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" href="/assets/images/PARAda-Logo.png" />
+  <!-- iOS splash screens - Using standardized sizes by screen width categories -->
+  <!-- Small phones (iPhone SE, etc.) -->
+  <link rel="apple-touch-startup-image" media="(max-device-width: 320px)" href="/assets/images/PARAda-Logo.png" />
   
-  <!-- iOS splash screens - iPad -->
-  <link rel="apple-touch-startup-image" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="/assets/images/PARAda-Logo.png" />
+  <!-- Medium phones (iPhone 6/7/8, etc.) -->
+  <link rel="apple-touch-startup-image" media="(min-device-width: 321px) and (max-device-width: 375px)" href="/assets/images/PARAda-Logo.png" />
   
-  <!-- iOS splash screens - iPhone 12, 13, 14 models -->
-  <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="/assets/images/PARAda-Logo.png" />
+  <!-- Large phones (iPhone Plus, X, 11, 12, 13, etc.) -->
+  <link rel="apple-touch-startup-image" media="(min-device-width: 376px) and (max-device-width: 428px)" href="/assets/images/PARAda-Logo.png" />
   
-  <!-- iOS splash screens - iPhone 14 Pro models -->
-  <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="/assets/images/PARAda-Logo.png" />
+  <!-- Small tablets (iPad Mini, etc.) -->
+  <link rel="apple-touch-startup-image" media="(min-device-width: 429px) and (max-device-width: 768px)" href="/assets/images/PARAda-Logo.png" />
   
-  <!-- iOS splash screens - iPhone 15 models -->
-  <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="/assets/images/PARAda-Logo.png" />
+  <!-- Medium tablets (iPad, iPad Air, etc.) -->
+  <link rel="apple-touch-startup-image" media="(min-device-width: 769px) and (max-device-width: 834px)" href="/assets/images/PARAda-Logo.png" />
   
-  <!-- Generic splash screen for future devices -->
-  <link rel="apple-touch-startup-image" media="(min-device-width: 320px) and (max-device-width: 480px) and (-webkit-min-device-pixel-ratio: 2)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(min-device-width: 481px) and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2)" href="/assets/images/PARAda-Logo.png" />
-  <link rel="apple-touch-startup-image" media="(min-device-width: 1025px) and (-webkit-min-device-pixel-ratio: 2)" href="/assets/images/PARAda-Logo.png" />
+  <!-- Large tablets (iPad Pro, etc.) -->
+  <link rel="apple-touch-startup-image" media="(min-device-width: 835px)" href="/assets/images/PARAda-Logo.png" />
+  
+  <!-- Orientation-specific splash screens for better user experience -->
+  <link rel="apple-touch-startup-image" media="(orientation: portrait)" href="/assets/images/PARAda-Logo.png" />
+  <link rel="apple-touch-startup-image" media="(orientation: landscape)" href="/assets/images/PARAda-Logo.png" />
+  
+  <!-- Pixel ratio variants for different screen densities -->
+  <link rel="apple-touch-startup-image" media="(-webkit-device-pixel-ratio: 1)" href="/assets/images/PARAda-Logo.png" />
+  <link rel="apple-touch-startup-image" media="(-webkit-device-pixel-ratio: 2)" href="/assets/images/PARAda-Logo.png" />
+  <link rel="apple-touch-startup-image" media="(-webkit-device-pixel-ratio: 3)" href="/assets/images/PARAda-Logo.png" />
   
   <!-- Favicon -->
   <link rel="shortcut icon" href="/assets/images/favicon.png" />
