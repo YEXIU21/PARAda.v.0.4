@@ -20,9 +20,10 @@ export default function IOSInstallPrompt() {
     // Only run on web platform
     if (Platform.OS !== 'web') return;
 
-    // Check if running on iOS
+    // More comprehensive iOS detection
     const userAgent = navigator.userAgent || '';
-    const isIOSDevice = /iPhone|iPad|iPod/.test(userAgent);
+    const isIOSDevice = /iPhone|iPad|iPod/.test(userAgent) || 
+                       (/Mac/.test(userAgent) && 'maxTouchPoints' in navigator && (navigator as any).maxTouchPoints > 1); // Detect iPad Pro with iPadOS
     setIsIOS(isIOSDevice);
 
     // Check if already installed (in standalone mode)
