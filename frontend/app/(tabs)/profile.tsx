@@ -285,28 +285,22 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
       setNewPassword('');
       setConfirmPassword('');
       
-      // Set submitting to false before showing the alert
-      setIsSubmitting(false);
-      
-      // Show success alert with a more prominent message and only close modal after user acknowledges
-      setTimeout(() => {
-        Alert.alert(
-          '✅ Success',
-          'Your password has been changed successfully.',
-          [
-            {
-              text: 'OK',
-              onPress: () => onClose(),
-              style: 'default'
-            }
-          ],
-          { cancelable: false } // Prevent dismissing by tapping outside
-        );
-      }, 300); // Small delay to ensure the alert appears after state updates
+      // Show success alert and only close modal after user acknowledges
+      Alert.alert(
+        'Success',
+        'Password changed successfully',
+        [
+          {
+            text: 'OK',
+            onPress: () => onClose()
+          }
+        ]
+      );
     } catch (error: any) {
       // Display error message from API or a generic message
       const errorMessage = error.message || 'Failed to change password. Please try again.';
       Alert.alert('Error', errorMessage);
+    } finally {
       setIsSubmitting(false);
     }
   };
