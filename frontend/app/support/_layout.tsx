@@ -20,6 +20,11 @@ export default function SupportLayout() {
       <Stack.Screen name="index" options={{ title: 'Support Dashboard' }} />
       <Stack.Screen name="settings" options={{ title: 'Support Settings' }} />
       <Stack.Screen name="ticket/[id]" options={{ title: 'Ticket Details' }} />
+      <Stack.Screen name="create-ticket" options={{ title: 'Create Ticket' }} />
+      <Stack.Screen name="user-management" options={{ title: 'User Management' }} />
+      <Stack.Screen name="analytics" options={{ title: 'Analytics Dashboard' }} />
+      <Stack.Screen name="user-details/[id]" options={{ title: 'User Details' }} />
+      <Stack.Screen name="message/[id]" options={{ title: 'Message User' }} />
     </Stack>
   );
 } 

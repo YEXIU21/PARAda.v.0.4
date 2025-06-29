@@ -221,9 +221,49 @@ const SupportDashboard = () => {
     </View>
   );
 
+  // Add quick action buttons
+  const renderQuickActions = () => (
+    <View style={styles.quickActionsContainer}>
+      <TouchableOpacity
+        style={[styles.actionButton, { backgroundColor: colors.primary }]}
+        onPress={() => router.push('/support/create-ticket')}
+      >
+        <FontAwesome5 name="ticket-alt" size={20} color="#fff" />
+        <Text style={styles.actionButtonText}>Create Ticket</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity
+        style={[styles.actionButton, { backgroundColor: '#4caf50' }]}
+        onPress={() => router.push('/support/user-management')}
+      >
+        <FontAwesome5 name="users" size={20} color="#fff" />
+        <Text style={styles.actionButtonText}>User Management</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity
+        style={[styles.actionButton, { backgroundColor: '#2196f3' }]}
+        onPress={() => router.push('/support/analytics')}
+      >
+        <FontAwesome5 name="chart-bar" size={20} color="#fff" />
+        <Text style={styles.actionButtonText}>Analytics</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity
+        style={[styles.actionButton, { backgroundColor: '#ff9800' }]}
+        onPress={() => router.push('/support/settings')}
+      >
+        <FontAwesome5 name="cog" size={20} color="#fff" />
+        <Text style={styles.actionButtonText}>Settings</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <SupportLayout title="Support Dashboard" showBackButton={false}>
       <View style={styles.container}>
+        {/* Quick action buttons */}
+        {renderQuickActions()}
+        
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.statNumber, { color: colors.text }]}>
@@ -250,35 +290,52 @@ const SupportDashboard = () => {
         <View style={styles.ticketsContainer}>
           <View style={styles.ticketsHeader}>
             <Text style={[styles.ticketsTitle, { color: colors.text }]}>Support Tickets</Text>
-            <TouchableOpacity 
-              style={[styles.newTicketButton, { backgroundColor: colors.primary }]}
-              onPress={() => console.log('Create new ticket')}
+            <TouchableOpacity
+              style={styles.createTicketButton}
+              onPress={() => router.push('/support/create-ticket')}
             >
               <FontAwesome5 name="plus" size={14} color="#fff" />
-              <Text style={styles.newTicketText}>New Ticket</Text>
+              <Text style={styles.createTicketText}>New Ticket</Text>
             </TouchableOpacity>
           </View>
           
           {renderFilterTabs()}
           
           {loading ? (
-            <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                Loading tickets...
+              </Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <FontAwesome5 name="exclamation-circle" size={24} color={colors.error} />
+              <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+              <TouchableOpacity
+                style={[styles.retryButton, { backgroundColor: colors.primary }]}
+                onPress={() => setFilter(filter)} // This will trigger a re-fetch
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : filteredTickets.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <FontAwesome5 name="ticket-alt" size={48} color={colors.textSecondary} />
+              <Text style={[styles.emptyText, { color: colors.text }]}>No tickets found</Text>
+              <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+                {filter === 'all' 
+                  ? 'There are no support tickets in the system.' 
+                  : `There are no ${filter} tickets at the moment.`}
+              </Text>
+            </View>
           ) : (
             <FlatList
               data={filteredTickets}
               renderItem={renderTicketItem}
-              keyExtractor={item => item.id}
-              style={styles.ticketsList}
-              contentContainerStyle={styles.ticketsListContent}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.ticketList}
               showsVerticalScrollIndicator={false}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <FontAwesome5 name="ticket-alt" size={48} color={colors.textSecondary} />
-                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                    No tickets found
-                  </Text>
-                </View>
-              }
             />
           )}
         </View>
@@ -292,23 +349,37 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  quickActionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '48%',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   statCard: {
     flex: 1,
-    padding: 16,
     borderRadius: 8,
-    marginHorizontal: 4,
+    padding: 12,
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginHorizontal: 4,
   },
   statNumber: {
     fontSize: 24,
@@ -320,62 +391,55 @@ const styles = StyleSheet.create({
   },
   ticketsContainer: {
     flex: 1,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   ticketsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   ticketsTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
-  newTicketButton: {
+  createTicketButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#4caf50',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderRadius: 4,
   },
-  newTicketText: {
+  createTicketText: {
     color: '#fff',
-    marginLeft: 6,
-    fontWeight: '500',
+    fontWeight: '600',
+    marginLeft: 4,
   },
   filterContainer: {
     flexDirection: 'row',
     marginBottom: 16,
-    flexWrap: 'wrap',
+    overflow: 'scroll',
   },
   filterTab: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: 16,
     marginRight: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
   },
   filterText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '500',
   },
-  ticketsList: {
-    flex: 1,
-  },
-  ticketsListContent: {
+  ticketList: {
     paddingBottom: 16,
   },
   ticketItem: {
-    padding: 16,
     borderRadius: 8,
+    padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
   },
   ticketHeader: {
     flexDirection: 'row',
@@ -383,7 +447,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   ticketId: {
-    fontSize: 12,
+    fontSize: 14,
   },
   badgeContainer: {
     flexDirection: 'row',
@@ -392,11 +456,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
-    marginLeft: 6,
+    marginLeft: 8,
   },
   badgeText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '500',
   },
   ticketSubject: {
@@ -406,30 +470,66 @@ const styles = StyleSheet.create({
   },
   ticketInfo: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
   ticketInfoText: {
     fontSize: 12,
-    marginRight: 16,
   },
   ticketFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   ticketDate: {
-    fontSize: 11,
+    fontSize: 12,
   },
-  loader: {
-    marginTop: 20,
-  },
-  emptyContainer: {
-    alignItems: 'center',
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
-    padding: 40,
+    alignItems: 'center',
+    padding: 24,
   },
-  emptyText: {
+  loadingText: {
     marginTop: 16,
     fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
   },
 });
 
