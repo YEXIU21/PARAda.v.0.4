@@ -44,4 +44,14 @@ router.get(
   installationController.getInstallationStats
 );
 
+/**
+ * @route GET /api/installations/count
+ * @desc Get public installation count
+ * @access Public
+ */
+router.get(
+  '/count',
+  installationController.getPublicInstallationCount
+);
+
 module.exports = router; 

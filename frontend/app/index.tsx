@@ -17,6 +17,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../context/ThemeContext';
 import IOSInstallPrompt from '../components/IOSInstallPrompt';
+import InstallationCounter from '../components/InstallationCounter';
 
 // PWA installation detection
 interface BeforeInstallPromptEvent extends Event {
@@ -223,29 +224,43 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <View style={styles.heroSection}>
-        <Text style={[styles.heroTitle, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}>
-          Real-Time Transportation Tracking for Smarter Travel
-        </Text>
-        <Text style={[styles.heroSubtitle, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>
-          PARAda helps you navigate public transportation with ease, providing real-time updates and convenient scheduling
-        </Text>
-        
-        <TouchableOpacity
-          style={styles.downloadButton}
-          onPress={handleInstallClick}
+        <LinearGradient
+          colors={['#4B6BFE', '#5E5CE6']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroGradient}
         >
-          <LinearGradient
-            colors={colors.gradientColors}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.downloadButtonGradient}
-          >
-            <FontAwesome5 name={isInstallable ? "download" : "arrow-right"} size={20} color="#FFFFFF" style={styles.downloadIcon} />
-            <Text style={styles.downloadButtonText}>
-              {isInstallable ? 'Install App' : isInstalled ? 'Open App' : 'Get Started'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
+          <View style={styles.heroContent}>
+            <Image 
+              source={require('../assets/images/PARAda-Logo.png')} 
+              style={styles.heroLogo} 
+              resizeMode="contain"
+            />
+            <Text style={styles.heroTitle}>PARAda Transport</Text>
+            <Text style={styles.heroSubtitle}>Real-Time Transportation Tracking for Smarter Travel</Text>
+            
+            <InstallationCounter 
+              textColor="#FFFFFF"
+              iconColor="#FFFFFF"
+              backgroundColor="rgba(255, 255, 255, 0.2)"
+            />
+            
+            <TouchableOpacity
+              style={styles.ctaButton}
+              onPress={handleInstallClick}
+            >
+              <Text style={styles.ctaButtonText}>
+                {isInstalled ? 'Open App' : isInstallable ? 'Install App' : 'Get Started'}
+              </Text>
+              <FontAwesome5 
+                name={isInstalled ? 'arrow-right' : isInstallable ? 'download' : 'arrow-right'} 
+                size={16} 
+                color="#4B6BFE" 
+                style={styles.ctaButtonIcon} 
+              />
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
       </View>
 
       {/* Features Section */}
@@ -419,44 +434,60 @@ const styles = StyleSheet.create({
   heroSection: {
     padding: 20,
     alignItems: 'center',
-    marginTop: 20,
+    justifyContent: 'center',
+    marginBottom: 40,
+  },
+  heroGradient: {
+    padding: 30,
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
+  },
+  heroContent: {
+    alignItems: 'center',
+  },
+  heroLogo: {
+    width: 120,
+    height: 120,
+    marginBottom: 20,
   },
   heroTitle: {
     fontSize: 32,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 16,
+    color: '#FFFFFF',
   },
   heroSubtitle: {
     fontSize: 18,
     textAlign: 'center',
     marginBottom: 30,
     maxWidth: 600,
+    color: '#FFFFFF',
   },
-  downloadButton: {
-    marginBottom: 40,
-  },
-  downloadButtonGradient: {
+  ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
     borderRadius: 50,
+    marginTop: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  downloadIcon: {
-    marginRight: 10,
-  },
-  downloadButtonText: {
-    color: '#FFFFFF',
+  ctaButtonText: {
+    color: '#4B6BFE',
     fontSize: 18,
     fontWeight: 'bold',
+    marginRight: 10,
   },
-  heroImage: {
-    width: '100%',
-    height: 250,
-    maxWidth: 500,
-    marginBottom: 40,
+  ctaButtonIcon: {
+    marginTop: 1,
   },
   featuresSection: {
     padding: 20,
@@ -527,23 +558,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 25,
     opacity: 0.9,
-  },
-  ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 50,
-  },
-  ctaButtonText: {
-    color: '#4B6BFE',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginRight: 8,
-  },
-  ctaButtonIcon: {
-    marginTop: 1,
   },
   footer: {
     padding: 20,
