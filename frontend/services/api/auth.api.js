@@ -319,6 +319,7 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
       }
     }
     
-    throw error;
+    // If we don't have a specific error message, throw a generic one
+    throw new Error('Failed to change password. Please try again.');
   }
 }; 

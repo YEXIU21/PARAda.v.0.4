@@ -276,11 +276,17 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
       return;
     }
     
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'New password must be at least 6 characters');
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
       console.log('Calling changePassword function...');
-      const result = await changePassword(currentPassword, newPassword);
-      console.log('Password change result:', result);
+      
+      // Call the changePassword function from AuthContext
+      await changePassword(currentPassword, newPassword);
       
       // Reset form
       setCurrentPassword('');
@@ -288,25 +294,23 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
       setConfirmPassword('');
       
       // Show success alert and only close modal after user acknowledges
-      console.log('Showing success alert...');
-      setTimeout(() => {
-        Alert.alert(
-          'Success',
-          'Password changed successfully',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                console.log('Success alert acknowledged, closing modal');
-                onClose();
-              }
+      Alert.alert(
+        'Success',
+        'Password changed successfully',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              console.log('Success alert acknowledged, closing modal');
+              onClose();
             }
-          ],
-          { cancelable: false }
-        );
-      }, 500); // Small delay to ensure the alert shows properly
+          }
+        ],
+        { cancelable: false }
+      );
     } catch (error: any) {
       console.error('Password change error in component:', error);
+      
       // Display error message from API or a generic message
       let errorMessage = 'Failed to change password. Please try again.';
       

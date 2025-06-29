@@ -40,7 +40,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<boolean>;
   updateProfile: (userData: Partial<User>) => Promise<boolean>;
   refreshUserSubscription: () => Promise<boolean>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 // Create the auth context
@@ -603,11 +603,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Change password function
-  const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
     try {
       if (!user) {
         console.error('Cannot change password: No user logged in');
-        return false;
+        throw new Error('You must be logged in to change your password');
       }
       
       console.log(`Attempting to change password for user ID: ${user.id}`);
@@ -632,7 +632,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Don't throw here, as the password change itself was successful
       }
       
-      return true;
+      return;
     } catch (error) {
       console.error('Password change error:', error);
       throw error; // Rethrow to handle in the component

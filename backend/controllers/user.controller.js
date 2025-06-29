@@ -302,12 +302,24 @@ exports.changePassword = async (req, res) => {
     console.log(`Using salt rounds: ${saltRounds}`);
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
     
-    // Update password
-    user.password = hashedPassword;
-    user.updatedAt = new Date();
+    // Update password directly in the database to avoid pre-save hook issues
+    const result = await User.updateOne(
+      { _id: userId },
+      { 
+        $set: { 
+          password: hashedPassword,
+          updatedAt: new Date()
+        } 
+      }
+    );
     
-    await user.save();
     console.log(`Password updated successfully for user: ${userId}`);
+    console.log(`Modified count: ${result.modifiedCount}`);
+    
+    // Verify the new password can be used for login
+    const updatedUser = await User.findById(userId);
+    const verifyNewPassword = await bcrypt.compare(newPassword, updatedUser.password);
+    console.log(`New password verification: ${verifyNewPassword ? 'valid' : 'invalid'}`);
     
     return res.status(200).json({
       message: 'Password changed successfully'
