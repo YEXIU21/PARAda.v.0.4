@@ -19,12 +19,26 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useEffect(() => {
-    // Initialize socket connection
-    initializeSocket();
-    
     // Check authentication status
     const checkAuth = async () => {
       try {
+        // Check if we're on the landing page
+        const isLandingPage = Platform.OS === 'web' && 
+          window.location.pathname === '/' || 
+          window.location.pathname === '/index.html';
+        
+        // If on landing page, don't redirect to login
+        if (isLandingPage) {
+          // Just hide the splash screen after a delay
+          setTimeout(() => {
+            SplashScreen.hideAsync().catch(err => {
+              console.warn('Error hiding splash screen:', err);
+            });
+          }, 500);
+          return;
+        }
+        
+        // For other pages, check authentication
         const token = await AsyncStorage.getItem('token');
         const userDataString = await AsyncStorage.getItem('userData');
         
@@ -47,17 +61,33 @@ export default function RootLayout() {
           return;
         }
         
-        // User is authenticated, allow access to protected routes
+        // User is authenticated, initialize socket connection
+        try {
+          await initializeSocket();
+          console.log('Socket connection initialized');
+        } catch (error) {
+          console.error('Failed to initialize socket:', error);
+          // Continue even if socket initialization fails
+        }
+        
         // Hide the splash screen
         setTimeout(() => {
-          SplashScreen.hideAsync();
+          SplashScreen.hideAsync().catch(err => {
+            console.warn('Error hiding splash screen:', err);
+          });
         }, 500);
       } catch (error) {
         console.error('Error checking auth:', error);
-        // On error, redirect to login
-        setTimeout(() => {
-          router.replace('/auth/login');
-        }, 1000);
+        // On error, redirect to login only if not on landing page
+        const isLandingPage = Platform.OS === 'web' && 
+          window.location.pathname === '/' || 
+          window.location.pathname === '/index.html';
+        
+        if (!isLandingPage) {
+          setTimeout(() => {
+            router.replace('/auth/login');
+          }, 1000);
+        }
       }
     };
     

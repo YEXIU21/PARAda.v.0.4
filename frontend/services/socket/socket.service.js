@@ -11,14 +11,17 @@ let socket = null;
 
 /**
  * Initialize the socket connection
- * @returns {Promise<SocketIOClient.Socket>} - The socket instance
+ * @returns {Promise<SocketIOClient.Socket|null>} - The socket instance or null if not authenticated
  */
 export const initializeSocket = async () => {
   try {
     if (socket) return socket;
     
     const token = await getAuthToken();
-    if (!token) throw new Error('Authentication required for socket connection');
+    if (!token) {
+      console.log('No authentication token available, skipping socket connection');
+      return null;
+    }
     
     console.log('Initializing socket connection to:', BASE_URL);
     
@@ -63,7 +66,7 @@ export const initializeSocket = async () => {
     return socket;
   } catch (error) {
     console.error('Failed to initialize socket:', error);
-    throw error;
+    return null;
   }
 };
 
@@ -90,26 +93,29 @@ export const disconnectSocket = () => {
  * Subscribe to a specific event
  * @param {string} event - The event name
  * @param {Function} callback - The callback function
+ * @returns {boolean} - Whether the subscription was successful
  */
 export const subscribeToEvent = (event, callback) => {
   if (!socket) {
     console.warn('Socket not initialized, cannot subscribe to event:', event);
-    return;
+    return false;
   }
   
   socket.on(event, callback);
   console.log('Subscribed to event:', event);
+  return true;
 };
 
 /**
  * Unsubscribe from a specific event
  * @param {string} event - The event name
  * @param {Function} callback - The callback function
+ * @returns {boolean} - Whether the unsubscription was successful
  */
 export const unsubscribeFromEvent = (event, callback) => {
   if (!socket) {
     console.warn('Socket not initialized, cannot unsubscribe from event:', event);
-    return;
+    return false;
   }
   
   if (callback) {
@@ -119,19 +125,23 @@ export const unsubscribeFromEvent = (event, callback) => {
     socket.off(event);
     console.log('Unsubscribed from all callbacks for event:', event);
   }
+  
+  return true;
 };
 
 /**
  * Emit an event to the server
  * @param {string} event - The event name
  * @param {any} data - The data to send
+ * @returns {boolean} - Whether the event was emitted
  */
 export const emitEvent = (event, data) => {
   if (!socket) {
     console.warn('Socket not initialized, cannot emit event:', event);
-    return;
+    return false;
   }
   
   socket.emit(event, data);
   console.log('Emitted event:', event, data);
+  return true;
 }; 
