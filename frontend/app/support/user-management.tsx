@@ -266,7 +266,7 @@ const UserManagementScreen = () => {
   };
   
   return (
-    <SupportLayout title="User Management">
+    <SupportLayout title="User Management" showBackButton={false}>
       <View style={styles.container}>
         {/* Search and filters */}
         <View style={styles.searchContainer}>

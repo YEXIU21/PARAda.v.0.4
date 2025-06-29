@@ -165,7 +165,7 @@ const AnalyticsDashboard = () => {
   
   if (loading) {
     return (
-      <SupportLayout title="Analytics Dashboard">
+      <SupportLayout title="Analytics Dashboard" showBackButton={false}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
@@ -178,7 +178,7 @@ const AnalyticsDashboard = () => {
   
   if (error) {
     return (
-      <SupportLayout title="Analytics Dashboard">
+      <SupportLayout title="Analytics Dashboard" showBackButton={false}>
         <View style={styles.errorContainer}>
           <FontAwesome5 name="exclamation-circle" size={24} color={colors.error} />
           <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
@@ -194,7 +194,7 @@ const AnalyticsDashboard = () => {
   }
   
   return (
-    <SupportLayout title="Analytics Dashboard">
+    <SupportLayout title="Analytics Dashboard" showBackButton={false}>
       <ScrollView style={styles.container}>
         {/* Time range selector */}
         {renderTimeRangeSelector()}

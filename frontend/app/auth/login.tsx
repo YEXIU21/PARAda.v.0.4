@@ -16,6 +16,7 @@ import {
   KeyboardTypeOptions,
   TextStyle,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
@@ -161,7 +162,19 @@ export default function LoginScreen() {
       const success = await login(email, password);
       
       if (success) {
-        router.replace('/(tabs)');
+        // After successful login, get the updated user from AsyncStorage
+        const userString = await AsyncStorage.getItem('user');
+        if (userString) {
+          const userData = JSON.parse(userString);
+          if (userData && userData.role === 'support') {
+            router.replace('/support');
+          } else {
+            router.replace('/(tabs)');
+          }
+        } else {
+          // Fallback to tabs if user data isn't available
+          router.replace('/(tabs)');
+        }
       } else {
         setError('Invalid email or password. Please try again.');
       }

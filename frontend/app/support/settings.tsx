@@ -125,7 +125,7 @@ const SupportSettingsScreen = () => {
   
   if (loading) {
     return (
-      <SupportLayout title="Support Settings">
+      <SupportLayout title="Support Settings" showBackButton={false}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
@@ -137,7 +137,7 @@ const SupportSettingsScreen = () => {
   }
   
   return (
-    <SupportLayout title="Support Settings">
+    <SupportLayout title="Support Settings" showBackButton={false}>
       <ScrollView style={styles.container}>
         {error ? (
           <View style={styles.errorContainer}>
