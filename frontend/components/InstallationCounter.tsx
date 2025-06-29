@@ -8,12 +8,20 @@ interface InstallationCounterProps {
   textColor?: string;
   iconColor?: string;
   backgroundColor?: string;
+  compact?: boolean;
+  centered?: boolean;
+  showIcon?: boolean;
+  fontSize?: number;
 }
 
 const InstallationCounter: React.FC<InstallationCounterProps> = ({ 
   textColor = '#fff',
   iconColor = '#4B6BFE',
-  backgroundColor = 'rgba(255, 255, 255, 0.1)'
+  backgroundColor = 'rgba(255, 255, 255, 0.1)',
+  compact = false,
+  centered = false,
+  showIcon = true,
+  fontSize = 14
 }) => {
   const [totalInstalls, setTotalInstalls] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -62,10 +70,30 @@ const InstallationCounter: React.FC<InstallationCounterProps> = ({
     return null; // Don't show anything while loading
   }
   
+  // For compact mode, just return the text without container
+  if (compact) {
+    return (
+      <Text style={[
+        styles.text, 
+        { color: textColor, fontSize, textAlign: centered ? 'center' : 'left' }
+      ]}>
+        {showIcon && <FontAwesome5 name="download" size={fontSize} color={iconColor} />}{' '}
+        <Text style={styles.count}>{formatNumber(totalInstalls)}+</Text> users
+      </Text>
+    );
+  }
+  
+  // Standard display with container
   return (
-    <View style={[styles.container, { backgroundColor }]}>
-      <FontAwesome5 name="download" size={16} color={iconColor} style={styles.icon} />
-      <Text style={[styles.text, { color: textColor }]}>
+    <View style={[
+      styles.container, 
+      { 
+        backgroundColor,
+        alignSelf: centered ? 'center' : 'flex-start'
+      }
+    ]}>
+      {showIcon && <FontAwesome5 name="download" size={16} color={iconColor} style={styles.icon} />}
+      <Text style={[styles.text, { color: textColor, fontSize }]}>
         <Text style={styles.count}>{formatNumber(totalInstalls)}+</Text> users have installed PARAda
       </Text>
     </View>
@@ -79,7 +107,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
-    alignSelf: 'flex-start',
   },
   icon: {
     marginRight: 8,

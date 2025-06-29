@@ -231,12 +231,6 @@ export default function LandingPage() {
           PARAda helps you navigate public transportation with ease, providing real-time updates and convenient scheduling
         </Text>
         
-        <InstallationCounter 
-          textColor={isDarkMode ? '#FFFFFF' : '#333333'}
-          iconColor={colors.primary}
-          backgroundColor={isDarkMode ? 'rgba(75, 107, 254, 0.1)' : 'rgba(75, 107, 254, 0.05)'}
-        />
-        
         <TouchableOpacity
           style={styles.downloadButton}
           onPress={handleInstallClick}
@@ -253,6 +247,16 @@ export default function LandingPage() {
             </Text>
           </LinearGradient>
         </TouchableOpacity>
+        
+        {/* Installation Counter - now below the button */}
+        <View style={styles.installationCounterWrapper}>
+          <InstallationCounter 
+            textColor={isDarkMode ? '#FFFFFF' : '#333333'}
+            iconColor={colors.primary}
+            backgroundColor={isDarkMode ? 'rgba(75, 107, 254, 0.1)' : 'rgba(75, 107, 254, 0.05)'}
+            centered={true}
+          />
+        </View>
       </View>
 
       {/* Features Section */}
@@ -310,6 +314,18 @@ export default function LandingPage() {
             </Text>
             <FontAwesome5 name={isInstallable ? "download" : "arrow-right"} size={16} color="#4B6BFE" style={styles.ctaButtonIcon} />
           </TouchableOpacity>
+          
+          {/* Installation Counter in CTA section */}
+          <View style={styles.ctaInstallationCounter}>
+            <InstallationCounter 
+              textColor="#FFFFFF"
+              iconColor="#FFFFFF"
+              backgroundColor="rgba(255, 255, 255, 0.2)"
+              compact={true}
+              centered={true}
+              fontSize={16}
+            />
+          </View>
         </LinearGradient>
       </View>
 
@@ -441,7 +457,7 @@ const styles = StyleSheet.create({
     maxWidth: 600,
   },
   downloadButton: {
-    marginBottom: 40,
+    marginBottom: 20,
   },
   downloadButtonGradient: {
     flexDirection: 'row',
@@ -458,6 +474,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  installationCounterWrapper: {
+    marginBottom: 40,
+    alignItems: 'center',
   },
   featuresSection: {
     padding: 20,
@@ -528,6 +548,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 25,
     opacity: 0.9,
+  },
+  ctaInstallationCounter: {
+    marginTop: 15,
+    alignItems: 'center',
   },
   footer: {
     padding: 20,
