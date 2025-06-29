@@ -257,6 +257,7 @@ exports.changePassword = async (req, res) => {
     // Validate request
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ 
         message: 'Validation error', 
         errors: errors.array() 
@@ -266,8 +267,12 @@ exports.changePassword = async (req, res) => {
     const { userId } = req.params;
     const { currentPassword, newPassword } = req.body;
     
+    console.log(`Password change request for user ID: ${userId}`);
+    console.log(`Requesting user ID: ${req.user._id}`);
+    
     // Check if user is updating their own password or is admin
     if (userId !== req.user._id.toString() && req.user.role !== 'admin') {
+      console.log('Unauthorized password change attempt');
       return res.status(403).json({
         message: 'You are not authorized to change this user\'s password'
       });
@@ -276,6 +281,7 @@ exports.changePassword = async (req, res) => {
     const user = await User.findById(userId);
     
     if (!user) {
+      console.log(`User not found: ${userId}`);
       return res.status(404).json({
         message: 'User not found'
       });
@@ -283,6 +289,7 @@ exports.changePassword = async (req, res) => {
     
     // Verify current password
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    console.log(`Current password validation: ${isPasswordValid ? 'valid' : 'invalid'}`);
     
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -290,14 +297,17 @@ exports.changePassword = async (req, res) => {
       });
     }
     
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // Hash new password using the configured salt rounds
+    const { saltRounds } = require('../config/auth.config');
+    console.log(`Using salt rounds: ${saltRounds}`);
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
     
     // Update password
     user.password = hashedPassword;
     user.updatedAt = new Date();
     
     await user.save();
+    console.log(`Password updated successfully for user: ${userId}`);
     
     return res.status(200).json({
       message: 'Password changed successfully'
@@ -309,7 +319,7 @@ exports.changePassword = async (req, res) => {
       error: error.message
     });
   }
-}; 
+};
 
 /**
  * Change user role (admin only)

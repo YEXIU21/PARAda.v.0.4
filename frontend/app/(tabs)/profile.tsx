@@ -278,7 +278,9 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
     
     try {
       setIsSubmitting(true);
-      await changePassword(currentPassword, newPassword);
+      console.log('Calling changePassword function...');
+      const result = await changePassword(currentPassword, newPassword);
+      console.log('Password change result:', result);
       
       // Reset form
       setCurrentPassword('');
@@ -286,17 +288,25 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
       setConfirmPassword('');
       
       // Show success alert and only close modal after user acknowledges
-      Alert.alert(
-        'Success',
-        'Password changed successfully',
-        [
-          {
-            text: 'OK',
-            onPress: () => onClose()
-          }
-        ]
-      );
+      console.log('Showing success alert...');
+      setTimeout(() => {
+        Alert.alert(
+          'Success',
+          'Password changed successfully',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                console.log('Success alert acknowledged, closing modal');
+                onClose();
+              }
+            }
+          ],
+          { cancelable: false }
+        );
+      }, 500); // Small delay to ensure the alert shows properly
     } catch (error: any) {
+      console.error('Password change error in component:', error);
       // Display error message from API or a generic message
       let errorMessage = 'Failed to change password. Please try again.';
       

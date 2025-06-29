@@ -285,20 +285,30 @@ export const refreshUserData = async () => {
  */
 export const changePassword = async (userId, currentPassword, newPassword) => {
   try {
+    console.log(`Changing password for user ID: ${userId}`);
+    
     const token = await getAuthToken();
-    if (!token) throw new Error('Authentication required');
+    if (!token) {
+      console.error('Authentication token not found');
+      throw new Error('Authentication required');
+    }
 
+    const url = `${BASE_URL}${ENDPOINTS.USER.CHANGE_PASSWORD(userId)}`;
+    console.log(`Making password change request to: ${url}`);
+    
     const response = await axios.put(
-      `${BASE_URL}${ENDPOINTS.USER.CHANGE_PASSWORD(userId)}`,
+      url,
       { currentPassword, newPassword },
       {
         headers: { 'x-access-token': token }
       }
     );
     
+    console.log('Password change API response:', response.status);
     return response.data;
   } catch (error) {
     console.error('Error changing password:', error);
+    
     if (error.response) {
       console.error('Status:', error.response.status);
       console.error('Data:', error.response.data);
@@ -308,6 +318,7 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
         throw new Error(error.response.data.message);
       }
     }
+    
     throw error;
   }
 }; 

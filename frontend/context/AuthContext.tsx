@@ -605,13 +605,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Change password function
   const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
     try {
-      if (!user) return false;
+      if (!user) {
+        console.error('Cannot change password: No user logged in');
+        return false;
+      }
+      
+      console.log(`Attempting to change password for user ID: ${user.id}`);
       
       // Import changePassword function dynamically to avoid circular dependencies
       const { changePassword: apiChangePassword } = require('../services/api/auth.api');
       
       // Call the API to change password
-      await apiChangePassword(user.id, currentPassword, newPassword);
+      const result = await apiChangePassword(user.id, currentPassword, newPassword);
+      console.log('Password change successful:', result);
+      
+      // Force a token refresh to ensure the new password is used for future requests
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (token) {
+          // Verify the token is still valid with the new password
+          const response = await axios.post(`${ENV.apiUrl}/api/auth/verify`, { token });
+          console.log('Token verification after password change:', response.data);
+        }
+      } catch (tokenError) {
+        console.error('Error verifying token after password change:', tokenError);
+        // Don't throw here, as the password change itself was successful
+      }
+      
       return true;
     } catch (error) {
       console.error('Password change error:', error);
