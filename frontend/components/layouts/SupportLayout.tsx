@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } fr
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { router, useRouter } from 'expo-router';
 import RoleBasedNavBar from '../RoleBasedNavBar';
 
 interface SupportLayoutProps {
@@ -21,14 +21,14 @@ const SupportLayout: React.FC<SupportLayoutProps> = ({
 }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const navigation = useNavigation();
+  const navigation = useRouter();
   
   // Check if user has support role
   React.useEffect(() => {
     if (user?.role !== 'support' && user?.role !== 'admin') {
-      navigation.navigate('Home' as never);
+      router.replace('/(tabs)');
     }
-  }, [user, navigation]);
+  }, [user]);
   
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -38,7 +38,7 @@ const SupportLayout: React.FC<SupportLayoutProps> = ({
           {showBackButton && (
             <TouchableOpacity 
               style={styles.backButton}
-              onPress={() => navigation.goBack()}
+              onPress={() => router.back()}
             >
               <FontAwesome5 name="arrow-left" size={18} color={colors.text} />
             </TouchableOpacity>

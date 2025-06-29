@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -16,43 +16,67 @@ const SupportDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<string>('all');
+  const [retryCount, setRetryCount] = useState(0);
 
   // Fetch tickets and stats from API
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Build query parameters
-        const queryParams = new URLSearchParams();
-        if (filter !== 'all') {
-          queryParams.append('status', filter);
-        }
-        
-        // Fetch tickets
-        const ticketsResponse = await getTickets(queryParams.toString());
-        if (ticketsResponse.success) {
-          setTickets(ticketsResponse.data);
-        } else {
-          setError('Failed to fetch tickets');
-          setTickets([]);
-        }
-        
-        // Fetch stats
-        const statsResponse = await getTicketStats();
-        if (statsResponse.success) {
-          setStats(statsResponse.data);
-        }
-      } catch (err) {
-        console.error('Error fetching support data:', err);
-        setError('An error occurred while fetching data');
-        setTickets([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError('');
     
-    fetchData();
+    try {
+      console.log('Fetching support dashboard data...');
+      
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      if (filter !== 'all') {
+        queryParams.append('status', filter);
+      }
+      
+      // Fetch tickets
+      const ticketsResponse = await getTickets(queryParams.toString());
+      if (ticketsResponse.success) {
+        console.log(`Successfully fetched ${ticketsResponse.data?.length || 0} tickets`);
+        setTickets(ticketsResponse.data || []);
+      } else {
+        console.error('Failed to fetch tickets:', ticketsResponse.message);
+        setError('Failed to fetch tickets');
+        setTickets([]);
+      }
+      
+      // Fetch stats
+      const statsResponse = await getTicketStats();
+      if (statsResponse.success) {
+        console.log('Successfully fetched ticket stats');
+        setStats(statsResponse.data);
+      } else {
+        console.error('Failed to fetch ticket stats:', statsResponse.message);
+      }
+    } catch (err) {
+      console.error('Error fetching support data:', err);
+      setError('An error occurred while fetching data');
+      setTickets([]);
+    } finally {
+      setLoading(false);
+    }
   }, [filter]);
+  
+  // Initial data fetch
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+  
+  // Retry mechanism if there's an error
+  useEffect(() => {
+    if (error && retryCount < 3) {
+      const timer = setTimeout(() => {
+        console.log(`Retrying data fetch (attempt ${retryCount + 1}/3)...`);
+        setRetryCount(prev => prev + 1);
+        fetchData();
+      }, 2000); // Retry after 2 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [error, retryCount, fetchData]);
 
   // Filter tickets based on status
   const filteredTickets = filter === 'all' 

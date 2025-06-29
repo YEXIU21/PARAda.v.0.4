@@ -1,6 +1,7 @@
 import axios from 'axios';
 import ENV from '../../constants/environment';
 import { getAuthHeader } from './auth.api.js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API URL
 const API_URL = ENV.apiUrl;
@@ -50,10 +51,34 @@ export interface SupportSettings {
   };
 }
 
+// Fallback function to get auth header if the imported one fails
+const getFallbackAuthHeader = async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      console.warn('No authentication token available for headers');
+      return {};
+    }
+    
+    return { 'x-access-token': token };
+  } catch (error) {
+    console.error('Error creating fallback auth headers:', error);
+    return {};
+  }
+};
+
 // Get all tickets with optional filters
 export const getTickets = async (queryParams?: string) => {
   try {
-    const authHeader = await getAuthHeader();
+    // Try to get auth header from the imported function first
+    let authHeader;
+    try {
+      authHeader = await getAuthHeader();
+    } catch (error) {
+      console.warn('Error getting auth header from imported function, using fallback:', error);
+      authHeader = await getFallbackAuthHeader();
+    }
+    
     const url = queryParams 
       ? `${API_URL}/api/support/tickets?${queryParams}`
       : `${API_URL}/api/support/tickets`;
@@ -69,7 +94,15 @@ export const getTickets = async (queryParams?: string) => {
 // Get ticket statistics
 export const getTicketStats = async (queryParams?: string) => {
   try {
-    const authHeader = await getAuthHeader();
+    // Try to get auth header from the imported function first
+    let authHeader;
+    try {
+      authHeader = await getAuthHeader();
+    } catch (error) {
+      console.warn('Error getting auth header from imported function, using fallback:', error);
+      authHeader = await getFallbackAuthHeader();
+    }
+    
     const url = queryParams 
       ? `${API_URL}/api/support/tickets/stats?${queryParams}`
       : `${API_URL}/api/support/tickets/stats`;
@@ -85,7 +118,15 @@ export const getTicketStats = async (queryParams?: string) => {
 // Get ticket details by ID
 export const getTicketById = async (ticketId: string) => {
   try {
-    const authHeader = await getAuthHeader();
+    // Try to get auth header from the imported function first
+    let authHeader;
+    try {
+      authHeader = await getAuthHeader();
+    } catch (error) {
+      console.warn('Error getting auth header from imported function, using fallback:', error);
+      authHeader = await getFallbackAuthHeader();
+    }
+    
     const response = await axios.get(`${API_URL}/api/support/tickets/${ticketId}`, { 
       headers: authHeader 
     });
@@ -99,7 +140,15 @@ export const getTicketById = async (ticketId: string) => {
 // Update ticket status
 export const updateTicketStatus = async (ticketId: string, status: string) => {
   try {
-    const authHeader = await getAuthHeader();
+    // Try to get auth header from the imported function first
+    let authHeader;
+    try {
+      authHeader = await getAuthHeader();
+    } catch (error) {
+      console.warn('Error getting auth header from imported function, using fallback:', error);
+      authHeader = await getFallbackAuthHeader();
+    }
+    
     const response = await axios.patch(
       `${API_URL}/api/support/tickets/${ticketId}/status`, 
       { status }, 
@@ -115,7 +164,15 @@ export const updateTicketStatus = async (ticketId: string, status: string) => {
 // Update ticket priority
 export const updateTicketPriority = async (ticketId: string, priority: string) => {
   try {
-    const authHeader = await getAuthHeader();
+    // Try to get auth header from the imported function first
+    let authHeader;
+    try {
+      authHeader = await getAuthHeader();
+    } catch (error) {
+      console.warn('Error getting auth header from imported function, using fallback:', error);
+      authHeader = await getFallbackAuthHeader();
+    }
+    
     const response = await axios.patch(
       `${API_URL}/api/support/tickets/${ticketId}/priority`, 
       { priority }, 
@@ -131,7 +188,15 @@ export const updateTicketPriority = async (ticketId: string, priority: string) =
 // Add reply to ticket
 export const addTicketReply = async (ticketId: string, message: string) => {
   try {
-    const authHeader = await getAuthHeader();
+    // Try to get auth header from the imported function first
+    let authHeader;
+    try {
+      authHeader = await getAuthHeader();
+    } catch (error) {
+      console.warn('Error getting auth header from imported function, using fallback:', error);
+      authHeader = await getFallbackAuthHeader();
+    }
+    
     const response = await axios.post(
       `${API_URL}/api/support/tickets/${ticketId}/reply`, 
       { message }, 
@@ -147,7 +212,15 @@ export const addTicketReply = async (ticketId: string, message: string) => {
 // Get support settings
 export const getSupportSettings = async () => {
   try {
-    const authHeader = await getAuthHeader();
+    // Try to get auth header from the imported function first
+    let authHeader;
+    try {
+      authHeader = await getAuthHeader();
+    } catch (error) {
+      console.warn('Error getting auth header from imported function, using fallback:', error);
+      authHeader = await getFallbackAuthHeader();
+    }
+    
     const response = await axios.get(`${API_URL}/api/support/settings`, { 
       headers: authHeader 
     });
@@ -161,7 +234,15 @@ export const getSupportSettings = async () => {
 // Update support settings
 export const updateSupportSettings = async (settings: Partial<SupportSettings>) => {
   try {
-    const authHeader = await getAuthHeader();
+    // Try to get auth header from the imported function first
+    let authHeader;
+    try {
+      authHeader = await getAuthHeader();
+    } catch (error) {
+      console.warn('Error getting auth header from imported function, using fallback:', error);
+      authHeader = await getFallbackAuthHeader();
+    }
+    
     const response = await axios.put(
       `${API_URL}/api/support/settings`, 
       settings, 
@@ -177,7 +258,15 @@ export const updateSupportSettings = async (settings: Partial<SupportSettings>) 
 // Create new ticket (for support staff to create tickets on behalf of users)
 export const createTicket = async (ticketData: Partial<Ticket>) => {
   try {
-    const authHeader = await getAuthHeader();
+    // Try to get auth header from the imported function first
+    let authHeader;
+    try {
+      authHeader = await getAuthHeader();
+    } catch (error) {
+      console.warn('Error getting auth header from imported function, using fallback:', error);
+      authHeader = await getFallbackAuthHeader();
+    }
+    
     const response = await axios.post(
       `${API_URL}/api/support/tickets`, 
       ticketData, 
@@ -193,7 +282,15 @@ export const createTicket = async (ticketData: Partial<Ticket>) => {
 // Assign ticket to support staff
 export const assignTicket = async (ticketId: string, assigneeId: string) => {
   try {
-    const authHeader = await getAuthHeader();
+    // Try to get auth header from the imported function first
+    let authHeader;
+    try {
+      authHeader = await getAuthHeader();
+    } catch (error) {
+      console.warn('Error getting auth header from imported function, using fallback:', error);
+      authHeader = await getFallbackAuthHeader();
+    }
+    
     const response = await axios.patch(
       `${API_URL}/api/support/tickets/${ticketId}/assign`, 
       { assigneeId }, 
