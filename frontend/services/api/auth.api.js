@@ -43,6 +43,25 @@ export const getAuthToken = async () => {
 };
 
 /**
+ * Get authentication headers for API requests
+ * @returns {Promise<Object>} - Headers object with authentication token
+ */
+export const getAuthHeader = async () => {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      console.warn('No authentication token available for headers');
+      return {};
+    }
+    
+    return { 'x-access-token': token };
+  } catch (error) {
+    console.error('Error creating auth headers:', error);
+    return {};
+  }
+};
+
+/**
  * Login user
  * @param {string} email - User email
  * @param {string} password - User password

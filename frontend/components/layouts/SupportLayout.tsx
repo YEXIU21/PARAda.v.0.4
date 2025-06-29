@@ -4,6 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import RoleBasedNavBar from '../RoleBasedNavBar';
 
 interface SupportLayoutProps {
   children: React.ReactNode;
@@ -24,7 +25,7 @@ const SupportLayout: React.FC<SupportLayoutProps> = ({
   
   // Check if user has support role
   React.useEffect(() => {
-    if (user?.role !== 'support') {
+    if (user?.role !== 'support' && user?.role !== 'admin') {
       navigation.navigate('Home' as never);
     }
   }, [user, navigation]);
@@ -62,6 +63,9 @@ const SupportLayout: React.FC<SupportLayoutProps> = ({
       >
         {children}
       </ScrollView>
+      
+      {/* Footer Navigation Bar */}
+      <RoleBasedNavBar />
     </SafeAreaView>
   );
 };
@@ -100,7 +104,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flexGrow: 1,
-    paddingBottom: 20,
+    paddingBottom: 80, // Add extra padding at the bottom to account for the navigation bar
   },
 });
 
