@@ -298,7 +298,19 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
       );
     } catch (error: any) {
       // Display error message from API or a generic message
-      const errorMessage = error.message || 'Failed to change password. Please try again.';
+      let errorMessage = 'Failed to change password. Please try again.';
+      
+      // Check for specific error messages
+      if (error.message === 'Current password is incorrect') {
+        errorMessage = 'The current password you entered is incorrect. Please try again.';
+      } else if (error.message === 'You are not authorized to change this user\'s password') {
+        errorMessage = 'You are not authorized to change this password.';
+      } else if (error.message?.includes('Validation error')) {
+        errorMessage = 'Password validation failed. New password must be at least 6 characters.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       Alert.alert('Error', errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -369,6 +381,9 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
                 />
               </TouchableOpacity>
             </View>
+            <Text style={[styles.passwordHint, { color: theme.textSecondary }]}>
+              Password must be at least 6 characters long
+            </Text>
           </View>
           
           <View style={styles.inputContainer}>
@@ -1263,5 +1278,20 @@ const styles = StyleSheet.create({
   },
   eyeIconContainer: {
     padding: 10,
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+  },
+  eyeIcon: {
+    padding: 10,
+  },
+  passwordHint: {
+    marginTop: 5,
+    fontSize: 12,
+    marginLeft: 5,
   },
 }); 
