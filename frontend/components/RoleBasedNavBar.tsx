@@ -36,6 +36,13 @@ export default function RoleBasedNavBar() {
       { name: 'Messages', icon: 'comments', route: '/messages' },
       { name: 'Profile', icon: 'user', route: '/profile' },
     ];
+  } else if (user.role === 'support') {
+    navItems = [
+      { name: 'Dashboard', icon: 'headset', route: '/support' },
+      { name: 'Users', icon: 'users', route: '/support/user-management' },
+      { name: 'Tickets', icon: 'ticket-alt', route: '/support/create-ticket' },
+      { name: 'Analytics', icon: 'chart-bar', route: '/support/analytics' },
+    ];
   } else { // passenger
     navItems = [
       { name: 'Home', icon: 'home', route: '/' },
@@ -50,7 +57,7 @@ export default function RoleBasedNavBar() {
   };
 
   const renderNavItem = (item: NavItem) => {
-    const isActive = currentPath === item.route;
+    const isActive = currentPath === item.route || currentPath.startsWith(item.route + '/');
     
     return (
       <TouchableOpacity
