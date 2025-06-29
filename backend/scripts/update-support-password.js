@@ -11,7 +11,7 @@ const bcrypt = require('bcryptjs');
 const dbURI = process.env.MONGODB_URI || 'mongodb+srv://angelfreitzd:angelfreitzdparada2025@parada.5bz6m2a.mongodb.net/parada?retryWrites=true&w=majority&appName=PARAda';
 
 // The new password
-const NEW_PASSWORD = 'Support@2025!';
+const NEW_PASSWORD = 'parada@support123';
 
 // Connect to the database
 mongoose.connect(dbURI, {
