@@ -6,19 +6,53 @@ import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
-  TouchableOpacity
+  TouchableOpacity,
+  Dimensions
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { getInstallationStats } from '../../services/api/installation.api';
-import { BarChart } from 'react-native-chart-kit';
-import { Dimensions } from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
 
 interface InstallationStatsProps {
   refreshTrigger?: number; // Optional prop to trigger refresh from parent
 }
+
+// Simple Bar Chart component that doesn't rely on external libraries
+const SimpleBarChart = ({ data, colors }: { 
+  data: { label: string; value: number; color: string }[];
+  colors: any;
+}) => {
+  // Find the maximum value for scaling
+  const maxValue = Math.max(...data.map(item => item.value), 1);
+  
+  return (
+    <View style={styles.chartContainer}>
+      {data.map((item, index) => (
+        <View key={index} style={styles.barGroup}>
+          <View style={styles.barLabelContainer}>
+            <Text style={[styles.barLabel, { color: colors.text }]}>{item.label}</Text>
+          </View>
+          <View style={styles.barContainer}>
+            <View 
+              style={[
+                styles.bar, 
+                { 
+                  width: `${Math.max((item.value / maxValue) * 100, 5)}%`,
+                  backgroundColor: item.color || colors.primary
+                }
+              ]}
+            />
+            <Text style={[styles.barValue, { color: colors.text }]}>
+              {item.value}
+            </Text>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+};
 
 const InstallationStats: React.FC<InstallationStatsProps> = ({ refreshTrigger = 0 }) => {
   const { colors: theme } = useTheme();
@@ -56,24 +90,19 @@ const InstallationStats: React.FC<InstallationStatsProps> = ({ refreshTrigger = 
   
   // Prepare chart data
   const prepareChartData = () => {
-    if (!stats || !stats.platforms) return null;
+    if (!stats || !stats.platforms) return [];
     
     const platforms = Object.keys(stats.platforms);
-    const data = {
-      labels: platforms.map(p => p.charAt(0).toUpperCase() + p.slice(1)),
-      datasets: [
-        {
-          data: platforms.map(p => stats.platforms[p] || 0)
-        }
-      ]
-    };
-    
-    return data;
+    return platforms.map(platform => ({
+      label: platform.charAt(0).toUpperCase() + platform.slice(1),
+      value: stats.platforms[platform] || 0,
+      color: getPlatformColor(platform)
+    }));
   };
   
   // Prepare daily chart data (last 7 days)
   const prepareDailyChartData = () => {
-    if (!stats || !stats.daily) return null;
+    if (!stats || !stats.daily) return [];
     
     const dates = Object.keys(stats.daily).sort().slice(-7); // Get last 7 days
     
@@ -86,18 +115,17 @@ const InstallationStats: React.FC<InstallationStatsProps> = ({ refreshTrigger = 
     });
     
     // Create datasets for each platform
-    const datasets = Array.from(allPlatforms).map(platform => {
+    return Array.from(allPlatforms).map(platform => {
+      const totalInstalls = dates.reduce((sum, date) => {
+        return sum + (stats.daily[date][platform] || 0);
+      }, 0);
+      
       return {
-        name: platform.charAt(0).toUpperCase() + platform.slice(1),
-        data: dates.map(date => stats.daily[date][platform] || 0),
-        color: () => getPlatformColor(platform)
+        label: platform.charAt(0).toUpperCase() + platform.slice(1),
+        value: totalInstalls,
+        color: getPlatformColor(platform)
       };
     });
-    
-    return {
-      labels: dates.map(d => d.slice(5)), // Format as MM-DD
-      datasets
-    };
   };
   
   // Get color for platform
@@ -195,65 +223,18 @@ const InstallationStats: React.FC<InstallationStatsProps> = ({ refreshTrigger = 
       </View>
       
       {/* Platform Chart */}
-      {chartData && chartData.datasets[0].data.some(d => d > 0) && (
+      {chartData.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Installations by Platform</Text>
-          <BarChart
-            data={chartData}
-            width={screenWidth - 40}
-            height={220}
-            yAxisLabel=""
-            chartConfig={{
-              backgroundColor: theme.card,
-              backgroundGradientFrom: theme.card,
-              backgroundGradientTo: theme.card,
-              decimalPlaces: 0,
-              color: (opacity = 1) => theme.primary,
-              labelColor: (opacity = 1) => theme.text,
-              style: {
-                borderRadius: 16
-              }
-            }}
-            style={{
-              marginVertical: 8,
-              borderRadius: 16
-            }}
-          />
+          <SimpleBarChart data={chartData} colors={theme} />
         </View>
       )}
       
-      {/* Daily Installations (Last 7 days) */}
-      {dailyChartData && dailyChartData.datasets.length > 0 && (
+      {/* Weekly Installations */}
+      {dailyChartData.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Installations (Last 7 Days)</Text>
-          
-          {dailyChartData.labels.length > 0 ? (
-            <BarChart
-              data={dailyChartData}
-              width={screenWidth - 40}
-              height={220}
-              yAxisLabel=""
-              chartConfig={{
-                backgroundColor: theme.card,
-                backgroundGradientFrom: theme.card,
-                backgroundGradientTo: theme.card,
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(75, 107, 254, ${opacity})`,
-                labelColor: (opacity = 1) => theme.text,
-                style: {
-                  borderRadius: 16
-                }
-              }}
-              style={{
-                marginVertical: 8,
-                borderRadius: 16
-              }}
-            />
-          ) : (
-            <Text style={[styles.noDataText, { color: theme.textSecondary }]}>
-              No daily installation data available yet
-            </Text>
-          )}
+          <SimpleBarChart data={dailyChartData} colors={theme} />
         </View>
       )}
     </ScrollView>
@@ -336,6 +317,37 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     fontSize: 16,
+  },
+  chartContainer: {
+    marginTop: 20,
+    width: '100%',
+  },
+  barGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    width: '100%',
+  },
+  barLabelContainer: {
+    width: 80,
+  },
+  barLabel: {
+    fontSize: 14,
+  },
+  barContainer: {
+    flex: 1,
+    height: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bar: {
+    height: 24,
+    borderRadius: 4,
+  },
+  barValue: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: 'bold',
   }
 });
 
