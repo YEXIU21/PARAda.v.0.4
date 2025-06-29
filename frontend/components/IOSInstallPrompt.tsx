@@ -14,6 +14,7 @@ export default function IOSInstallPrompt() {
   const [isVisible, setIsVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [step, setStep] = useState(1); // For multi-step instructions
   const { isDarkMode, colors } = useTheme();
 
   useEffect(() => {
@@ -43,6 +44,15 @@ export default function IOSInstallPrompt() {
         setIsVisible(isIOSDevice && !isInStandaloneMode);
         return;
       }
+      
+      // Check if this is the user's second visit (good time to show the prompt)
+      const visitCount = parseInt(localStorage.getItem('visitCount') || '0', 10);
+      if (visitCount === 2 && !isDismissed) {
+        setIsVisible(isIOSDevice && !isInStandaloneMode);
+      }
+      
+      // Update visit count
+      localStorage.setItem('visitCount', (visitCount + 1).toString());
     }
 
     // Only show for iOS devices that aren't in standalone mode and haven't dismissed
@@ -56,11 +66,69 @@ export default function IOSInstallPrompt() {
       localStorage.setItem('iosInstallPromptDismissed', 'true');
     }
   };
+  
+  const handleNext = () => {
+    if (step < 3) {
+      setStep(step + 1);
+    } else {
+      handleDismiss();
+    }
+  };
+  
+  const handleBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
+  };
 
   // Don't render anything if not on iOS or already installed or dismissed
   if (Platform.OS !== 'web' || !isIOS || isStandalone || !isVisible) {
     return null;
   }
+  
+  // Determine which instruction to show based on step
+  const renderInstructionContent = () => {
+    switch(step) {
+      case 1:
+        return (
+          <>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>Step 1: Tap the Share icon</Text>
+            <View style={styles.imageContainer}>
+              <FontAwesome5 name="share" size={40} color={colors.primary} style={styles.instructionImage} />
+            </View>
+            <Text style={[styles.instructionText, { color: colors.text }]}>
+              Tap the Share icon in your browser's toolbar
+            </Text>
+          </>
+        );
+      case 2:
+        return (
+          <>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>Step 2: Find "Add to Home Screen"</Text>
+            <View style={styles.imageContainer}>
+              <FontAwesome5 name="plus-square" size={40} color={colors.primary} style={styles.instructionImage} />
+            </View>
+            <Text style={[styles.instructionText, { color: colors.text }]}>
+              Scroll down in the share menu and tap "Add to Home Screen"
+            </Text>
+          </>
+        );
+      case 3:
+        return (
+          <>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>Step 3: Tap "Add"</Text>
+            <View style={styles.imageContainer}>
+              <FontAwesome5 name="check-circle" size={40} color={colors.primary} style={styles.instructionImage} />
+            </View>
+            <Text style={[styles.instructionText, { color: colors.text }]}>
+              Tap "Add" in the top right corner to install PARAda to your home screen
+            </Text>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <View style={[
@@ -77,39 +145,41 @@ export default function IOSInstallPrompt() {
           </TouchableOpacity>
         </View>
         
-        <Text style={[styles.text, { color: colors.text }]}>
-          Install this app on your home screen for a better experience:
-        </Text>
+        {renderInstructionContent()}
         
-        <View style={styles.instructionsContainer}>
-          <View style={styles.instructionStep}>
-            <FontAwesome5 name="share" size={20} color={colors.primary} style={styles.icon} />
-            <Text style={[styles.instructionText, { color: colors.text }]}>
-              1. Tap the Share icon in your browser
-            </Text>
-          </View>
+        <View style={styles.navigationContainer}>
+          {step > 1 && (
+            <TouchableOpacity 
+              style={[styles.navButton, { backgroundColor: colors.card }]}
+              onPress={handleBack}
+            >
+              <FontAwesome5 name="arrow-left" size={16} color={colors.text} />
+              <Text style={[styles.navButtonText, { color: colors.text }]}>Back</Text>
+            </TouchableOpacity>
+          )}
           
-          <View style={styles.instructionStep}>
-            <FontAwesome5 name="plus-square" size={20} color={colors.primary} style={styles.icon} />
-            <Text style={[styles.instructionText, { color: colors.text }]}>
-              2. Scroll down and tap "Add to Home Screen"
+          <TouchableOpacity
+            style={[styles.navButton, { backgroundColor: colors.primary }]}
+            onPress={handleNext}
+          >
+            <Text style={styles.navButtonText}>
+              {step < 3 ? 'Next' : 'Got it'}
             </Text>
-          </View>
-          
-          <View style={styles.instructionStep}>
-            <FontAwesome5 name="check-circle" size={20} color={colors.primary} style={styles.icon} />
-            <Text style={[styles.instructionText, { color: colors.text }]}>
-              3. Tap "Add" to confirm
-            </Text>
-          </View>
+            {step < 3 && <FontAwesome5 name="arrow-right" size={16} color="#FFFFFF" style={styles.navIcon} />}
+          </TouchableOpacity>
         </View>
         
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.primary }]}
-          onPress={handleDismiss}
-        >
-          <Text style={styles.buttonText}>Got it</Text>
-        </TouchableOpacity>
+        <View style={styles.progressContainer}>
+          {[1, 2, 3].map(i => (
+            <View 
+              key={i}
+              style={[
+                styles.progressDot,
+                { backgroundColor: i <= step ? colors.primary : colors.border }
+              ]}
+            />
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -134,7 +204,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   title: {
     fontSize: 18,
@@ -143,32 +213,57 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 8,
   },
-  text: {
+  stepTitle: {
     fontSize: 16,
-    marginBottom: 16,
-  },
-  instructionsContainer: {
-    marginBottom: 16,
-  },
-  instructionStep: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    fontWeight: 'bold',
     marginBottom: 12,
+    textAlign: 'center',
   },
-  icon: {
-    marginRight: 12,
+  imageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 16,
+    height: 100,
+  },
+  instructionImage: {
+    marginBottom: 8,
   },
   instructionText: {
     fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
   },
-  button: {
-    paddingVertical: 12,
-    borderRadius: 8,
+  navigationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  navButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    minWidth: 100,
   },
-  buttonText: {
+  navButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  navIcon: {
+    marginLeft: 8,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  progressDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
   },
 }); 

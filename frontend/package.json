@@ -20,12 +20,13 @@
     "generate-android-icons": "node ./scripts/generate-android-icons.js",
     "generate-pwa-icons": "node ./scripts/generate-pwa-icons.js",
     "generate-ios-icons": "node ./scripts/generate-ios-icons.js",
+    "generate-ios-splash-screens": "node ./scripts/generate-ios-splash-screens.js",
     "generate-splash-screens": "node ./scripts/generate-splash-screen.js",
     "update-web-template": "node ./scripts/update-web-template.js",
     "sync-pwa-assets": "node ./scripts/sync-pwa-assets.js",
     "simplify-pwa-icons": "node ./scripts/simplify-pwa-icons.js",
     "ensure-logo-paths": "node ./scripts/ensure-logo-paths.js",
-    "generate-all-assets": "npm run generate-android-icons && npm run generate-pwa-icons && npm run generate-ios-icons && npm run generate-splash-screens && npm run update-web-template && npm run sync-pwa-assets && npm run simplify-pwa-icons && npm run ensure-logo-paths"
+    "generate-all-assets": "npm run generate-android-icons && npm run generate-pwa-icons && npm run generate-ios-icons && npm run generate-splash-screens && npm run generate-ios-splash-screens && npm run update-web-template && npm run sync-pwa-assets && npm run simplify-pwa-icons && npm run ensure-logo-paths"
   },
   "jest": {
     "preset": "jest-expo",

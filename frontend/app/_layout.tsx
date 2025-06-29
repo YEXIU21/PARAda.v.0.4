@@ -12,75 +12,100 @@ import PWAInstallPrompt from '../components/PWAInstallPrompt';
 import { initializeSocket } from '../services/socket/socket.service';
 import * as WebBrowser from 'expo-web-browser';
 import ErrorBoundary from '../components/ErrorBoundary';
-import { trackInstallation } from '../services/api/installation.api';
+import { trackInstallation, getPlatformType } from '../services/api/installation.api';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useEffect(() => {
-    // Preload the PARAda-Logo.png image to ensure it's ready when needed
-    if (Platform.OS === 'web') {
-      // Preload the logo image
-      const logoImg = new window.Image();
-      logoImg.src = '/assets/images/PARAda-Logo.png';
-      logoImg.onload = () => {
-        console.log('Logo image preloaded');
-      };
-      
-      // Also preload the splash screen image
-      const splashImg = new window.Image();
-      splashImg.src = '/assets/images/adaptive-icon.png';
-      splashImg.onload = () => {
-        console.log('Splash screen image preloaded');
-      };
-    }
+    // Initialize socket connection
+    initializeSocket();
     
-    // Hide the splash screen when the app is ready
-    setTimeout(() => {
-      SplashScreen.hideAsync().catch(err => {
-        console.warn('Error hiding splash screen:', err);
-      });
-    }, 1500); // Increased timeout to ensure resources are loaded
-
-    // Check if user is logged in and redirect if necessary
-    const checkAuthStatus = async () => {
+    // Check authentication status
+    const checkAuth = async () => {
       try {
-        const storedUser = await AsyncStorage.getItem('user');
+        const token = await AsyncStorage.getItem('token');
+        const userDataString = await AsyncStorage.getItem('userData');
         
-        // If we have a user in storage and we're on the landing page, redirect to the app
-        if (storedUser && (window.location.pathname === '/' || window.location.pathname === '/auth/login')) {
-          router.replace('/(tabs)');
-          
-          // Initialize socket connection for logged-in users
-          try {
-            await initializeSocket();
-            console.log('Socket connection initialized');
-          } catch (socketError) {
-            console.error('Failed to initialize socket:', socketError);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking auth status:', error);
-      }
-    };
-
-    checkAuthStatus();
-    
-    // Track app installation
-    const trackAppInstallation = async () => {
-      try {
-        // Only track installation once
-        const installationTracked = await AsyncStorage.getItem('installationTracked');
-        if (installationTracked === 'true') {
-          console.log('Installation already tracked');
+        if (!token || !userDataString) {
+          // No token or user data, redirect to login after a delay
+          setTimeout(() => {
+            router.replace('/auth/login');
+          }, 1000);
           return;
         }
         
+        // Parse user data
+        const userData = JSON.parse(userDataString);
+        
+        if (!userData || !userData.id) {
+          // Invalid user data, redirect to login
+          setTimeout(() => {
+            router.replace('/auth/login');
+          }, 1000);
+          return;
+        }
+        
+        // User is authenticated, allow access to protected routes
+        // Hide the splash screen
+        setTimeout(() => {
+          SplashScreen.hideAsync();
+        }, 500);
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        // On error, redirect to login
+        setTimeout(() => {
+          router.replace('/auth/login');
+        }, 1000);
+      }
+    };
+    
+    // Track app installation with improved logic
+    const trackAppInstallation = async () => {
+      try {
+        // Check if installation was tracked recently (within last 7 days)
+        const lastTracked = await AsyncStorage.getItem('installationTrackedDate');
+        const now = new Date().getTime();
+        
+        // If tracked within the last 7 days, don't track again
+        if (lastTracked) {
+          const lastTrackedTime = parseInt(lastTracked, 10);
+          const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+          
+          if (now - lastTrackedTime < sevenDaysMs) {
+            console.log('Installation tracked recently, skipping');
+            return;
+          }
+        }
+        
+        // Get platform type for better analytics
+        const platformType = getPlatformType();
+        
         // Track installation
-        console.log('Tracking app installation...');
+        console.log(`Tracking app installation for platform: ${platformType}`);
         const result = await trackInstallation();
+        
+        // Store tracking date
+        await AsyncStorage.setItem('installationTrackedDate', now.toString());
+        
         console.log('Installation tracking result:', result);
+        
+        // For PWA installations, show a thank you message
+        if (platformType === 'pwa' && Platform.OS === 'web') {
+          // Check if this is a first-time PWA launch
+          const isPwaFirstLaunch = await AsyncStorage.getItem('pwaFirstLaunch');
+          
+          if (!isPwaFirstLaunch && window.matchMedia('(display-mode: standalone)').matches) {
+            // Mark as launched
+            await AsyncStorage.setItem('pwaFirstLaunch', 'true');
+            
+            // Show welcome message (could be implemented as a modal or toast)
+            console.log('First PWA launch detected!');
+            
+            // You could trigger a welcome modal here
+          }
+        }
       } catch (error) {
         console.error('Error tracking installation:', error);
       }
@@ -90,106 +115,23 @@ export default function RootLayout() {
     setTimeout(() => {
       trackAppInstallation();
     }, 2000);
-
-    // Add PWA meta tags and script for web platform
-    if (Platform.OS === 'web') {
-      // Check if meta tags already exist
-      const existingViewport = document.querySelector('meta[name="viewport"]');
-      const existingThemeColor = document.querySelector('meta[name="theme-color"]');
-      const existingAppleMobile = document.querySelector('meta[name="apple-mobile-web-app-capable"]');
-      const existingStatusBar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-      const existingMobileWeb = document.querySelector('meta[name="mobile-web-app-capable"]');
-      
-      // Only add viewport meta if it doesn't exist
-      if (!existingViewport) {
-        const metaViewport = document.createElement('meta');
-        metaViewport.name = 'viewport';
-        metaViewport.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
-        document.head.appendChild(metaViewport);
-      }
-      
-      // Only add theme-color meta if it doesn't exist
-      if (!existingThemeColor) {
-        const metaThemeColor = document.createElement('meta');
-        metaThemeColor.name = 'theme-color';
-        metaThemeColor.content = '#4B6BFE';
-        document.head.appendChild(metaThemeColor);
-      }
-      
-      // Only add apple-mobile-web-app-capable meta if it doesn't exist
-      if (!existingAppleMobile) {
-        const metaAppleMobileWebAppCapable = document.createElement('meta');
-        metaAppleMobileWebAppCapable.name = 'apple-mobile-web-app-capable';
-        metaAppleMobileWebAppCapable.content = 'yes';
-        document.head.appendChild(metaAppleMobileWebAppCapable);
-      }
-      
-      // Only add apple-mobile-web-app-status-bar-style meta if it doesn't exist
-      if (!existingStatusBar) {
-        const metaAppleMobileWebAppStatusBarStyle = document.createElement('meta');
-        metaAppleMobileWebAppStatusBarStyle.name = 'apple-mobile-web-app-status-bar-style';
-        metaAppleMobileWebAppStatusBarStyle.content = 'black-translucent';
-        document.head.appendChild(metaAppleMobileWebAppStatusBarStyle);
-      }
-      
-      // Add mobile-web-app-capable meta if it doesn't exist (to fix the warning)
-      if (!existingMobileWeb) {
-        const metaMobileWebAppCapable = document.createElement('meta');
-        metaMobileWebAppCapable.name = 'mobile-web-app-capable';
-        metaMobileWebAppCapable.content = 'yes';
-        document.head.appendChild(metaMobileWebAppCapable);
-      }
-      
-      // Check if manifest link already exists
-      const existingManifest = document.querySelector('link[rel="manifest"]');
-      if (!existingManifest) {
-        // Add manifest link
-        const linkManifest = document.createElement('link');
-        linkManifest.rel = 'manifest';
-        linkManifest.href = '/manifest.json';
-        document.head.appendChild(linkManifest);
-      }
-      
-      // Add favicon link if it doesn't exist
-      const existingFavicon = document.querySelector('link[rel="icon"]');
-      if (!existingFavicon) {
-        const linkFavicon = document.createElement('link');
-        linkFavicon.rel = 'icon';
-        linkFavicon.href = '/assets/images/favicon.ico';
-        document.head.appendChild(linkFavicon);
-      }
-      
-      // Add service worker registration script if it doesn't exist
-      const existingServiceWorkerScript = document.querySelector('script[src="/register-service-worker.js"]');
-      if (!existingServiceWorkerScript) {
-        const script = document.createElement('script');
-        script.src = '/register-service-worker.js';
-        script.defer = true;
-        document.body.appendChild(script);
-      }
-    }
+    
+    // Check auth status
+    checkAuth();
+    
   }, []);
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <ThemeProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ThemedStatusBar />
           <NotificationService>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="+not-found" options={{ title: 'Not Found', headerShown: true }} />
-              <Stack.Screen name="auth/login" options={{ title: 'Login' }} />
-              <Stack.Screen name="auth/register" options={{ title: 'Register' }} />
-              <Stack.Screen name="support" options={{ headerShown: false }} />
-              <Stack.Screen name="support/ticket/[id]" options={{ headerShown: false }} />
-            </Stack>
-            <ThemedStatusBar />
-            {/* Only show PWA install prompt on pages other than landing page */}
-            {Platform.OS === 'web' && window.location.pathname !== '/' && <PWAInstallPrompt />}
+            {Platform.OS === 'web' && <PWAInstallPrompt />}
+            <Stack screenOptions={{ headerShown: false }} />
           </NotificationService>
-        </ThemeProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
