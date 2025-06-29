@@ -12,6 +12,7 @@ import PWAInstallPrompt from '../components/PWAInstallPrompt';
 import { initializeSocket } from '../services/socket/socket.service';
 import * as WebBrowser from 'expo-web-browser';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { trackInstallation } from '../services/api/installation.api';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -65,6 +66,30 @@ export default function RootLayout() {
     };
 
     checkAuthStatus();
+    
+    // Track app installation
+    const trackAppInstallation = async () => {
+      try {
+        // Only track installation once
+        const installationTracked = await AsyncStorage.getItem('installationTracked');
+        if (installationTracked === 'true') {
+          console.log('Installation already tracked');
+          return;
+        }
+        
+        // Track installation
+        console.log('Tracking app installation...');
+        const result = await trackInstallation();
+        console.log('Installation tracking result:', result);
+      } catch (error) {
+        console.error('Error tracking installation:', error);
+      }
+    };
+    
+    // Track installation after a short delay to ensure everything is loaded
+    setTimeout(() => {
+      trackAppInstallation();
+    }, 2000);
 
     // Add PWA meta tags and script for web platform
     if (Platform.OS === 'web') {
