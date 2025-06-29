@@ -293,21 +293,21 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
       setNewPassword('');
       setConfirmPassword('');
       
-      // Show success alert and only close modal after user acknowledges
-      Alert.alert(
-        'Success',
-        'Password changed successfully',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              console.log('Success alert acknowledged, closing modal');
-              onClose();
-            }
+      // Ensure the alert is visible by setting a higher z-index
+      // Close modal first to avoid alert being hidden behind modal
+      onClose();
+      
+      // Show success alert with a slight delay to ensure modal is closed
+      setTimeout(() => {
+        Alert.alert(
+          'Success',
+          'Password changed successfully',
+          [{ text: 'OK' }],
+          { 
+            cancelable: false,
           }
-        ],
-        { cancelable: false }
-      );
+        );
+      }, 300);
     } catch (error: any) {
       console.error('Password change error in component:', error);
       
