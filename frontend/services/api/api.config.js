@@ -100,7 +100,7 @@ export const ENDPOINTS = {
   
   // User endpoints
   USER: {
-    PROFILE: '/api/users/profile',
+    PROFILE: '/api/auth/profile',
     UPDATE: '/api/users/profile',
     CHANGE_PASSWORD: (id) => `/api/users/${id}/password`,
   },
