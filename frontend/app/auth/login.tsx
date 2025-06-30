@@ -1,22 +1,145 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   ActivityIndicator,
+  TextInput,
+  Pressable,
+  NativeSyntheticEvent,
+  TextInputFocusEventData,
+  KeyboardTypeOptions,
+  TextStyle,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
 import { Link, router } from 'expo-router';
 import axios from 'axios';
+import { ThemeColors } from '../../types/ThemeTypes';
+
+// Define props interface for CustomInputField
+interface CustomInputFieldProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder: string;
+  icon: string;
+  secureTextEntry?: boolean;
+  keyboardType?: KeyboardTypeOptions;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  isFocused: boolean;
+  onFocus: () => void;
+  onBlur: () => void;
+  rightElement?: React.ReactNode;
+  theme: ThemeColors;
+}
+
+// Custom Input Field Component
+const CustomInputField: React.FC<CustomInputFieldProps> = ({
+  value,
+  onChangeText,
+  placeholder,
+  icon,
+  secureTextEntry = false,
+  keyboardType = 'default',
+  autoCapitalize = 'none',
+  isFocused,
+  onFocus,
+  onBlur,
+  rightElement,
+  theme,
+}) => {
+  const inputRef = useRef<TextInput>(null);
+  
+  // Force the input to use a specific style that eliminates selection highlight
+  useEffect(() => {
+    if (Platform.OS === 'web' && inputRef.current) {
+      // For web platform, apply direct CSS to eliminate selection highlight
+      const inputElement = inputRef.current as any;
+      if (inputElement && inputElement.style) {
+        // Apply inline styles to eliminate selection highlight
+        inputElement.style.webkitTapHighlightColor = 'rgba(0,0,0,0)';
+        inputElement.style.outline = 'none';
+        inputElement.style.caretColor = theme.primary;
+      }
+    }
+  }, [inputRef.current, theme.primary]);
+  
+  const handleContainerPress = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+      if (onFocus) onFocus();
+    }
+  };
+
+  // Define additional styles for web platform
+  const additionalStyles = Platform.OS === 'web' ? {
+    // Use any to bypass TypeScript checking for web-specific styles
+    // that aren't part of the standard TextStyle type
+    ...(Platform.OS === 'web' ? {
+      WebkitUserSelect: 'text',
+      WebkitTouchCallout: 'none',
+      WebkitTapHighlightColor: 'rgba(0,0,0,0)',
+    } : {})
+  } : {};
+
+  return (
+    <Pressable
+      onPress={handleContainerPress}
+      style={[
+        styles.inputContainer,
+        {
+          borderColor: isFocused ? theme.primary : theme.border,
+          backgroundColor: theme.card,
+          borderWidth: isFocused ? 2 : 1,
+        },
+      ]}
+    >
+      <FontAwesome5
+        name={icon}
+        size={20}
+        color={isFocused ? theme.primary : theme.textSecondary}
+        style={styles.inputIcon}
+      />
+      
+      <TextInput
+        ref={inputRef}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={theme.textSecondary}
+        secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        style={[
+          styles.input,
+          { color: theme.text },
+          additionalStyles as TextStyle
+        ]}
+        onFocus={() => {
+          if (onFocus) onFocus();
+        }}
+        onBlur={() => {
+          if (onBlur) onBlur();
+        }}
+        selectionColor="transparent"
+        cursorColor={theme.primary}
+        underlineColorAndroid="transparent"
+        caretHidden={false}
+        textAlignVertical="center"
+      />
+      
+      {rightElement}
+    </Pressable>
+  );
+};
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -24,7 +147,7 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, getHomePathForRole } = useAuth();
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
 
@@ -36,10 +159,28 @@ export default function LoginScreen() {
 
     setError('');
     try {
-    const success = await login(email, password);
-    
-    if (success) {
-        router.replace('/(tabs)');
+      const success = await login(email, password);
+      
+      if (success) {
+        // After successful login, get the updated user from AsyncStorage
+        const userString = await AsyncStorage.getItem('user');
+        if (userString) {
+          const userData = JSON.parse(userString);
+          if (userData && userData.role) {
+            // Use the helper function to get the correct home path
+            const homePath = getHomePathForRole(userData.role);
+            console.log(`${userData.role} user logged in, redirecting to ${homePath}`);
+            router.replace(homePath);
+          } else {
+            // Fallback to tabs if role is not available
+            console.log('User role not found, using fallback redirect');
+            router.replace('/(tabs)');
+          }
+        } else {
+          // Fallback to tabs if user data isn't available
+          console.log('No user data found after login, using fallback redirect');
+          router.replace('/(tabs)');
+        }
       } else {
         setError('Invalid email or password. Please try again.');
       }
@@ -47,8 +188,6 @@ export default function LoginScreen() {
       console.error('Login error:', err);
       if (axios.isAxiosError(err)) {
         if (err.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
           if (err.response.status === 401) {
             setError('Invalid email or password.');
           } else if (err.response.data && err.response.data.message) {
@@ -57,13 +196,11 @@ export default function LoginScreen() {
             setError('Login failed. Please try again later.');
           }
         } else if (err.request) {
-          // The request was made but no response was received
           setError('Server not responding. Check your internet connection.');
         } else {
-          // Something happened in setting up the request
           setError('An error occurred. Please try again.');
         }
-    } else {
+      } else {
         setError('An unexpected error occurred.');
       }
     }
@@ -95,7 +232,7 @@ export default function LoginScreen() {
               />
             </View>
             <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>PARAda</Text>
+              <Text style={styles.headerTitle}>PARAda</Text>
               <Text style={styles.headerSubtitle}>Real-Time Transportation Tracking</Text>
             </View>
           </View>
@@ -112,67 +249,41 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
-          <View style={[
-            styles.inputContainer, 
-            { 
-              borderColor: focusedInput === 'email' ? theme.primary : theme.border, 
-              backgroundColor: theme.card,
-              borderWidth: focusedInput === 'email' ? 2 : 1
-            }
-          ]}>
-            <FontAwesome5 
-              name="envelope" 
-              size={20} 
-              color={focusedInput === 'email' ? theme.primary : theme.textSecondary} 
-              style={styles.inputIcon} 
-            />
-            <TextInput
-              style={[styles.input, { color: theme.text }]}
-              placeholder="Email"
-              placeholderTextColor={theme.textSecondary}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              onFocus={() => setFocusedInput('email')}
-              onBlur={() => setFocusedInput(null)}
-              selectionColor={theme.primary}
-            />
-          </View>
+          <CustomInputField
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email"
+            icon="envelope"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            isFocused={focusedInput === 'email'}
+            onFocus={() => setFocusedInput('email')}
+            onBlur={() => setFocusedInput(null)}
+            theme={theme}
+            rightElement={null}
+          />
 
-          <View style={[
-            styles.inputContainer, 
-            { 
-              borderColor: focusedInput === 'password' ? theme.primary : theme.border, 
-              backgroundColor: theme.card,
-              borderWidth: focusedInput === 'password' ? 2 : 1
+          <CustomInputField
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password"
+            icon="lock"
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            isFocused={focusedInput === 'password'}
+            onFocus={() => setFocusedInput('password')}
+            onBlur={() => setFocusedInput(null)}
+            theme={theme}
+            rightElement={
+              <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
+                <FontAwesome5 
+                  name={showPassword ? "eye" : "eye-slash"} 
+                  size={18} 
+                  color={focusedInput === 'password' ? theme.primary : theme.textSecondary} 
+                />
+              </TouchableOpacity>
             }
-          ]}>
-            <FontAwesome5 
-              name="lock" 
-              size={20} 
-              color={focusedInput === 'password' ? theme.primary : theme.textSecondary} 
-              style={styles.inputIcon} 
-            />
-            <TextInput
-              style={[styles.input, { color: theme.text }]}
-              placeholder="Password"
-              placeholderTextColor={theme.textSecondary}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              onFocus={() => setFocusedInput('password')}
-              onBlur={() => setFocusedInput(null)}
-              selectionColor={theme.primary}
-            />
-            <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
-              <FontAwesome5 
-                name={showPassword ? "eye" : "eye-slash"} 
-                size={18} 
-                color={focusedInput === 'password' ? theme.primary : theme.textSecondary} 
-            />
-            </TouchableOpacity>
-          </View>
+          />
 
           <TouchableOpacity
             style={[styles.loginButton, { backgroundColor: theme.primary }]}
