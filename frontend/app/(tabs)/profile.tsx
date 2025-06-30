@@ -248,7 +248,22 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { changePassword } = useAuth();
+  
+  const toggleCurrentPasswordVisibility = () => {
+    setShowCurrentPassword(!showCurrentPassword);
+  };
+  
+  const toggleNewPasswordVisibility = () => {
+    setShowNewPassword(!showNewPassword);
+  };
+  
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
   
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -261,19 +276,55 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
       return;
     }
     
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'New password must be at least 6 characters');
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
-      await changePassword(currentPassword, newPassword);
-      Alert.alert('Success', 'Password changed successfully');
+      console.log('Calling changePassword function...');
       
-      // Reset form and close modal
+      // Call the changePassword function from AuthContext
+      await changePassword(currentPassword, newPassword);
+      
+      // Reset form
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      
+      // Ensure the alert is visible by setting a higher z-index
+      // Close modal first to avoid alert being hidden behind modal
       onClose();
+      
+      // Show success alert with a slight delay to ensure modal is closed
+      setTimeout(() => {
+        Alert.alert(
+          'Success',
+          'Password changed successfully',
+          [{ text: 'OK' }],
+          { 
+            cancelable: false,
+          }
+        );
+      }, 300);
     } catch (error: any) {
+      console.error('Password change error in component:', error);
+      
       // Display error message from API or a generic message
-      const errorMessage = error.message || 'Failed to change password. Please try again.';
+      let errorMessage = 'Failed to change password. Please try again.';
+      
+      // Check for specific error messages
+      if (error.message === 'Current password is incorrect') {
+        errorMessage = 'The current password you entered is incorrect. Please try again.';
+      } else if (error.message === 'You are not authorized to change this user\'s password') {
+        errorMessage = 'You are not authorized to change this password.';
+      } else if (error.message?.includes('Validation error')) {
+        errorMessage = 'Password validation failed. New password must be at least 6 characters.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       Alert.alert('Error', errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -298,47 +349,80 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
           
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.text }]}>Current Password</Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.inputBackground || '#333333', 
-                color: theme.text, 
-                borderColor: theme.border 
-              }]}
-              value={currentPassword}
-              onChangeText={setCurrentPassword}
-              secureTextEntry
-              placeholderTextColor={theme.textSecondary}
-            />
+            <View style={[styles.passwordInputWrapper, { 
+              backgroundColor: theme.inputBackground || '#333333',
+              borderColor: theme.border
+            }]}>
+              <TextInput
+                style={[styles.passwordInput, { 
+                  color: theme.text
+                }]}
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                secureTextEntry={!showCurrentPassword}
+                placeholderTextColor={theme.textSecondary}
+              />
+              <TouchableOpacity onPress={toggleCurrentPasswordVisibility} style={styles.eyeIconContainer}>
+                <FontAwesome5 
+                  name={showCurrentPassword ? "eye" : "eye-slash"} 
+                  size={18} 
+                  color={theme.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
           
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.text }]}>New Password</Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.inputBackground || '#333333', 
-                color: theme.text, 
-                borderColor: theme.border 
-              }]}
-              value={newPassword}
-              onChangeText={setNewPassword}
-              secureTextEntry
-              placeholderTextColor={theme.textSecondary}
-            />
+            <View style={[styles.passwordInputWrapper, { 
+              backgroundColor: theme.inputBackground || '#333333',
+              borderColor: theme.border
+            }]}>
+              <TextInput
+                style={[styles.passwordInput, { 
+                  color: theme.text
+                }]}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry={!showNewPassword}
+                placeholderTextColor={theme.textSecondary}
+              />
+              <TouchableOpacity onPress={toggleNewPasswordVisibility} style={styles.eyeIconContainer}>
+                <FontAwesome5 
+                  name={showNewPassword ? "eye" : "eye-slash"} 
+                  size={18} 
+                  color={theme.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.passwordHint, { color: theme.textSecondary }]}>
+              Password must be at least 6 characters long
+            </Text>
           </View>
           
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.text }]}>Confirm New Password</Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.inputBackground || '#333333', 
-                color: theme.text, 
-                borderColor: theme.border 
-              }]}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              placeholderTextColor={theme.textSecondary}
-            />
+            <View style={[styles.passwordInputWrapper, { 
+              backgroundColor: theme.inputBackground || '#333333',
+              borderColor: theme.border
+            }]}>
+              <TextInput
+                style={[styles.passwordInput, { 
+                  color: theme.text
+                }]}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+                placeholderTextColor={theme.textSecondary}
+              />
+              <TouchableOpacity onPress={toggleConfirmPasswordVisibility} style={styles.eyeIconContainer}>
+                <FontAwesome5 
+                  name={showConfirmPassword ? "eye" : "eye-slash"} 
+                  size={18} 
+                  color={theme.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
           
           <TouchableOpacity 
@@ -1193,5 +1277,35 @@ const styles = StyleSheet.create({
   notificationListContainer: {
     flex: 1,
     minHeight: 300,
+  },
+  passwordInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 15,
+    fontSize: 16,
+  },
+  eyeIconContainer: {
+    padding: 10,
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+  },
+  eyeIcon: {
+    padding: 10,
+  },
+  passwordHint: {
+    marginTop: 5,
+    fontSize: 12,
+    marginLeft: 5,
   },
 }); 
