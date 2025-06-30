@@ -5,29 +5,90 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL, ENDPOINTS, AXIOS_CONFIG } from './api.config';
+import { Platform } from 'react-native';
+import axiosInstance from './api.config';
+
+// Constants for multiple storage keys to ensure persistence
+const TOKEN_KEYS = {
+  PRIMARY: 'token',
+  SECONDARY: 'authToken',
+  BACKUP: 'backup_token',
+  WEB_STORAGE: 'parada_token'
+};
 
 /**
- * Get authentication token from AsyncStorage
+ * Save authentication token to multiple storage locations for redundancy
+ * @param {string} token - Authentication token
+ * @returns {Promise<void>}
+ */
+export const saveAuthToken = async (token) => {
+  if (!token) {
+    console.warn('Attempted to save empty token');
+    return;
+  }
+  
+  try {
+    // Save to all AsyncStorage keys
+    await AsyncStorage.setItem(TOKEN_KEYS.PRIMARY, token);
+    await AsyncStorage.setItem(TOKEN_KEYS.SECONDARY, token);
+    await AsyncStorage.setItem(TOKEN_KEYS.BACKUP, token);
+    
+    // If on web platform, also save to localStorage and sessionStorage
+    if (Platform.OS === 'web') {
+      try {
+        localStorage.setItem(TOKEN_KEYS.WEB_STORAGE, token);
+        sessionStorage.setItem(TOKEN_KEYS.WEB_STORAGE, token);
+      } catch (e) {
+        console.error('Error saving token to web storage:', e);
+      }
+    }
+    
+    console.log('Authentication token saved to multiple locations');
+  } catch (error) {
+    console.error('Error saving auth token:', error);
+  }
+};
+
+/**
+ * Get authentication token from AsyncStorage with fallback mechanisms
  * @returns {Promise<string|null>} - Authentication token or null
  */
 export const getAuthToken = async () => {
   try {
-    // First try the current 'token' key
-    let token = await AsyncStorage.getItem('token');
+    // Try to get token from the primary location
+    let token = await AsyncStorage.getItem(TOKEN_KEYS.PRIMARY);
     
-    // If token not found, try the alternate 'authToken' key
+    // If not found, try secondary locations
     if (!token) {
-      token = await AsyncStorage.getItem('authToken');
-      
-      // If found under 'authToken', migrate it to 'token' for consistency
-      if (token) {
-        console.log('Found token under authToken key, migrating...');
-        await AsyncStorage.setItem('token', token);
+      console.log('Primary token not found, trying secondary...');
+      token = await AsyncStorage.getItem(TOKEN_KEYS.SECONDARY);
+    }
+    
+    // If still not found, try backup location
+    if (!token) {
+      console.log('Secondary token not found, trying backup...');
+      token = await AsyncStorage.getItem(TOKEN_KEYS.BACKUP);
+    }
+    
+    // If on web, also try web storage as last resort
+    if (!token && Platform.OS === 'web') {
+      console.log('Backup token not found, trying web storage...');
+      try {
+        token = localStorage.getItem(TOKEN_KEYS.WEB_STORAGE) || 
+                sessionStorage.getItem(TOKEN_KEYS.WEB_STORAGE);
+      } catch (e) {
+        console.error('Error accessing web storage:', e);
       }
     }
     
+    // If token found in any alternate location, restore it to all locations
+    if (token && !await AsyncStorage.getItem(TOKEN_KEYS.PRIMARY)) {
+      console.log('Token found in alternate location, restoring to all locations...');
+      await saveAuthToken(token);
+    }
+    
     if (!token) {
-      console.warn('No authentication token found in storage.');
+      console.warn('No authentication token found in any storage location');
       
       // For debugging, log all available keys in AsyncStorage
       const keys = await AsyncStorage.getAllKeys();
@@ -35,10 +96,73 @@ export const getAuthToken = async () => {
       return null;
     }
     
+    // Verify token with backend if possible (but don't block the request)
+    validateTokenInBackground(token);
+    
     return token;
   } catch (error) {
     console.error('Error getting auth token:', error);
     return null;
+  }
+};
+
+/**
+ * Validate token with backend in background
+ * @param {string} token - Token to validate
+ * @returns {Promise<boolean>} - Whether token is valid
+ */
+const validateTokenInBackground = async (token) => {
+  if (!token) return false;
+  
+  try {
+    // Use a short timeout for validation to avoid blocking
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
+    const response = await axios.post(
+      `${BASE_URL}${ENDPOINTS.AUTH.VERIFY}`,
+      { token },
+      { 
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' } 
+      }
+    );
+    
+    clearTimeout(timeoutId);
+    
+    if (response.data && response.data.valid === false) {
+      console.warn('Token validation failed in background check');
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    // Don't log errors for aborted requests
+    if (error.name !== 'AbortError') {
+      console.error('Background token validation error:', error);
+    }
+    
+    // Return true on network errors to avoid logging out users unnecessarily
+    return true;
+  }
+};
+
+/**
+ * Get authentication header for API requests
+ * @returns {Promise<Object>} - Header object with authentication token
+ */
+export const getAuthHeader = async () => {
+  try {
+    const token = await getAuthToken();
+    if (!token) return {};
+    
+    return { 
+      'x-access-token': token,
+      'Authorization': `Bearer ${token}`
+    };
+  } catch (error) {
+    console.error('Error creating auth headers:', error);
+    return {};
   }
 };
 
@@ -51,15 +175,14 @@ export const getAuthToken = async () => {
 export const login = async (email, password) => {
   try {
     console.log(`Logging in to ${BASE_URL}${ENDPOINTS.AUTH.LOGIN}`);
-    const response = await axios.post(
+    const response = await axiosInstance.post(
       `${BASE_URL}${ENDPOINTS.AUTH.LOGIN}`, 
-      { email, password },
-      AXIOS_CONFIG
+      { email, password }
     );
     
     if (response.data && response.data.accessToken) {
-      // Save token
-      await AsyncStorage.setItem('token', response.data.accessToken);
+      // Save token to all storage locations
+      await saveAuthToken(response.data.accessToken);
       
       return {
         user: response.data.user,
@@ -92,10 +215,9 @@ export const register = async (userData) => {
     console.log(`Registering user at ${BASE_URL}${ENDPOINTS.AUTH.REGISTER}`);
     console.log('Registration data:', { ...userData, password: '[REDACTED]' });
     
-    const response = await axios.post(
+    const response = await axiosInstance.post(
       `${BASE_URL}${ENDPOINTS.AUTH.REGISTER}`, 
-      userData,
-      AXIOS_CONFIG
+      userData
     );
     
     if (response.status === 201 && response.data.user) {
@@ -120,13 +242,30 @@ export const register = async (userData) => {
 };
 
 /**
- * Logout user
+ * Logout user - ensure all tokens are cleared
  * @returns {Promise<void>}
  */
 export const logout = async () => {
   try {
-    await AsyncStorage.removeItem('token');
+    // Clear all token storage locations
+    await AsyncStorage.removeItem(TOKEN_KEYS.PRIMARY);
+    await AsyncStorage.removeItem(TOKEN_KEYS.SECONDARY);
+    await AsyncStorage.removeItem(TOKEN_KEYS.BACKUP);
     await AsyncStorage.removeItem('user');
+    
+    // Clear web storage if on web
+    if (Platform.OS === 'web') {
+      try {
+        localStorage.removeItem(TOKEN_KEYS.WEB_STORAGE);
+        localStorage.removeItem('parada_last_path');
+        sessionStorage.removeItem(TOKEN_KEYS.WEB_STORAGE);
+        sessionStorage.removeItem('parada_last_path');
+      } catch (e) {
+        console.error('Error clearing web storage:', e);
+      }
+    }
+    
+    console.log('All auth tokens cleared');
   } catch (error) {
     console.error('Logout error:', error);
     throw error;
@@ -139,19 +278,8 @@ export const logout = async () => {
  */
 export const getAuthUser = async () => {
   try {
-    const token = await getAuthToken();
-    if (!token) {
-      console.log('No auth token found');
-      return null;
-    }
-    
     console.log(`Fetching user data from ${BASE_URL}${ENDPOINTS.AUTH.ME}`);
-    const response = await axios.get(
-      `${BASE_URL}${ENDPOINTS.AUTH.ME}`,
-      {
-        headers: { 'x-access-token': token }
-      }
-    );
+    const response = await axiosInstance.get(`${BASE_URL}${ENDPOINTS.AUTH.ME}`);
     
     console.log('Auth user response:', response.data);
     return response.data.user;
@@ -285,20 +413,30 @@ export const refreshUserData = async () => {
  */
 export const changePassword = async (userId, currentPassword, newPassword) => {
   try {
+    console.log(`Changing password for user ID: ${userId}`);
+    
     const token = await getAuthToken();
-    if (!token) throw new Error('Authentication required');
+    if (!token) {
+      console.error('Authentication token not found');
+      throw new Error('Authentication required');
+    }
 
+    const url = `${BASE_URL}${ENDPOINTS.USER.CHANGE_PASSWORD(userId)}`;
+    console.log(`Making password change request to: ${url}`);
+    
     const response = await axios.put(
-      `${BASE_URL}${ENDPOINTS.USER.CHANGE_PASSWORD(userId)}`,
+      url,
       { currentPassword, newPassword },
       {
         headers: { 'x-access-token': token }
       }
     );
     
+    console.log('Password change API response:', response.status);
     return response.data;
   } catch (error) {
     console.error('Error changing password:', error);
+    
     if (error.response) {
       console.error('Status:', error.response.status);
       console.error('Data:', error.response.data);
@@ -308,6 +446,8 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
         throw new Error(error.response.data.message);
       }
     }
-    throw error;
+    
+    // If we don't have a specific error message, throw a generic one
+    throw new Error('Failed to change password. Please try again.');
   }
 }; 
