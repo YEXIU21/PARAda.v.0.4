@@ -10,7 +10,7 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/assets/images/PARAda-Logo.png",
+      "src": "/assets/images/favicon.png",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/png"
     },
@@ -25,6 +25,13 @@
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/PARAda-Logo.png",
+      "type": "image/png",
+      "sizes": "180x180",
+      "purpose": "any",
+      "ios": true
     }
   ],
   "related_applications": [],
@@ -35,21 +42,24 @@
       "short_name": "Login",
       "description": "Login to your PARAda account",
       "url": "/auth/login",
-      "icons": [{ "src": "/assets/icons/icon-96x96.png", "sizes": "96x96", "purpose": "any" }]
+      "icons": [{ "src": "/assets/images/favicon.png", "sizes": "96x96", "purpose": "any" }]
     },
     {
       "name": "Register",
       "short_name": "Register",
       "description": "Create a new PARAda account",
       "url": "/auth/register",
-      "icons": [{ "src": "/assets/icons/icon-96x96.png", "sizes": "96x96", "purpose": "any" }]
+      "icons": [{ "src": "/assets/images/favicon.png", "sizes": "96x96", "purpose": "any" }]
     }
   ],
   "screenshots": [
     {
-      "src": "/assets/icons/icon-512x512.png",
+      "src": "/assets/images/PARAda-Logo.png",
       "sizes": "1280x720",
       "type": "image/png"
     }
-  ]
+  ],
+  "apple-mobile-web-app-capable": "yes",
+  "apple-mobile-web-app-status-bar-style": "black-translucent",
+  "apple-mobile-web-app-title": "PARAda"
 } 
