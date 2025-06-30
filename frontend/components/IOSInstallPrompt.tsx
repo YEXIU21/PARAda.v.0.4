@@ -8,48 +8,72 @@ const IOSInstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
   const insets = useSafeAreaInsets();
   
+  // Only run client-side code in useEffect to avoid SSR issues
   useEffect(() => {
+    // Skip this effect during server-side rendering
+    if (typeof window === 'undefined') return;
+    
     const checkIfShouldShow = async () => {
-      // Only show on iOS
-      if (Platform.OS !== 'web' || !isIOS()) {
-        return;
-      }
-      
-      // Check if user has dismissed before
-      const hasPromptBeenDismissed = await AsyncStorage.getItem('ios_install_prompt_dismissed');
-      const lastPromptTime = await AsyncStorage.getItem('ios_install_prompt_time');
-      const currentTime = new Date().getTime();
-      
-      // Show prompt if not dismissed or if it's been more than 7 days since last prompt
-      if (!hasPromptBeenDismissed || 
-          (lastPromptTime && (currentTime - parseInt(lastPromptTime)) > 7 * 24 * 60 * 60 * 1000)) {
-        // Check if the app is not already installed
-        if (!isInStandaloneMode()) {
-          setShowPrompt(true);
-          // Update last prompt time
-          await AsyncStorage.setItem('ios_install_prompt_time', currentTime.toString());
+      try {
+        // Only show on iOS
+        if (Platform.OS !== 'web' || !isIOS()) {
+          return;
         }
+        
+        // Check if user has dismissed before
+        const hasPromptBeenDismissed = await AsyncStorage.getItem('ios_install_prompt_dismissed');
+        const lastPromptTime = await AsyncStorage.getItem('ios_install_prompt_time');
+        const currentTime = new Date().getTime();
+        
+        // Show prompt if not dismissed or if it's been more than 7 days since last prompt
+        if (!hasPromptBeenDismissed || 
+            (lastPromptTime && (currentTime - parseInt(lastPromptTime)) > 7 * 24 * 60 * 60 * 1000)) {
+          // Check if the app is not already installed
+          if (!isInStandaloneMode()) {
+            setShowPrompt(true);
+            // Update last prompt time
+            await AsyncStorage.setItem('ios_install_prompt_time', currentTime.toString());
+          }
+        }
+      } catch (error) {
+        // Silently handle errors to prevent crashes
+        console.error('Error in IOSInstallPrompt:', error);
       }
     };
     
     checkIfShouldShow();
   }, []);
   
+  // These functions are only called client-side within useEffect
   const isIOS = () => {
-    // Use type assertion for browser-specific property
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    try {
+      return typeof navigator !== 'undefined' && 
+        /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+        !(window as any).MSStream;
+    } catch (e) {
+      return false;
+    }
   };
   
   const isInStandaloneMode = () => {
-    // Use type assertion for iOS-specific property
-    return (window.navigator as any).standalone === true;
+    try {
+      return typeof navigator !== 'undefined' && 
+        (window.navigator as any).standalone === true;
+    } catch (e) {
+      return false;
+    }
   };
   
   const dismissPrompt = async () => {
-    setShowPrompt(false);
-    await AsyncStorage.setItem('ios_install_prompt_dismissed', 'true');
+    try {
+      setShowPrompt(false);
+      await AsyncStorage.setItem('ios_install_prompt_dismissed', 'true');
+    } catch (error) {
+      console.error('Error dismissing prompt:', error);
+    }
   };
   
+  // Don't render anything during SSR or if prompt shouldn't be shown
   if (!showPrompt) {
     return null;
   }
@@ -109,4 +133,5 @@ const styles = StyleSheet.create({
   },
 });
 
+// Export with dynamic import for SSR compatibility
 export default IOSInstallPrompt; 

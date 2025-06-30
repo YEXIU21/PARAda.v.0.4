@@ -35,6 +35,9 @@ const InstallationCounter: React.FC<InstallationCounterProps> = ({
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    // Skip this effect during server-side rendering
+    if (typeof window === 'undefined') return;
+    
     const fetchInstallationCount = async () => {
       try {
         setLoading(true);
@@ -54,6 +57,18 @@ const InstallationCounter: React.FC<InstallationCounterProps> = ({
 
     fetchInstallationCount();
   }, []);
+
+  // For SSR, return a minimal placeholder
+  if (typeof window === 'undefined') {
+    return (
+      <View style={[
+        styles.container, 
+        { backgroundColor, alignItems: centered ? 'center' : 'flex-start' }
+      ]}>
+        <Text style={[styles.counterText, { color: textColor }]}>Loading installations...</Text>
+      </View>
+    );
+  }
 
   if (loading) {
     return (

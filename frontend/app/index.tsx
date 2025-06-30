@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { 
   View, 
   Text, 
@@ -17,9 +17,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../context/ThemeContext';
-import IOSInstallPrompt from '../components/IOSInstallPrompt';
-import InstallationCounter from '../components/InstallationCounter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Use dynamic imports with a more TypeScript-friendly approach
+const IOSInstallPromptComponent = React.lazy(() => {
+  if (Platform.OS === 'web') {
+    return import('../components/IOSInstallPrompt');
+  } else {
+    return Promise.resolve({ default: () => null });
+  }
+});
+
+const InstallationCounterComponent = React.lazy(() => 
+  import('../components/InstallationCounter')
+);
 
 // PWA installation detection
 interface BeforeInstallPromptEvent extends Event {
@@ -28,7 +39,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 // Register service worker only in development
-if (process.env.NODE_ENV === 'development') {
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
       navigator.serviceWorker.register('/register-service-worker.js').then(function(registration) {
@@ -63,6 +74,9 @@ export default function LandingPage() {
 
   // Check if user is already authenticated on component mount
   useEffect(() => {
+    // Skip this effect during server-side rendering
+    if (typeof window === 'undefined') return;
+    
     let isActive = true; // Local flag to prevent state updates after cleanup
     
     async function checkAuth() {
@@ -128,7 +142,8 @@ export default function LandingPage() {
 
   // Check if PWA can be installed - use a safer approach
   useEffect(() => {
-    if (Platform.OS !== 'web') return;
+    // Skip this effect during server-side rendering
+    if (typeof window === 'undefined' || Platform.OS !== 'web') return;
     
     let isActive = true;
     
@@ -323,8 +338,10 @@ export default function LandingPage() {
     <ScrollView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
-      {/* iOS Install Prompt */}
-      <IOSInstallPrompt />
+      {/* iOS Install Prompt - Wrapped in Suspense for SSR compatibility */}
+      <Suspense fallback={null}>
+        <IOSInstallPromptComponent />
+      </Suspense>
       
       {/* Header - Updated to match login page */}
       <LinearGradient
@@ -372,14 +389,16 @@ export default function LandingPage() {
           </LinearGradient>
         </TouchableOpacity>
         
-        {/* Installation Counter - now below the button */}
+        {/* Installation Counter - now below the button, wrapped in Suspense */}
         <View style={styles.installationCounterWrapper}>
-          <InstallationCounter 
-            textColor={isDarkMode ? '#FFFFFF' : '#333333'}
-            iconColor={colors.primary}
-            backgroundColor={isDarkMode ? 'rgba(75, 107, 254, 0.1)' : 'rgba(75, 107, 254, 0.05)'}
-            centered={true}
-          />
+          <Suspense fallback={<ActivityIndicator size="small" color={colors.primary} />}>
+            <InstallationCounterComponent 
+              textColor={isDarkMode ? '#FFFFFF' : '#333333'}
+              iconColor={colors.primary}
+              backgroundColor={isDarkMode ? 'rgba(75, 107, 254, 0.1)' : 'rgba(75, 107, 254, 0.05)'}
+              centered={true}
+            />
+          </Suspense>
         </View>
       </View>
 
@@ -399,8 +418,6 @@ export default function LandingPage() {
                 <LinearGradient
                   colors={colors.gradientColors}
                   style={styles.featureIconBackground}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
                 >
                   <FontAwesome5 name={feature.icon} size={24} color="#FFFFFF" />
                 </LinearGradient>
@@ -415,120 +432,62 @@ export default function LandingPage() {
           ))}
         </View>
       </View>
-
+      
       {/* Call to Action */}
       <View style={styles.ctaSection}>
         <LinearGradient
           colors={colors.gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={styles.ctaBackground}
+          style={styles.ctaGradient}
         >
-          <Text style={styles.ctaTitle}>Ready to Simplify Your Transportation?</Text>
+          <Text style={styles.ctaTitle}>Ready to Get Started?</Text>
           <Text style={styles.ctaSubtitle}>
-            Download PARAda now and experience hassle-free transportation tracking
+            Join thousands of users who are already experiencing the benefits of PARAda
           </Text>
           
           <TouchableOpacity
             style={styles.ctaButton}
-            onPress={handleInstallClick}
+            onPress={() => router.push('/auth/login')}
           >
-            <Text style={styles.ctaButtonText}>
-              {isInstallable ? 'Install App' : isInstalled ? 'Open App' : 'Get Started'}
-            </Text>
-            <FontAwesome5 name={isInstallable ? "download" : "arrow-right"} size={16} color="#4B6BFE" style={styles.ctaButtonIcon} />
+            <Text style={styles.ctaButtonText}>Sign Up Now</Text>
           </TouchableOpacity>
           
           {/* Installation Counter in CTA section */}
           <View style={styles.ctaInstallationCounter}>
-            <InstallationCounter 
-              textColor="#FFFFFF"
-              iconColor="#FFFFFF"
-              backgroundColor="rgba(255, 255, 255, 0.2)"
-              compact={true}
-              centered={true}
-              fontSize={16}
-            />
+            <Suspense fallback={<ActivityIndicator size="small" color="#FFFFFF" />}>
+              <InstallationCounterComponent 
+                textColor="#FFFFFF"
+                iconColor="#FFFFFF"
+                backgroundColor="rgba(255, 255, 255, 0.1)"
+                centered={true}
+              />
+            </Suspense>
           </View>
         </LinearGradient>
       </View>
-
+      
       {/* Footer */}
-      <View style={[styles.footer, { backgroundColor: isDarkMode ? '#1A1A1A' : '#F0F0F0' }]}>
-        <View style={styles.footerColumns}>
-          <View style={styles.footerColumn}>
-            <Text style={[styles.footerColumnTitle, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}>
-              Company
+      <View style={[styles.footer, { backgroundColor: isDarkMode ? '#121212' : '#F0F0F0' }]}>
+        <Text style={[styles.footerText, { color: isDarkMode ? '#AAAAAA' : '#666666' }]}>
+          © 2023 PARAda. All rights reserved.
+        </Text>
+        <View style={styles.footerLinks}>
+          <TouchableOpacity>
+            <Text style={[styles.footerLink, { color: isDarkMode ? '#AAAAAA' : '#666666' }]}>
+              Privacy Policy
             </Text>
-            <TouchableOpacity>
-              <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>About Us</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Careers</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Contact</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.footerColumn}>
-            <Text style={[styles.footerColumnTitle, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}>
-              Support
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={[styles.footerLink, { color: isDarkMode ? '#AAAAAA' : '#666666' }]}>
+              Terms of Service
             </Text>
-            <TouchableOpacity onPress={() => Linking.openURL('mailto:support@parada.com')}>
-              <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>support@parada.com</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => Linking.openURL('mailto:help@parada.com')}>
-              <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>help@parada.com</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => Linking.openURL('mailto:customerservice@parada.com')}>
-              <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>customerservice@parada.com</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.footerColumn}>
-            <Text style={[styles.footerColumnTitle, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}>
-              Resources
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={[styles.footerLink, { color: isDarkMode ? '#AAAAAA' : '#666666' }]}>
+              Contact Us
             </Text>
-            <TouchableOpacity>
-              <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Help Center</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Privacy Policy</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Terms of Service</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.footerColumn}>
-            <Text style={[styles.footerColumnTitle, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}>
-              Connect
-            </Text>
-            <View style={styles.socialLinks}>
-              <TouchableOpacity 
-                style={styles.socialIcon}
-                onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61574439785965')}
-              >
-                <FontAwesome5 name="facebook" size={20} color={isDarkMode ? '#BBBBBB' : '#666666'} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialIcon}>
-                <FontAwesome5 name="twitter" size={20} color={isDarkMode ? '#BBBBBB' : '#666666'} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialIcon}>
-                <FontAwesome5 name="instagram" size={20} color={isDarkMode ? '#BBBBBB' : '#666666'} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialIcon}>
-                <FontAwesome5 name="linkedin" size={20} color={isDarkMode ? '#BBBBBB' : '#666666'} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-        
-        <View style={styles.copyright}>
-          <Text style={[styles.copyrightText, { color: isDarkMode ? '#999999' : '#999999' }]}>
-            © {new Date().getFullYear()} PARAda Transportation. All rights reserved.
-          </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
@@ -677,7 +636,7 @@ const styles = StyleSheet.create({
     marginTop: 40,
     marginBottom: 40,
   },
-  ctaBackground: {
+  ctaGradient: {
     padding: 30,
     borderRadius: 15,
     alignItems: 'center',
@@ -696,71 +655,7 @@ const styles = StyleSheet.create({
     marginBottom: 25,
     opacity: 0.9,
   },
-  ctaInstallationCounter: {
-    marginTop: 15,
-    alignItems: 'center',
-  },
-  footer: {
-    padding: 20,
-    paddingTop: 40,
-    paddingBottom: 30,
-  },
-  footerColumns: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-evenly',
-    marginBottom: 20,
-    maxWidth: 1200,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  footerColumn: {
-    minWidth: 180,
-    marginBottom: 20,
-    alignItems: 'center',
-    paddingHorizontal: 15,
-  },
-  footerColumnTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  footerLink: {
-    fontSize: 14,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  socialLinks: {
-    flexDirection: 'row',
-    marginTop: 5,
-    justifyContent: 'center',
-  },
-  socialIcon: {
-    marginHorizontal: 8,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(150, 150, 150, 0.1)',
-  },
-  copyright: {
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(150, 150, 150, 0.2)',
-    width: '100%',
-    maxWidth: 1200,
-    alignSelf: 'center',
-  },
-  copyrightText: {
-    textAlign: 'center',
-    fontSize: 12,
-  },
   ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     paddingVertical: 15,
     paddingHorizontal: 30,
@@ -776,10 +671,29 @@ const styles = StyleSheet.create({
     color: '#4B6BFE',
     fontSize: 18,
     fontWeight: 'bold',
-    marginRight: 10,
   },
-  ctaButtonIcon: {
-    marginTop: 1,
+  ctaInstallationCounter: {
+    marginTop: 15,
+    alignItems: 'center',
+  },
+  footer: {
+    padding: 20,
+    paddingTop: 40,
+    paddingBottom: 30,
+  },
+  footerText: {
+    textAlign: 'center',
+    fontSize: 12,
+  },
+  footerLinks: {
+    flexDirection: 'row',
+    marginTop: 5,
+    justifyContent: 'center',
+  },
+  footerLink: {
+    fontSize: 14,
+    marginHorizontal: 10,
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
