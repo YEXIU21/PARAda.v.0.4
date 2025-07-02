@@ -654,7 +654,7 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
             <View style={styles.planHeader}>
               <Text style={[styles.planName, { color: theme.text }]}>{item.name}</Text>
               <Text style={[styles.planPrice, { color: theme.primary }]}>
-                ₱{item.price}/{item.duration === 365 ? 'year' : 'month'}
+                ₱{item.price}/{item.duration === 365 ? 'year' : item.duration === 7 ? 'week' : 'month'}
               </Text>
             </View>
             <Text style={[styles.planDuration, { color: theme.textSecondary }]}>
