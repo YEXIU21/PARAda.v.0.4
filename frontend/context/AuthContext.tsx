@@ -731,10 +731,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Authentication token not found');
       }
       
-      // Direct API call instead of importing auth API
-      const response = await axios.post(
-        `${API_URL}/api/auth/change-password`,
-        { userId: user.id, currentPassword, newPassword },
+      // Use the correct API endpoint - PUT /api/users/:userId/password
+      const response = await axios.put(
+        `${API_URL}/api/users/${user.id}/password`,
+        { currentPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
