@@ -144,10 +144,26 @@ export default function MessagesScreen() {
       
       // Check if user is logged in
       if (!user || !user.id) {
-        throw new Error('User not authenticated');
+        // Try to get user from AsyncStorage as fallback
+        try {
+          const storedUserStr = await AsyncStorage.getItem('user');
+          if (storedUserStr) {
+            const storedUser = JSON.parse(storedUserStr);
+            if (storedUser && storedUser.id) {
+              console.log('Using stored user data as fallback');
+              // Continue with stored user data
+            } else {
+              throw new Error('User not authenticated');
+            }
+          } else {
+            throw new Error('User not authenticated');
+          }
+        } catch (e) {
+          throw new Error('User not authenticated');
+        }
       }
       
-      console.log(`Fetching messages for user ID: ${user.id} Role: ${user.role}`);
+      console.log(`Fetching messages for user ID: ${user?.id} Role: ${user?.role}`);
       
       // First try to load from storage for faster UI response
       const storedMessages = await loadMessagesFromStorage();

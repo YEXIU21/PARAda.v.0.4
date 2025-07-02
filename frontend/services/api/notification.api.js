@@ -42,6 +42,7 @@ export const getUserNotifications = async (options = {}) => {
       {
         headers: { 
           'x-access-token': token,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         timeout: 15000 // 15 second timeout
