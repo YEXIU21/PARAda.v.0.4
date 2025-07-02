@@ -142,8 +142,10 @@ export default function MessagesScreen() {
         setIsLoading(true);
       }
       
+      let currentUser = user;
+      
       // Check if user is logged in
-      if (!user || !user.id) {
+      if (!currentUser || !currentUser.id) {
         // Try to get user from AsyncStorage as fallback
         try {
           const storedUserStr = await AsyncStorage.getItem('user');
@@ -151,81 +153,99 @@ export default function MessagesScreen() {
             const storedUser = JSON.parse(storedUserStr);
             if (storedUser && storedUser.id) {
               console.log('Using stored user data as fallback');
-              // Continue with stored user data
+              currentUser = storedUser;
             } else {
-              throw new Error('User not authenticated');
+              console.warn('No valid user in AsyncStorage');
+              // Instead of throwing error, continue with fallback to stored messages
             }
           } else {
-            throw new Error('User not authenticated');
+            console.warn('No user data in AsyncStorage');
+            // Instead of throwing error, continue with fallback to stored messages
           }
         } catch (e) {
-          throw new Error('User not authenticated');
+          console.error('Error getting user from AsyncStorage:', e);
+          // Instead of throwing error, continue with fallback to stored messages
         }
       }
       
-      console.log(`Fetching messages for user ID: ${user?.id} Role: ${user?.role}`);
+      if (currentUser && currentUser.id) {
+        console.log(`Fetching messages for user ID: ${currentUser.id} Role: ${currentUser.role}`);
+      } else {
+        console.log('Fetching messages without authenticated user, will use stored messages');
+      }
       
       // First try to load from storage for faster UI response
       const storedMessages = await loadMessagesFromStorage();
       
       try {
-        // Then fetch from API
-        console.log('Making API call to get notifications');
-        const options = {
-          limit: 100,
-          unreadOnly: false
-        };
-        
-        console.log('Getting notifications with options:', options);
-        const apiUrl = `${BASE_URL}/api/notifications?limit=${options.limit}`;
-        console.log('Fetching notifications from:', apiUrl);
-        
-        const response = await getUserNotifications(options);
-        
-        console.log('API returned notifications:', response?.notifications?.length);
-        if (response?.notifications?.length > 0) {
-          console.log('Sample notification:', JSON.stringify(response.notifications[0]));
+        // Then fetch from API if we have a user
+        if (currentUser && currentUser.id) {
+          console.log('Making API call to get notifications');
+          const options = {
+            limit: 100,
+            unreadOnly: false
+          };
           
-          // Filter out invalid messages
-          const validMessages = response.notifications.filter((msg: any) => {
-            if (!msg) return false;
-            if (!msg._id || !msg.title || !msg.message) return false;
-            return true;
-          });
+          console.log('Getting notifications with options:', options);
+          const apiUrl = `${BASE_URL}/api/notifications?limit=${options.limit}`;
+          console.log('Fetching notifications from:', apiUrl);
           
-          console.log('Valid messages after filtering:', validMessages.length);
+          const response = await getUserNotifications(options);
           
-          // Remove duplicates by ID
-          const uniqueMessages = validMessages.filter((msg: any, index: number, self: any[]) => 
-            index === self.findIndex((m) => m._id === msg._id)
-          );
-          
-          console.log('Unique messages after duplicate filtering:', uniqueMessages.length);
-          
-          // Use API data if available
-          if (uniqueMessages.length > 0) {
-            console.log(`Found ${uniqueMessages.length} valid messages`);
-            setMessages(uniqueMessages);
-            saveMessagesToStorage(uniqueMessages);
+          console.log('API returned notifications:', response?.notifications?.length);
+          if (response?.notifications?.length > 0) {
+            console.log('Sample notification:', JSON.stringify(response.notifications[0]));
+            
+            // Filter out invalid messages
+            const validMessages = response.notifications.filter((msg: any) => {
+              if (!msg) return false;
+              if (!msg._id || !msg.title || !msg.message) return false;
+              return true;
+            });
+            
+            console.log('Valid messages after filtering:', validMessages.length);
+            
+            // Remove duplicates by ID
+            const uniqueMessages = validMessages.filter((msg: any, index: number, self: any[]) => 
+              index === self.findIndex((m) => m._id === msg._id)
+            );
+            
+            console.log('Unique messages after duplicate filtering:', uniqueMessages.length);
+            
+            // Use API data if available
+            if (uniqueMessages.length > 0) {
+              console.log(`Found ${uniqueMessages.length} valid messages`);
+              setMessages(uniqueMessages);
+              saveMessagesToStorage(uniqueMessages);
+            } 
+            // Fall back to stored data if API returned no valid messages
+            else if (storedMessages.length > 0) {
+              console.log(`Loaded ${storedMessages.length} valid messages from storage`);
+              setMessages(storedMessages);
+            }
+            // No messages available
+            else {
+              setMessages([]);
+            }
           } 
-          // Fall back to stored data if API returned no valid messages
+          // Fall back to stored data if API returned no messages
           else if (storedMessages.length > 0) {
-            console.log(`Loaded ${storedMessages.length} valid messages from storage`);
+            console.log(`Loaded ${storedMessages.length} messages from storage`);
             setMessages(storedMessages);
           }
           // No messages available
           else {
             setMessages([]);
           }
-        } 
-        // Fall back to stored data if API returned no messages
-        else if (storedMessages.length > 0) {
-          console.log(`Loaded ${storedMessages.length} messages from storage`);
-          setMessages(storedMessages);
-        }
-        // No messages available
-        else {
-          setMessages([]);
+        } else {
+          // No authenticated user, use stored messages
+          if (storedMessages.length > 0) {
+            console.log(`Using ${storedMessages.length} stored messages (no authenticated user)`);
+            setMessages(storedMessages);
+          } else {
+            console.log('No stored messages available and no authenticated user');
+            setMessages([]);
+          }
         }
       } catch (apiError) {
         console.error('Error fetching messages from API:', apiError);
