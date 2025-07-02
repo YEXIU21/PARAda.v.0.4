@@ -3,6 +3,7 @@ node_modules/
 npm-debug.log
 yarn-debug.log
 yarn-error.log
+.pnpm-debug.log
 
 # Expo
 .expo/
@@ -30,6 +31,8 @@ web-build/
 .vscode/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
 
 # Build files
 /build/
@@ -45,6 +48,7 @@ logs/
 
 # Testing
 /coverage
+.nyc_output/
 
 # Misc
 .DS_Store
@@ -67,6 +71,7 @@ zparadsystemplanrules.md
 zparadarules.md
 .cursorignore
 r5.md
+limitless.md
 # Ignore .cursor folder
 .cursor/
 

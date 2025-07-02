@@ -81,17 +81,24 @@ const WebMapView: React.FC<WebMapViewProps> = (props) => {
       return;
     }
     
-    // Define the callback function in the window scope
-    window.initGoogleMap = () => {
-      console.log('Google Maps API loaded');
-      setMapLoaded(true);
-    };
-    
-    // Add specific error handling for Google Maps API errors
-    window.gm_authFailure = () => {
-      setMapError(true);
-      console.error('Google Maps authentication error: The API key may not be valid or billing is not enabled');
-    };
+    // Define the callback function in the window scope before loading the script
+    if (typeof window !== 'undefined') {
+      // Make sure initGoogleMap is defined only once
+      if (!window.initGoogleMap) {
+        window.initGoogleMap = () => {
+          console.log('Google Maps API loaded');
+          setMapLoaded(true);
+        };
+      }
+      
+      // Add specific error handling for Google Maps API errors
+      if (!window.gm_authFailure) {
+        window.gm_authFailure = () => {
+          setMapError(true);
+          console.error('Google Maps authentication error: The API key may not be valid or billing is not enabled');
+        };
+      }
+    }
     
     // Check if the script is already loaded
     const existingScript = document.getElementById('google-maps-script');
@@ -112,12 +119,11 @@ const WebMapView: React.FC<WebMapViewProps> = (props) => {
       return () => {
         // Cleanup script when component unmounts
         if (document.getElementById('google-maps-script')) {
-        document.head.removeChild(script);
+          document.head.removeChild(script);
         }
         
-        // Clean up global functions
-        delete window.initGoogleMap;
-        delete window.gm_authFailure;
+        // Don't remove global functions as they might be used by other instances
+        // Instead, we'll just check if they exist before defining them
       };
     } else if (window.google && window.google.maps) {
       // If script exists and maps is loaded, set loaded state
@@ -143,6 +149,14 @@ const WebMapView: React.FC<WebMapViewProps> = (props) => {
         },
         // Only use mapId if it exists, otherwise use styles
         ...(mapId ? { mapId } : { styles: mapStyle || [] })
+      });
+      
+      // Handle billing not enabled error
+      window.google.maps.event.addListenerOnce(googleMapRef.current, 'error', (e) => {
+        console.error('Google Maps error:', e);
+        if (e && e.error === 'BillingNotEnabledMapError') {
+          setMapError(true);
+        }
       });
       
       // Remove any existing location button first
