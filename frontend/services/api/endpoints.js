@@ -72,7 +72,6 @@ export const ENDPOINTS = {
   
   MESSAGE: {
     SEND: '/api/messages',
-    SEND_BY_EMAIL: '/api/messages/send-by-email',
     GET_HISTORY: (userId) => `/api/messages/${userId}`,
     READ: (id) => `/api/messages/${id}/read`,
     DELETE: (id) => `/api/messages/${id}`,
