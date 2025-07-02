@@ -35,7 +35,7 @@ export const ENDPOINTS = {
     ALL: '/api/users',
     DRIVERS: '/api/users/drivers',
     PASSENGERS: '/api/users/passengers',
-    PROFILE: '/api/auth/profile'
+    PROFILE: '/api/auth/profile'  // This is the correct endpoint
   },
   
   SUBSCRIPTION: {
