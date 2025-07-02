@@ -124,7 +124,7 @@ const AdminSubscriptionPlansManager: React.FC<AdminSubscriptionPlansManagerProps
           const processedPlans = plans.map(plan => ({
             ...plan,
             // Ensure we have an id field that's used consistently in the UI
-            id: plan.id || plan.planId || (plan._id ? String(plan._id) : undefined),
+            id: plan.id || plan.planId || (plan._id ? String(plan._id) : `plan-${Math.random().toString(36).substring(2, 9)}`),
             // Keep the original MongoDB _id and backend planId to use with the API
             _id: plan._id,
             planId: plan.planId
