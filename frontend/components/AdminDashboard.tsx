@@ -112,8 +112,8 @@ export default function AdminDashboard({
     Alert.alert('Success', 'Subscription has been verified');
   };
 
-  // If map view is selected, show the toggle button
-  if (!showAdminDashboard) {
+  // Render the toggle button component separately to avoid conditional hook calls
+  const renderMapToggleButton = () => {
     return (
       <TouchableOpacity 
         style={[
@@ -129,213 +129,223 @@ export default function AdminDashboard({
         <Text style={[styles.mapToggleText, { color: theme.text }]}>Show Statistics</Text>
       </TouchableOpacity>
     );
-  }
+  };
 
-  // Otherwise show the admin dashboard
-  return (
-    <SafeAreaView 
-      style={[
-        styles.safeAreaContainer,
-        { backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.95)' : 'rgba(255, 255, 255, 0.95)' }
-      ]}
-    >
-      <View style={styles.overlay}>
-        {activeTab === 'dashboard' ? (
-          <View style={[styles.content, { backgroundColor: theme.card }]}>
-            <FontAwesome5 name="tools" size={60} color="#4B6BFE" />
-            <Text style={[styles.title, { color: theme.text }]}>Admin Dashboard</Text>
-            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-              Welcome to the Administration Panel
-            </Text>
-            
-            <View style={styles.actionButtons}>
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: '#4B6BFE' }]}
-                onPress={onOpenSubscriptions}
-              >
-                <FontAwesome5 name="tags" size={20} color="white" style={{ marginBottom: 10 }} />
-                <Text style={styles.actionText}>Manage Subscriptions</Text>
-              </TouchableOpacity>
+  // Render the admin dashboard content separately
+  const renderAdminDashboard = () => {
+    return (
+      <SafeAreaView 
+        style={[
+          styles.safeAreaContainer,
+          { backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.95)' : 'rgba(255, 255, 255, 0.95)' }
+        ]}
+      >
+        <View style={styles.overlay}>
+          {activeTab === 'dashboard' ? (
+            <View style={[styles.content, { backgroundColor: theme.card }]}>
+              <FontAwesome5 name="tools" size={60} color="#4B6BFE" />
+              <Text style={[styles.title, { color: theme.text }]}>Admin Dashboard</Text>
+              <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                Welcome to the Administration Panel
+              </Text>
+              
+              <View style={styles.actionButtons}>
+                <TouchableOpacity 
+                  style={[styles.actionButton, { backgroundColor: '#4B6BFE' }]}
+                  onPress={onOpenSubscriptions}
+                >
+                  <FontAwesome5 name="tags" size={20} color="white" style={{ marginBottom: 10 }} />
+                  <Text style={styles.actionText}>Manage Subscriptions</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.actionButton, { backgroundColor: '#34A853' }]}
+                  onPress={() => navigateToScreen('manage-drivers')}
+                >
+                  <FontAwesome5 name="id-card" size={20} color="white" style={{ marginBottom: 10 }} />
+                  <Text style={styles.actionText}>Manage Drivers</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.actionButton, { backgroundColor: '#FF9500' }]}
+                  onPress={() => setShowPaymentApprovalModal(true)}
+                >
+                  <FontAwesome5 name="money-check-alt" size={20} color="white" style={{ marginBottom: 10 }} />
+                  <Text style={styles.actionText}>Payment Approvals</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.actionButton, { backgroundColor: '#FF3B30' }]}
+                  onPress={() => navigateToScreen('user-management')}
+                >
+                  <FontAwesome5 name="users" size={20} color="white" style={{ marginBottom: 10 }} />
+                  <Text style={styles.actionText}>User Management</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.actionButton, { backgroundColor: '#5856D6' }]}
+                  onPress={() => navigateToScreen('reports')}
+                >
+                  <FontAwesome5 name="chart-pie" size={20} color="white" style={{ marginBottom: 10 }} />
+                  <Text style={styles.actionText}>Reports & Analytics</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.actionButton, { backgroundColor: '#007AFF' }]}
+                  onPress={() => navigateToScreen('notifications')}
+                >
+                  <FontAwesome5 name="bell" size={20} color="white" style={{ marginBottom: 10 }} />
+                  <Text style={styles.actionText}>Notifications</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.actionButton, { backgroundColor: '#5AC8FA' }]}
+                  onPress={onToggleMapView}
+                >
+                  <FontAwesome5 name="map-marked-alt" size={20} color="white" style={{ marginBottom: 10 }} />
+                  <Text style={styles.actionText}>View Map</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.actionButton, { backgroundColor: '#8E8E93' }]}
+                  onPress={() => navigateToScreen('system-settings')}
+                >
+                  <FontAwesome5 name="cog" size={20} color="white" style={{ marginBottom: 10 }} />
+                  <Text style={styles.actionText}>System Settings</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : activeTab === 'map' ? (
+            <View style={[styles.content, { backgroundColor: theme.card }]}>
+              <FontAwesome5 name="map-marked-alt" size={60} color="#4B6BFE" />
+              <Text style={[styles.title, { color: theme.text }]}>Map View</Text>
+              <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                View the map display
+              </Text>
               
               <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: '#34A853' }]}
-                onPress={() => navigateToScreen('manage-drivers')}
-              >
-                <FontAwesome5 name="id-card" size={20} color="white" style={{ marginBottom: 10 }} />
-                <Text style={styles.actionText}>Manage Drivers</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: '#FF9500' }]}
-                onPress={() => setShowPaymentApprovalModal(true)}
-              >
-                <FontAwesome5 name="money-check-alt" size={20} color="white" style={{ marginBottom: 10 }} />
-                <Text style={styles.actionText}>Payment Approvals</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: '#FF3B30' }]}
-                onPress={() => navigateToScreen('user-management')}
-              >
-                <FontAwesome5 name="users" size={20} color="white" style={{ marginBottom: 10 }} />
-                <Text style={styles.actionText}>User Management</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: '#5856D6' }]}
-                onPress={() => navigateToScreen('reports')}
-              >
-                <FontAwesome5 name="chart-pie" size={20} color="white" style={{ marginBottom: 10 }} />
-                <Text style={styles.actionText}>Reports & Analytics</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: '#007AFF' }]}
-                onPress={() => navigateToScreen('notifications')}
-              >
-                <FontAwesome5 name="bell" size={20} color="white" style={{ marginBottom: 10 }} />
-                <Text style={styles.actionText}>Notifications</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: '#5AC8FA' }]}
+                style={[styles.showMapButton, { backgroundColor: '#FF3B30' }]}
                 onPress={onToggleMapView}
               >
-                <FontAwesome5 name="map-marked-alt" size={20} color="white" style={{ marginBottom: 10 }} />
-                <Text style={styles.actionText}>View Map</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: '#8E8E93' }]}
-                onPress={() => navigateToScreen('system-settings')}
-              >
-                <FontAwesome5 name="cog" size={20} color="white" style={{ marginBottom: 10 }} />
-                <Text style={styles.actionText}>System Settings</Text>
+                <FontAwesome5 name="map" size={20} color="white" style={{ marginRight: 10 }} />
+                <Text style={styles.showMapText}>Switch to Map View</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        ) : activeTab === 'map' ? (
-          <View style={[styles.content, { backgroundColor: theme.card }]}>
-            <FontAwesome5 name="map-marked-alt" size={60} color="#4B6BFE" />
-            <Text style={[styles.title, { color: theme.text }]}>Map View</Text>
-            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-              View the map display
-            </Text>
-            
-            <TouchableOpacity 
-              style={[styles.showMapButton, { backgroundColor: '#FF3B30' }]}
-              onPress={onToggleMapView}
+          ) : (
+            <AdminStatistics isDarkMode={isDarkMode} theme={theme} />
+          )}
+          
+          <View style={[
+            styles.tabBarContainer, 
+            { backgroundColor: isDarkMode ? 'rgba(40, 40, 40, 0.9)' : 'rgba(255, 255, 255, 0.9)' }
+          ]}>
+            <ScrollView
+              ref={scrollViewRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tabBar}
+              snapToAlignment="center"
+              decelerationRate="fast"
+              pagingEnabled={false}
+              alwaysBounceHorizontal={true}
+              directionalLockEnabled={true}
+              scrollEventThrottle={16}
+              overScrollMode="never"
             >
-              <FontAwesome5 name="map" size={20} color="white" style={{ marginRight: 10 }} />
-              <Text style={styles.showMapText}>Switch to Map View</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <AdminStatistics isDarkMode={isDarkMode} theme={theme} />
-        )}
-        
-        <View style={[
-          styles.tabBarContainer, 
-          { backgroundColor: isDarkMode ? 'rgba(40, 40, 40, 0.9)' : 'rgba(255, 255, 255, 0.9)' }
-        ]}>
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tabBar}
-            snapToAlignment="center"
-            decelerationRate="fast"
-            pagingEnabled={false}
-            alwaysBounceHorizontal={true}
-            directionalLockEnabled={true}
-            scrollEventThrottle={16}
-            overScrollMode="never"
-          >
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'stats' && styles.activeTab]}
-              onPress={() => setActiveTab('stats')}
-            >
-              <FontAwesome5
-                name="chart-line"
-                size={18}
-                color={activeTab === 'stats' ? '#4B6BFE' : isDarkMode ? '#888' : '#666'}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  { color: activeTab === 'stats' ? '#4B6BFE' : isDarkMode ? '#888' : '#666' }
-                ]}
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'stats' && styles.activeTab]}
+                onPress={() => setActiveTab('stats')}
               >
-                Statistics
-              </Text>
-            </TouchableOpacity>
+                <FontAwesome5
+                  name="chart-line"
+                  size={18}
+                  color={activeTab === 'stats' ? '#4B6BFE' : isDarkMode ? '#888' : '#666'}
+                />
+                <Text
+                  style={[
+                    styles.tabText,
+                    { color: activeTab === 'stats' ? '#4B6BFE' : isDarkMode ? '#888' : '#666' }
+                  ]}
+                >
+                  Statistics
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.tab]}
-              onPress={() => {
-                router.push('/(tabs)/subscribers-management');
-              }}
-            >
-              <FontAwesome5
-                name="users"
-                size={18}
-                color={isDarkMode ? '#888' : '#666'}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  { color: isDarkMode ? '#888' : '#666' }
-                ]}
+              <TouchableOpacity
+                style={[styles.tab]}
+                onPress={() => {
+                  router.push('/(tabs)/subscribers-management');
+                }}
               >
-                Subscribers
-              </Text>
-            </TouchableOpacity>
+                <FontAwesome5
+                  name="users"
+                  size={18}
+                  color={isDarkMode ? '#888' : '#666'}
+                />
+                <Text
+                  style={[
+                    styles.tabText,
+                    { color: isDarkMode ? '#888' : '#666' }
+                  ]}
+                >
+                  Subscribers
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'map' && styles.mapTab]}
-              onPress={() => {
-                setActiveTab('map');
-                if (activeTab === 'map') {
-                  onToggleMapView();
-                }
-              }}
-            >
-              <FontAwesome5
-                name="map"
-                size={18}
-                color={activeTab === 'map' ? '#FF3B30' : isDarkMode ? '#888' : '#666'}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  { color: activeTab === 'map' ? '#FF3B30' : isDarkMode ? '#888' : '#666' }
-                ]}
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'map' && styles.mapTab]}
+                onPress={() => {
+                  setActiveTab('map');
+                  if (activeTab === 'map') {
+                    onToggleMapView();
+                  }
+                }}
               >
-                Map View
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
+                <FontAwesome5
+                  name="map"
+                  size={18}
+                  color={activeTab === 'map' ? '#FF3B30' : isDarkMode ? '#888' : '#666'}
+                />
+                <Text
+                  style={[
+                    styles.tabText,
+                    { color: activeTab === 'map' ? '#FF3B30' : isDarkMode ? '#888' : '#666' }
+                  ]}
+                >
+                  Map View
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
         </View>
-      </View>
+      </SafeAreaView>
+    );
+  };
 
-      <PaymentApprovalModal
-        isVisible={showPaymentApprovalModal}
-        onClose={() => setShowPaymentApprovalModal(false)}
-        theme={{
-          background: theme.card,
-          card: theme.card,
-          text: theme.text,
-          textSecondary: theme.textSecondary,
-          border: '#ccc',
-          primary: '#4B6BFE',
-          gradientColors: ['#4B6BFE', '#3451E1'],
-          error: '#FF3B30',
-          success: '#4CAF50',
-          warning: '#FF9500'
-        }}
-        isDarkMode={isDarkMode}
-      />
-    </SafeAreaView>
+  // Main render - avoid conditional returns at the component level
+  return (
+    <>
+      {!showAdminDashboard ? renderMapToggleButton() : renderAdminDashboard()}
+      {showPaymentApprovalModal && (
+        <PaymentApprovalModal
+          isVisible={showPaymentApprovalModal}
+          onClose={() => setShowPaymentApprovalModal(false)}
+          theme={{
+            background: theme.card,
+            card: theme.card,
+            text: theme.text,
+            textSecondary: theme.textSecondary,
+            border: '#ccc',
+            primary: '#4B6BFE',
+            gradientColors: ['#4B6BFE', '#3451E1'],
+            error: '#FF3B30',
+            success: '#4CAF50',
+            warning: '#FF9500'
+          }}
+          isDarkMode={isDarkMode}
+        />
+      )}
+    </>
   );
 }
 
