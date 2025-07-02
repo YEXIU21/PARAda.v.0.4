@@ -703,6 +703,109 @@ export default function ProfileScreen() {
         break;
     }
   };
+  
+  // Render subscription status component
+  const renderSubscriptionStatus = () => {
+    if (user?.role !== 'passenger') {
+      return null;
+    }
+    
+    if (subscriptionStatus.hasSubscription || subscriptionStatus.isPendingApproval) {
+      return (
+        <View style={[styles.subscriptionContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <View style={styles.subscriptionHeader}>
+            <Text style={[styles.subscriptionTitle, { color: theme.text }]}>Subscription Status</Text>
+            {subscriptionStatus.hasSubscription && (
+              <View style={styles.verifiedBadge}>
+                <FontAwesome5 name="check-circle" size={16} color="#4CAF50" />
+                <Text style={styles.verifiedText}>Verified</Text>
+              </View>
+            )}
+            <TouchableOpacity 
+              style={styles.refreshButton}
+              onPress={refreshSubscriptionData}
+              disabled={isRefreshingSubscription}
+            >
+              <FontAwesome5 
+                name="sync" 
+                size={14} 
+                color={theme.primary} 
+                style={[
+                  styles.refreshIcon,
+                  isRefreshingSubscription && styles.refreshingIcon
+                ]} 
+              />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.subscriptionDetails}>
+            <View style={styles.subscriptionItem}>
+              <Text style={[styles.subscriptionLabel, { color: theme.textSecondary }]}>Plan:</Text>
+              <Text style={[styles.subscriptionValue, { color: theme.text }]}>
+                {subscriptionStatus.plan ? 
+                  getPlanName(subscriptionStatus.plan)
+                  : 'Unknown'
+                }
+              </Text>
+            </View>
+            
+            {subscriptionStatus.expiryDate && (
+              <View style={styles.subscriptionItem}>
+                <Text style={[styles.subscriptionLabel, { color: theme.textSecondary }]}>Expires:</Text>
+                <Text style={[styles.subscriptionValue, { color: theme.text }]}>
+                  {new Date(subscriptionStatus.expiryDate).toLocaleDateString()}
+                </Text>
+              </View>
+            )}
+            
+            {/* Only show pending verification if we have a pending approval */}
+            {subscriptionStatus.isPendingApproval && (
+              <View style={styles.pendingContainer}>
+                <FontAwesome5 name="clock" size={14} color="#FF9500" />
+                <Text style={styles.pendingText}>Awaiting Verification</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      );
+    }
+    
+    return (
+      <View style={[styles.subscriptionContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <View style={styles.subscriptionHeader}>
+          <Text style={[styles.subscriptionTitle, { color: theme.text }]}>Subscription Status</Text>
+          <TouchableOpacity 
+            style={styles.refreshButton}
+            onPress={refreshSubscriptionData}
+            disabled={isRefreshingSubscription}
+          >
+            <FontAwesome5 
+              name="sync" 
+              size={14} 
+              color={theme.primary} 
+              style={[
+                styles.refreshIcon,
+                isRefreshingSubscription && styles.refreshingIcon
+              ]} 
+            />
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.subscriptionDetails}>
+          <Text style={[styles.noSubscriptionText, { color: theme.textSecondary }]}>
+            {isNewUser ? 'Welcome! Select a subscription plan to get started.' : 'No active subscription'}
+          </Text>
+          
+          <TouchableOpacity 
+            style={styles.subscribeButton}
+            onPress={() => router.push('/(tabs)/subscription-plans')}
+          >
+            <Text style={styles.subscribeButtonText}>View Plans</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -739,101 +842,7 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Account Settings</Text>
           
           {/* Display subscription status if user has one, is not an admin, and is not a driver */}
-          {user?.role === 'passenger' && (
-            <>
-              {subscriptionStatus.hasSubscription || subscriptionStatus.isPendingApproval ? (
-                <View style={[styles.subscriptionContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                  <View style={styles.subscriptionHeader}>
-                    <Text style={[styles.subscriptionTitle, { color: theme.text }]}>Subscription Status</Text>
-                    {subscriptionStatus.hasSubscription && (
-                      <View style={styles.verifiedBadge}>
-                        <FontAwesome5 name="check-circle" size={16} color="#4CAF50" />
-                        <Text style={styles.verifiedText}>Verified</Text>
-                      </View>
-                    )}
-                    <TouchableOpacity 
-                      style={styles.refreshButton}
-                      onPress={refreshSubscriptionData}
-                      disabled={isRefreshingSubscription}
-                    >
-                      <FontAwesome5 
-                        name="sync" 
-                        size={14} 
-                        color={theme.primary} 
-                        style={[
-                          styles.refreshIcon,
-                          isRefreshingSubscription && styles.refreshingIcon
-                        ]} 
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <View style={styles.subscriptionDetails}>
-                    <View style={styles.subscriptionItem}>
-                      <Text style={[styles.subscriptionLabel, { color: theme.textSecondary }]}>Plan:</Text>
-                      <Text style={[styles.subscriptionValue, { color: theme.text }]}>
-                        {subscriptionStatus.plan ? 
-                          getPlanName(subscriptionStatus.plan)
-                          : 'Unknown'
-                        }
-                      </Text>
-                    </View>
-                    
-                    {subscriptionStatus.expiryDate && (
-                      <View style={styles.subscriptionItem}>
-                        <Text style={[styles.subscriptionLabel, { color: theme.textSecondary }]}>Expires:</Text>
-                        <Text style={[styles.subscriptionValue, { color: theme.text }]}>
-                          {new Date(subscriptionStatus.expiryDate).toLocaleDateString()}
-                        </Text>
-                      </View>
-                    )}
-                    
-                    {/* Only show pending verification if we have a pending approval */}
-                    {subscriptionStatus.isPendingApproval && (
-                      <View style={styles.pendingContainer}>
-                        <FontAwesome5 name="clock" size={14} color="#FF9500" />
-                        <Text style={styles.pendingText}>Awaiting Verification</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              ) : (
-                <View style={[styles.subscriptionContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                  <View style={styles.subscriptionHeader}>
-                    <Text style={[styles.subscriptionTitle, { color: theme.text }]}>Subscription Status</Text>
-                    <TouchableOpacity 
-                      style={styles.refreshButton}
-                      onPress={refreshSubscriptionData}
-                      disabled={isRefreshingSubscription}
-                    >
-                      <FontAwesome5 
-                        name="sync" 
-                        size={14} 
-                        color={theme.primary} 
-                        style={[
-                          styles.refreshIcon,
-                          isRefreshingSubscription && styles.refreshingIcon
-                        ]} 
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <View style={styles.subscriptionDetails}>
-                    <Text style={[styles.noSubscriptionText, { color: theme.textSecondary }]}>
-                      {isNewUser ? 'Welcome! Select a subscription plan to get started.' : 'No active subscription'}
-                    </Text>
-                    
-                    <TouchableOpacity 
-                      style={styles.subscribeButton}
-                      onPress={() => router.push('/(tabs)/subscription-plans')}
-                    >
-                      <Text style={styles.subscribeButtonText}>View Plans</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-            </>
-          )}
+          {renderSubscriptionStatus()}
           
           <TouchableOpacity 
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
