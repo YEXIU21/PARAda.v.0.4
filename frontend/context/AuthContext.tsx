@@ -53,11 +53,8 @@ const API_URL = ENV.apiUrl;
 // Helper function to refresh user data
 const refreshUserData = async (token: string): Promise<User | null> => {
   try {
-    const response = await axios.get(`${API_URL}/api/auth/profile`, {
-      headers: { 
-        Authorization: `Bearer ${token}`,
-        'x-access-token': token
-      }
+    const response = await axios.get(`${API_URL}/api/users/profile`, {
+      headers: { Authorization: `Bearer ${token}` }
     });
     
     if (response.data && response.data.user) {
@@ -734,12 +731,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Authentication token not found');
       }
       
-      // Use the correct API endpoint - PUT /api/users/:userId/password
-      const response = await axios.put(
-        `${API_URL}/api/users/${user.id}/password`,
-        { currentPassword, newPassword },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      let response;
+      
+      try {
+        // First try the user-specific endpoint
+        console.log('Trying user-specific password change endpoint');
+        response = await axios.put(
+          `${API_URL}/api/users/${user.id}/password`,
+          { currentPassword, newPassword },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } catch (userEndpointError) {
+        console.log('User-specific endpoint failed, trying auth endpoint');
+        // If that fails, try the auth endpoint
+        response = await axios.post(
+          `${API_URL}/api/auth/change-password`,
+          { currentPassword, newPassword },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
       
       console.log('Password change successful:', response.data);
       

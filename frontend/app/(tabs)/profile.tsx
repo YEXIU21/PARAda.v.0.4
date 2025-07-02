@@ -293,21 +293,21 @@ const ChangePasswordModal = ({ visible, onClose, theme }: ModalProps) => {
       setNewPassword('');
       setConfirmPassword('');
       
-      // Show success alert immediately before closing the modal
-      Alert.alert(
-        'Success',
-        'Password changed successfully',
-        [{ 
-          text: 'OK',
-          onPress: () => {
-            // Close modal after user acknowledges the success
-            onClose();
+      // Ensure the alert is visible by setting a higher z-index
+      // Close modal first to avoid alert being hidden behind modal
+      onClose();
+      
+      // Show success alert with a slight delay to ensure modal is closed
+      setTimeout(() => {
+        Alert.alert(
+          'Success',
+          'Password changed successfully',
+          [{ text: 'OK' }],
+          { 
+            cancelable: false,
           }
-        }],
-        { 
-          cancelable: false,
-        }
-      );
+        );
+      }, 300);
     } catch (error: any) {
       console.error('Password change error in component:', error);
       
@@ -549,18 +549,75 @@ export default function ProfileScreen() {
     isPendingApproval: false
   });
 
+  // Add a ref to track the last refresh time
+  const lastRefreshTime = React.useRef<number>(0);
+  // Minimum time between refreshes (5 seconds)
+  const MIN_REFRESH_INTERVAL = 5000;
+
   // Refresh user subscription status when profile page loads
   useEffect(() => {
-    refreshSubscriptionData();
+    // Check if cached subscription data exists first
+    const checkCachedSubscription = async () => {
+      try {
+        const cachedSubscription = await AsyncStorage.getItem('userSubscription');
+        if (cachedSubscription) {
+          try {
+            const parsedSubscription = JSON.parse(cachedSubscription);
+            console.log('Using cached subscription data:', parsedSubscription);
+            
+            // Update UI with cached data first
+            if (parsedSubscription.verified || parsedSubscription.isActive) {
+              setSubscriptionStatus({
+                hasSubscription: true,
+                isPendingApproval: false,
+                plan: parsedSubscription.plan,
+                expiryDate: parsedSubscription.expiryDate
+              });
+            } else {
+              setSubscriptionStatus({
+                hasSubscription: false,
+                isPendingApproval: true,
+                plan: parsedSubscription.plan
+              });
+            }
+            
+            // Then refresh in the background only if data is older than 1 hour
+            const lastUpdated = await AsyncStorage.getItem('subscriptionLastUpdated');
+            if (!lastUpdated || (Date.now() - parseInt(lastUpdated)) > 60 * 60 * 1000) {
+              console.log('Cached subscription data is old, refreshing in background');
+              refreshSubscriptionData();
+            }
+          } catch (parseError) {
+            console.error('Error parsing cached subscription:', parseError);
+            refreshSubscriptionData();
+          }
+        } else {
+          // No cached data, need to fetch
+          refreshSubscriptionData();
+        }
+      } catch (error) {
+        console.error('Error checking cached subscription:', error);
+        refreshSubscriptionData();
+      }
+    };
+    
+    checkCachedSubscription();
   }, []);
 
   const refreshSubscriptionData = async () => {
+    // Implement debouncing - prevent refreshing too frequently
+    const now = Date.now();
+    if (now - lastRefreshTime.current < MIN_REFRESH_INTERVAL) {
+      console.log('Refresh called too soon, debouncing...');
+      return;
+    }
+    
+    // Update the last refresh time
+    lastRefreshTime.current = now;
+    
     try {
       setIsRefreshingSubscription(true);
       console.log('Refreshing user subscription status...');
-      
-      // First, clear any cached subscription data to ensure we get fresh data
-      await AsyncStorage.removeItem('userSubscription');
       
       // Import API functions dynamically to avoid circular dependencies
       const { getUserSubscription } = require('../../services/api/subscription.api');
@@ -568,6 +625,9 @@ export default function ProfileScreen() {
       // Fetch subscription directly from the API
       const subscription = await getUserSubscription();
       console.log('Subscription data from API:', subscription);
+      
+      // Update the last updated timestamp
+      await AsyncStorage.setItem('subscriptionLastUpdated', Date.now().toString());
       
       if (subscription && 
           subscription.paymentDetails && 
@@ -615,11 +675,42 @@ export default function ProfileScreen() {
     } catch (error) {
       console.error('Error refreshing subscription:', error);
       
-      // If API call fails, clear subscription data for safety
-      setSubscriptionStatus({
-        hasSubscription: false,
-        isPendingApproval: false
-      });
+      // If API call fails, try to use cached data
+      try {
+        const cachedSubscription = await AsyncStorage.getItem('userSubscription');
+        if (cachedSubscription) {
+          const parsedSubscription = JSON.parse(cachedSubscription);
+          console.log('API call failed, using cached subscription data:', parsedSubscription);
+          
+          if (parsedSubscription.verified || parsedSubscription.isActive) {
+            setSubscriptionStatus({
+              hasSubscription: true,
+              isPendingApproval: false,
+              plan: parsedSubscription.plan,
+              expiryDate: parsedSubscription.expiryDate
+            });
+          } else {
+            setSubscriptionStatus({
+              hasSubscription: false,
+              isPendingApproval: true,
+              plan: parsedSubscription.plan
+            });
+          }
+        } else {
+          // No cached data, clear subscription status
+          setSubscriptionStatus({
+            hasSubscription: false,
+            isPendingApproval: false
+          });
+        }
+      } catch (cacheError) {
+        console.error('Error using cached subscription data:', cacheError);
+        // If all else fails, clear subscription data for safety
+        setSubscriptionStatus({
+          hasSubscription: false,
+          isPendingApproval: false
+        });
+      }
     } finally {
       setIsRefreshingSubscription(false);
     }
@@ -706,74 +797,21 @@ export default function ProfileScreen() {
   
   // Render subscription status component
   const renderSubscriptionStatus = () => {
+    // If user is not a passenger, don't render anything
     if (user?.role !== 'passenger') {
       return null;
-    }
-    
-    if (subscriptionStatus.hasSubscription || subscriptionStatus.isPendingApproval) {
-      return (
-        <View style={[styles.subscriptionContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <View style={styles.subscriptionHeader}>
-            <Text style={[styles.subscriptionTitle, { color: theme.text }]}>Subscription Status</Text>
-            {subscriptionStatus.hasSubscription && (
-              <View style={styles.verifiedBadge}>
-                <FontAwesome5 name="check-circle" size={16} color="#4CAF50" />
-                <Text style={styles.verifiedText}>Verified</Text>
-              </View>
-            )}
-            <TouchableOpacity 
-              style={styles.refreshButton}
-              onPress={refreshSubscriptionData}
-              disabled={isRefreshingSubscription}
-            >
-              <FontAwesome5 
-                name="sync" 
-                size={14} 
-                color={theme.primary} 
-                style={[
-                  styles.refreshIcon,
-                  isRefreshingSubscription && styles.refreshingIcon
-                ]} 
-              />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.subscriptionDetails}>
-            <View style={styles.subscriptionItem}>
-              <Text style={[styles.subscriptionLabel, { color: theme.textSecondary }]}>Plan:</Text>
-              <Text style={[styles.subscriptionValue, { color: theme.text }]}>
-                {subscriptionStatus.plan ? 
-                  getPlanName(subscriptionStatus.plan)
-                  : 'Unknown'
-                }
-              </Text>
-            </View>
-            
-            {subscriptionStatus.expiryDate && (
-              <View style={styles.subscriptionItem}>
-                <Text style={[styles.subscriptionLabel, { color: theme.textSecondary }]}>Expires:</Text>
-                <Text style={[styles.subscriptionValue, { color: theme.text }]}>
-                  {new Date(subscriptionStatus.expiryDate).toLocaleDateString()}
-                </Text>
-              </View>
-            )}
-            
-            {/* Only show pending verification if we have a pending approval */}
-            {subscriptionStatus.isPendingApproval && (
-              <View style={styles.pendingContainer}>
-                <FontAwesome5 name="clock" size={14} color="#FF9500" />
-                <Text style={styles.pendingText}>Awaiting Verification</Text>
-              </View>
-            )}
-          </View>
-        </View>
-      );
     }
     
     return (
       <View style={[styles.subscriptionContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <View style={styles.subscriptionHeader}>
           <Text style={[styles.subscriptionTitle, { color: theme.text }]}>Subscription Status</Text>
+          {subscriptionStatus.hasSubscription && (
+            <View style={styles.verifiedBadge}>
+              <FontAwesome5 name="check-circle" size={16} color="#4CAF50" />
+              <Text style={styles.verifiedText}>Verified</Text>
+            </View>
+          )}
           <TouchableOpacity 
             style={styles.refreshButton}
             onPress={refreshSubscriptionData}
@@ -792,16 +830,49 @@ export default function ProfileScreen() {
         </View>
         
         <View style={styles.subscriptionDetails}>
-          <Text style={[styles.noSubscriptionText, { color: theme.textSecondary }]}>
-            {isNewUser ? 'Welcome! Select a subscription plan to get started.' : 'No active subscription'}
-          </Text>
-          
-          <TouchableOpacity 
-            style={styles.subscribeButton}
-            onPress={() => router.push('/(tabs)/subscription-plans')}
-          >
-            <Text style={styles.subscribeButtonText}>View Plans</Text>
-          </TouchableOpacity>
+          {(subscriptionStatus.hasSubscription || subscriptionStatus.isPendingApproval) ? (
+            <>
+              <View style={styles.subscriptionItem}>
+                <Text style={[styles.subscriptionLabel, { color: theme.textSecondary }]}>Plan:</Text>
+                <Text style={[styles.subscriptionValue, { color: theme.text }]}>
+                  {subscriptionStatus.plan ? 
+                    getPlanName(subscriptionStatus.plan)
+                    : 'Unknown'
+                  }
+                </Text>
+              </View>
+              
+              {subscriptionStatus.expiryDate && (
+                <View style={styles.subscriptionItem}>
+                  <Text style={[styles.subscriptionLabel, { color: theme.textSecondary }]}>Expires:</Text>
+                  <Text style={[styles.subscriptionValue, { color: theme.text }]}>
+                    {new Date(subscriptionStatus.expiryDate).toLocaleDateString()}
+                  </Text>
+                </View>
+              )}
+              
+              {/* Only show pending verification if we have a pending approval */}
+              {subscriptionStatus.isPendingApproval && (
+                <View style={styles.pendingContainer}>
+                  <FontAwesome5 name="clock" size={14} color="#FF9500" />
+                  <Text style={styles.pendingText}>Awaiting Verification</Text>
+                </View>
+              )}
+            </>
+          ) : (
+            <>
+              <Text style={[styles.noSubscriptionText, { color: theme.textSecondary }]}>
+                {isNewUser ? 'Welcome! Select a subscription plan to get started.' : 'No active subscription'}
+              </Text>
+              
+              <TouchableOpacity 
+                style={styles.subscribeButton}
+                onPress={() => router.push('/(tabs)/subscription-plans')}
+              >
+                <Text style={styles.subscribeButtonText}>View Plans</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
     );

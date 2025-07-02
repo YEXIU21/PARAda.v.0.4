@@ -5,6 +5,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth.middleware');
+const { userLimiter } = require('../middleware/rateLimiter.middleware');
 
 // Import controller (will create later)
 const userController = require('../controllers/user.controller');
@@ -100,6 +101,7 @@ router.put(
   '/:userId/password',
   [
     authMiddleware.verifyToken,
+    userLimiter,
     body('currentPassword')
       .exists()
       .withMessage('Current password is required'),

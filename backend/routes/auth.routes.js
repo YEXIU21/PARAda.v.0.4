@@ -6,6 +6,7 @@ const { body } = require('express-validator');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
 const authMiddleware = require('../middleware/auth.middleware');
+const { authLimiter } = require('../middleware/rateLimiter.middleware');
 
 /**
  * @route POST /api/auth/register
@@ -14,6 +15,7 @@ const authMiddleware = require('../middleware/auth.middleware');
  */
 router.post(
   '/register',
+  authLimiter,
   [
     body('username')
       .isLength({ min: 3, max: 50 })
@@ -43,6 +45,7 @@ router.post(
  */
 router.post(
   '/login',
+  authLimiter,
   [
     body('email')
       .isEmail()
@@ -72,6 +75,7 @@ router.get(
  */
 router.post(
   '/verify',
+  authLimiter,
   authController.verifyToken
 );
 
@@ -82,6 +86,7 @@ router.post(
  */
 router.post(
   '/reset-password-request',
+  authLimiter,
   [
     body('email')
       .isEmail()
@@ -97,6 +102,7 @@ router.post(
  */
 router.post(
   '/reset-password',
+  authLimiter,
   [
     body('token')
       .exists()
