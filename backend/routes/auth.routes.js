@@ -119,4 +119,23 @@ router.get(
   authController.getUserProfile
 );
 
+/**
+ * @route POST /api/auth/change-password
+ * @desc Change user password
+ * @access Private
+ */
+router.post(
+  '/change-password',
+  [
+    authMiddleware.verifyToken,
+    body('currentPassword')
+      .exists()
+      .withMessage('Current password is required'),
+    body('newPassword')
+      .isLength({ min: 6 })
+      .withMessage('New password must be at least 6 characters')
+  ],
+  authController.changePassword
+);
+
 module.exports = router; 

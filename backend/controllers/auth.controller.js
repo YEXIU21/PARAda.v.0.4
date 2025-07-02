@@ -292,3 +292,82 @@ exports.getUserProfile = async (req, res) => {
     });
   }
 }; 
+
+/**
+ * Change user password
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} - Response with success message or error
+ */
+exports.changePassword = async (req, res) => {
+  try {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
+      return res.status(400).json({ 
+        message: 'Validation error', 
+        errors: errors.array() 
+      });
+    }
+    
+    const userId = req.user._id;
+    const { currentPassword, newPassword } = req.body;
+    
+    console.log(`Password change request for user ID: ${userId}`);
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      console.log(`User not found: ${userId}`);
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+    
+    // Verify current password
+    const bcrypt = require('bcryptjs');
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    console.log(`Current password validation: ${isPasswordValid ? 'valid' : 'invalid'}`);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        message: 'Current password is incorrect'
+      });
+    }
+    
+    // Hash new password using the configured salt rounds
+    const { saltRounds } = require('../config/auth.config');
+    console.log(`Using salt rounds: ${saltRounds}`);
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    
+    // Update password directly in the database to avoid pre-save hook issues
+    const result = await User.updateOne(
+      { _id: userId },
+      { 
+        $set: { 
+          password: hashedPassword,
+          updatedAt: new Date()
+        } 
+      }
+    );
+    
+    console.log(`Password updated successfully for user: ${userId}`);
+    console.log(`Modified count: ${result.modifiedCount}`);
+    
+    // Verify the new password can be used for login
+    const updatedUser = await User.findById(userId);
+    const verifyNewPassword = await bcrypt.compare(newPassword, updatedUser.password);
+    console.log(`New password verification: ${verifyNewPassword ? 'valid' : 'invalid'}`);
+    
+    return res.status(200).json({
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    return res.status(500).json({
+      message: 'Error changing password',
+      error: error.message
+    });
+  }
+};
