@@ -6,7 +6,7 @@ const { body } = require('express-validator');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
 const authMiddleware = require('../middleware/auth.middleware');
-const { authLimiter } = require('../middleware/rateLimiter.middleware');
+const { authLimiter, passwordLimiter } = require('../middleware/rateLimiter.middleware');
 
 /**
  * @route POST /api/auth/register
@@ -15,7 +15,7 @@ const { authLimiter } = require('../middleware/rateLimiter.middleware');
  */
 router.post(
   '/register',
-  authLimiter,
+  passwordLimiter,
   [
     body('username')
       .isLength({ min: 3, max: 50 })
@@ -45,7 +45,7 @@ router.post(
  */
 router.post(
   '/login',
-  authLimiter,
+  passwordLimiter,
   [
     body('email')
       .isEmail()
@@ -75,7 +75,6 @@ router.get(
  */
 router.post(
   '/verify',
-  authLimiter,
   authController.verifyToken
 );
 
@@ -86,7 +85,7 @@ router.post(
  */
 router.post(
   '/reset-password-request',
-  authLimiter,
+  passwordLimiter,
   [
     body('email')
       .isEmail()
@@ -102,7 +101,7 @@ router.post(
  */
 router.post(
   '/reset-password',
-  authLimiter,
+  passwordLimiter,
   [
     body('token')
       .exists()
@@ -134,6 +133,7 @@ router.post(
   '/change-password',
   [
     authMiddleware.verifyToken,
+    passwordLimiter,
     body('currentPassword')
       .exists()
       .withMessage('Current password is required'),

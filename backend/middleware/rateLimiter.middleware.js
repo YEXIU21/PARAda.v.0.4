@@ -39,13 +39,33 @@ const createRateLimiter = (options = {}) => {
 };
 
 /**
- * Auth rate limiter - for authentication routes
- * More restrictive to prevent brute force attacks
+ * Password rate limiter - specifically for password-related endpoints
+ * Very restrictive to prevent brute force attacks on passwords
+ */
+const passwordLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 requests per 15 minutes
+  message: 'Too many password attempts, please try again after 15 minutes.',
+});
+
+/**
+ * Auth rate limiter - for non-password authentication routes
+ * More lenient to allow normal operation
  */
 const authLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 requests per 15 minutes
+  max: 100, // Increased from 10 to 100 requests per 15 minutes
   message: 'Too many authentication attempts, please try again after 15 minutes.',
+});
+
+/**
+ * Admin rate limiter - for admin routes
+ * More lenient to allow admin dashboard functionality
+ */
+const adminLimiter = createRateLimiter({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 200, // 200 requests per 5 minutes for admin routes
+  message: 'Too many admin requests, please try again after 5 minutes.',
 });
 
 /**
@@ -73,7 +93,9 @@ const userLimiter = createRateLimiter({
 });
 
 module.exports = {
+  passwordLimiter,
   authLimiter,
+  adminLimiter,
   apiLimiter,
   userLimiter,
   createRateLimiter

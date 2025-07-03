@@ -13,7 +13,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const http = require('http');
 // Import our custom rate limiter middleware
-const { authLimiter, apiLimiter, createRateLimiter } = require('./middleware/rateLimiter.middleware');
+const { authLimiter, apiLimiter, adminLimiter, createRateLimiter } = require('./middleware/rateLimiter.middleware');
 
 // Import configuration
 const connectDB = require('./config/db.config');
@@ -108,8 +108,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
 // Apply rate limiters to specific routes
-app.use('/api/auth', authLimiter); // Strict limits for auth routes
-app.use('/api/admin', authLimiter); // Strict limits for admin routes
+app.use('/api/auth', authLimiter); // More lenient limits for auth routes
+app.use('/api/admin', adminLimiter); // Use admin-specific limiter for admin routes
 app.use('/api/health', publicLimiter); // Very lenient for health checks
 app.use('/api', apiLimiter); // General limit for all other API routes
 
