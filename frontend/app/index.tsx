@@ -372,33 +372,35 @@ export default function LandingPage() {
           PARAda helps you navigate public transportation with ease, providing real-time updates and convenient scheduling
         </Text>
         
-        <TouchableOpacity
-          style={styles.downloadButton}
-          onPress={handleInstallClick}
-        >
-          <LinearGradient
-            colors={colors.gradientColors}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.downloadButtonGradient}
+        <View style={styles.buttonAndCounterContainer}>
+          <TouchableOpacity
+            style={styles.downloadButton}
+            onPress={handleInstallClick}
           >
-            <FontAwesome5 name={isInstallable ? "download" : "arrow-right"} size={20} color="#FFFFFF" style={styles.downloadIcon} />
-            <Text style={styles.downloadButtonText}>
-              {isInstallable ? 'Install App' : isInstalled ? 'Open App' : 'Get Started'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
-        
-        {/* Installation Counter - now below the button, wrapped in Suspense */}
-        <View style={styles.installationCounterWrapper}>
-          <Suspense fallback={<ActivityIndicator size="small" color={colors.primary} />}>
-            <InstallationCounterComponent 
-              textColor={isDarkMode ? '#FFFFFF' : '#333333'}
-              iconColor={colors.primary}
-              backgroundColor={isDarkMode ? 'rgba(75, 107, 254, 0.1)' : 'rgba(75, 107, 254, 0.05)'}
-              centered={true}
-            />
-          </Suspense>
+            <LinearGradient
+              colors={colors.gradientColors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.downloadButtonGradient}
+            >
+              <FontAwesome5 name={isInstallable ? "download" : "arrow-right"} size={20} color="#FFFFFF" style={styles.downloadIcon} />
+              <Text style={styles.downloadButtonText}>
+                {isInstallable ? 'Install App' : isInstalled ? 'Open App' : 'Get Started'}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          
+          {/* Installation Counter - now below the button, wrapped in Suspense */}
+          <View style={styles.installationCounterWrapper}>
+            <Suspense fallback={<ActivityIndicator size="small" color={colors.primary} />}>
+              <InstallationCounterComponent 
+                textColor={isDarkMode ? '#FFFFFF' : '#333333'}
+                iconColor={colors.primary}
+                backgroundColor={isDarkMode ? 'rgba(75, 107, 254, 0.1)' : 'rgba(75, 107, 254, 0.05)'}
+                centered={true}
+              />
+            </Suspense>
+          </View>
         </View>
       </View>
 
@@ -562,8 +564,14 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     maxWidth: 600,
   },
+  buttonAndCounterContainer: {
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 400,
+  },
   downloadButton: {
-    marginBottom: 20,
+    width: '100%',
+    marginBottom: 16,
   },
   downloadButtonGradient: {
     flexDirection: 'row',
@@ -584,6 +592,7 @@ const styles = StyleSheet.create({
   installationCounterWrapper: {
     marginBottom: 40,
     alignItems: 'center',
+    width: '100%',
   },
   featuresSection: {
     padding: 20,
