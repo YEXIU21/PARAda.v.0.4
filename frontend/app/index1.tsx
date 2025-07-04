@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, Suspense } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -9,27 +9,13 @@ import {
   Platform,
   Dimensions,
   Linking,
-  Alert,
-  ActivityIndicator
+  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../context/ThemeContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Use dynamic imports with a more TypeScript-friendly approach
-const IOSInstallPromptComponent = React.lazy(() => {
-  if (Platform.OS === 'web' && /iPad|iPhone|iPod/.test(navigator.userAgent)) {
-    return import('../components/IOSInstallPrompt');
-  } else {
-    return Promise.resolve({ default: () => null });
-  }
-});
-
-// Import directly instead of using lazy loading to avoid Suspense issues
-import InstallationCounter from '../components/InstallationCounter';
 
 // PWA installation detection
 interface BeforeInstallPromptEvent extends Event {
@@ -38,7 +24,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 // Register service worker only in development
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development') {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
       navigator.serviceWorker.register('/register-service-worker.js').then(function(registration) {
@@ -59,164 +45,39 @@ export default function LandingPage() {
   const windowWidth = Dimensions.get('window').width;
   const isMobile = windowWidth < 768;
   const [installAttempted, setInstallAttempted] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
-  
-  // Use ref to track component mount status
-  const isMounted = useRef(true);
-  
-  // Cleanup function when component unmounts
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
 
-  // Check if user is already authenticated on component mount
+  // Check if PWA can be installed
   useEffect(() => {
-    // Skip this effect during server-side rendering
-    if (typeof window === 'undefined') return;
-    
-    let isActive = true; // Local flag to prevent state updates after cleanup
-    
-    async function checkAuth() {
-      try {
-        const token = await AsyncStorage.getItem('token');
-        const userDataString = await AsyncStorage.getItem('user');
-        
-        // If user is already logged in, redirect to their home page
-        if (token && userDataString && isActive) {
-          try {
-            const userData = JSON.parse(userDataString);
-            
-            if (userData && userData.role) {
-              console.log('User already authenticated, redirecting to home');
-              
-              // Determine the appropriate redirect based on user role
-              let redirectPath = '/(tabs)';
-              if (userData.role === 'support') {
-                redirectPath = '/support';
-              }
-              
-              // Save the path for persistence
-              if (Platform.OS === 'web') {
-                try {
-                  localStorage.setItem('parada_last_path', redirectPath);
-                } catch (e) {
-                  console.error('Error saving path to localStorage:', e);
-                }
-              }
-              
-              // Redirect to appropriate home page
-              setTimeout(() => {
-                if (isActive) {
-                  router.replace(redirectPath);
-                }
-              }, 100);
-              return;
-            }
-          } catch (error) {
-            console.error('Error parsing user data:', error);
-          }
-        }
-        
-        // If we get here, user is not authenticated or there was an error
-        if (isActive) {
-          setIsChecking(false);
-        }
-      } catch (error) {
-        console.error('Error checking auth status:', error);
-        if (isActive) {
-          setIsChecking(false);
-        }
-      }
+    if (Platform.OS !== 'web') return;
+
+    // Check if app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+      return;
     }
-    
-    checkAuth();
-    
-    // Cleanup function
-    return () => {
-      isActive = false;
-    };
-  }, []);
 
-  // Check if PWA can be installed - use a safer approach
-  useEffect(() => {
-    // Skip this effect during server-side rendering
-    if (typeof window === 'undefined' || Platform.OS !== 'web') return;
-    
-    let isActive = true;
-    
-    // Function to check if app is already installed
-    const checkIfInstalled = () => {
-      try {
-        if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
-          if (isActive) {
-            setIsInstalled(true);
-          }
-        }
-      } catch (e) {
-        console.error('Error checking if app is installed:', e);
-      }
-    };
-    
-    // Handle the beforeinstallprompt event
+    // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      try {
-        e.preventDefault();
-        deferredPromptRef.current = e as BeforeInstallPromptEvent;
-        if (isActive) {
-          setIsInstallable(true);
-        }
-        console.log('PWA is installable, prompt captured');
-      } catch (error) {
-        console.error('Error handling install prompt:', error);
-      }
+      e.preventDefault();
+      deferredPromptRef.current = e as BeforeInstallPromptEvent;
+      setIsInstallable(true);
+      console.log('PWA is installable, prompt captured');
     };
-    
-    // Handle the appinstalled event
-    const handleAppInstalled = () => {
-      try {
-        if (isActive) {
-          setIsInstalled(true);
-          setIsInstallable(false);
-        }
-        console.log('PWA was installed successfully');
-      } catch (error) {
-        console.error('Error handling app installed event:', error);
-      }
-    };
-    
-    // Check on mount
-    checkIfInstalled();
-    
-    // Safe way to add event listeners
-    try {
-      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.addEventListener('appinstalled', handleAppInstalled);
-    } catch (e) {
-      console.error('Error adding event listeners:', e);
-    }
-    
-    // Cleanup function
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Listen for app installed event
+    window.addEventListener('appinstalled', () => {
+      setIsInstalled(true);
+      setIsInstallable(false);
+      console.log('PWA was installed successfully');
+    });
+
     return () => {
-      isActive = false;
-      try {
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-        window.removeEventListener('appinstalled', handleAppInstalled);
-      } catch (e) {
-        console.error('Error removing event listeners:', e);
-      }
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', () => {});
     };
   }, []);
-
-  // Don't render landing page until we've checked auth
-  if (isChecking) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
 
   // Handle PWA installation
   const handleInstallClick = async () => {
@@ -261,26 +122,13 @@ export default function LandingPage() {
       if (isMobile && !installAttempted && Platform.OS === 'web') {
         const userAgent = navigator.userAgent || '';
         if (/iPhone|iPad|iPod/.test(userAgent)) {
-          // iOS Safari - Show detailed instructions with visual cues
+          // iOS Safari
           Alert.alert(
-            "Install PARAda App",
-            "To install our app on your iOS device:\n\n1. Tap the Share button (rectangle with arrow) at the bottom of the screen\n\n2. Scroll down and tap 'Add to Home Screen'\n\n3. Tap 'Add' in the top right corner",
-            [
-              { 
-                text: "Show Me How", 
-                onPress: () => {
-                  // This would ideally show a visual guide, but for now we'll just set a flag
-                  // that our IOSInstallPrompt component can use
-                  if (typeof localStorage !== 'undefined') {
-                    localStorage.setItem('showIOSInstallInstructions', 'true');
-                    // Force a re-render to show instructions
-                    setInstallAttempted(true);
-                  }
-                } 
-              },
-              { text: "Later", onPress: () => router.push('/auth/login') }
-            ]
+            "Install PARAda",
+            "To install our app: tap the Share button, then 'Add to Home Screen'",
+            [{ text: "OK", onPress: () => router.push('/auth/login') }]
           );
+          setInstallAttempted(true);
           return;
         } else if (/Android/.test(userAgent) && /Chrome/.test(userAgent)) {
           // Android Chrome
@@ -337,14 +185,11 @@ export default function LandingPage() {
     <ScrollView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
-      {/* iOS Install Prompt - Wrapped in Suspense for SSR compatibility */}
-      <Suspense fallback={null}>
-        <IOSInstallPromptComponent />
-      </Suspense>
-      
-      {/* Header - Updated to match login page */}
+      {/* Header */}
       <LinearGradient
         colors={colors.gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
         style={styles.header}
       >
         <View style={styles.headerContent}>
@@ -354,10 +199,7 @@ export default function LandingPage() {
               style={styles.logo} 
               resizeMode="contain"
             />
-          </View>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>PARAda</Text>
-            <Text style={styles.headerSubtitle}>Real-Time Transportation Tracking</Text>
+            <Text style={styles.logoText}>PARAda</Text>
           </View>
         </View>
       </LinearGradient>
@@ -371,34 +213,22 @@ export default function LandingPage() {
           PARAda helps you navigate public transportation with ease, providing real-time updates and convenient scheduling
         </Text>
         
-        <View style={styles.buttonAndCounterContainer}>
-          <TouchableOpacity
-            style={styles.downloadButton}
-            onPress={handleInstallClick}
+        <TouchableOpacity
+          style={styles.downloadButton}
+          onPress={handleInstallClick}
+        >
+          <LinearGradient
+            colors={colors.gradientColors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.downloadButtonGradient}
           >
-            <LinearGradient
-              colors={colors.gradientColors}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.downloadButtonGradient}
-            >
-              <FontAwesome5 name={isInstallable ? "download" : "arrow-right"} size={20} color="#FFFFFF" style={styles.downloadIcon} />
-              <Text style={styles.downloadButtonText}>
-                {isInstallable ? 'Install App' : isInstalled ? 'Open App' : 'Get Started'}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
-          
-          {/* Installation Counter - now below the button, without Suspense */}
-          <View style={styles.installationCounterWrapper}>
-            <InstallationCounter 
-              textColor={isDarkMode ? '#FFFFFF' : '#333333'}
-              iconColor={colors.primary}
-              backgroundColor={isDarkMode ? 'rgba(75, 107, 254, 0.1)' : 'rgba(75, 107, 254, 0.05)'}
-              centered={true}
-            />
-          </View>
-        </View>
+            <FontAwesome5 name={isInstallable ? "download" : "arrow-right"} size={20} color="#FFFFFF" style={styles.downloadIcon} />
+            <Text style={styles.downloadButtonText}>
+              {isInstallable ? 'Install App' : isInstalled ? 'Open App' : 'Get Started'}
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </View>
 
       {/* Features Section */}
@@ -417,6 +247,8 @@ export default function LandingPage() {
                 <LinearGradient
                   colors={colors.gradientColors}
                   style={styles.featureIconBackground}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                 >
                   <FontAwesome5 name={feature.icon} size={24} color="#FFFFFF" />
                 </LinearGradient>
@@ -431,39 +263,32 @@ export default function LandingPage() {
           ))}
         </View>
       </View>
-      
+
       {/* Call to Action */}
       <View style={styles.ctaSection}>
         <LinearGradient
           colors={colors.gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={styles.ctaGradient}
+          style={styles.ctaBackground}
         >
-          <Text style={styles.ctaTitle}>Ready to Get Started?</Text>
+          <Text style={styles.ctaTitle}>Ready to Simplify Your Transportation?</Text>
           <Text style={styles.ctaSubtitle}>
-            Join thousands of users who are already experiencing the benefits of PARAda
+            Download PARAda now and experience hassle-free transportation tracking
           </Text>
           
           <TouchableOpacity
             style={styles.ctaButton}
-            onPress={() => router.push('/auth/login')}
+            onPress={handleInstallClick}
           >
-            <Text style={styles.ctaButtonText}>Sign Up Now</Text>
+            <Text style={styles.ctaButtonText}>
+              {isInstallable ? 'Install App' : isInstalled ? 'Open App' : 'Get Started'}
+            </Text>
+            <FontAwesome5 name={isInstallable ? "download" : "arrow-right"} size={16} color="#4B6BFE" style={styles.ctaButtonIcon} />
           </TouchableOpacity>
-          
-          {/* Installation Counter in CTA section - without Suspense */}
-          <View style={styles.ctaInstallationCounter}>
-            <InstallationCounter 
-              textColor="#FFFFFF"
-              iconColor="#FFFFFF"
-              backgroundColor="rgba(255, 255, 255, 0.1)"
-              centered={true}
-            />
-          </View>
         </LinearGradient>
       </View>
-      
+
       {/* Footer */}
       <View style={[styles.footer, { backgroundColor: isDarkMode ? '#1A1A1A' : '#F0F0F0' }]}>
         <View style={styles.footerColumns}>
@@ -551,51 +376,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 40,
-    paddingBottom: 20,
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
   },
   headerContent: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    width: '100%',
-  },
-  headerTextContainer: {
-    flexDirection: 'column',
-    marginLeft: 10,
   },
   logoContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    width: 50,
-    height: 50,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 3,
   },
   logo: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
-  headerTitle: {
-    fontSize: 22,
+  logoText: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 0,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: '#fff',
-    opacity: 0.9,
+    color: '#FFFFFF',
+    marginLeft: 10,
   },
   heroSection: {
     padding: 20,
@@ -614,14 +416,8 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     maxWidth: 600,
   },
-  buttonAndCounterContainer: {
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 400,
-  },
   downloadButton: {
-    width: '100%',
-    marginBottom: 16,
+    marginBottom: 40,
   },
   downloadButtonGradient: {
     flexDirection: 'row',
@@ -639,10 +435,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  installationCounterWrapper: {
-    marginBottom: 40,
-    alignItems: 'center',
+  heroImage: {
     width: '100%',
+    height: 250,
+    maxWidth: 500,
+    marginBottom: 40,
   },
   featuresSection: {
     padding: 20,
@@ -695,7 +492,7 @@ const styles = StyleSheet.create({
     marginTop: 40,
     marginBottom: 40,
   },
-  ctaGradient: {
+  ctaBackground: {
     padding: 30,
     borderRadius: 15,
     alignItems: 'center',
@@ -715,25 +512,21 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   ctaButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
     borderRadius: 50,
-    marginTop: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
   },
   ctaButtonText: {
     color: '#4B6BFE',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
+    marginRight: 8,
   },
-  ctaInstallationCounter: {
-    marginTop: 15,
-    alignItems: 'center',
+  ctaButtonIcon: {
+    marginTop: 1,
   },
   footer: {
     padding: 20,
@@ -792,10 +585,5 @@ const styles = StyleSheet.create({
   copyrightText: {
     textAlign: 'center',
     fontSize: 12,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 }); 
