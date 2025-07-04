@@ -3,6 +3,11 @@ import { Platform } from 'react-native';
 // Determine API URL based on environment
 let API_URL: string;
 
+// Check if we're running on Vercel
+const isVercel = typeof window !== 'undefined' && 
+  (window.location.hostname.includes('vercel.app') || 
+   window.location.hostname.includes('parada'));
+
 if (__DEV__) {
   // Development environment
   if (Platform.OS === 'web') {
@@ -17,7 +22,19 @@ if (__DEV__) {
   }
 } else {
   // Production environment - use the deployed API URL
-  API_URL = 'https://api.parada.app';
+  API_URL = 'https://parada-backend.onrender.com';
+  
+  // Log the environment detection
+  if (typeof window !== 'undefined') {
+    console.log('Vercel deployment detected, using production environment');
+  }
+}
+
+// Log the API URL for debugging
+if (typeof window !== 'undefined') {
+  console.log('Using API URL:', API_URL);
+  console.log('Environment:', __DEV__ ? 'development' : (isVercel ? 'production (Vercel)' : 'production'));
+  console.log('Origin:', typeof window !== 'undefined' ? window.location.origin : 'unknown');
 }
 
 // Socket URL (usually the same as API_URL but can be different)

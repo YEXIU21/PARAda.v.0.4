@@ -21,16 +21,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Use dynamic imports with a more TypeScript-friendly approach
 const IOSInstallPromptComponent = React.lazy(() => {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === 'web' && /iPad|iPhone|iPod/.test(navigator.userAgent)) {
     return import('../components/IOSInstallPrompt');
   } else {
     return Promise.resolve({ default: () => null });
   }
 });
 
-const InstallationCounterComponent = React.lazy(() => 
-  import('../components/InstallationCounter')
-);
+// Import directly instead of using lazy loading to avoid Suspense issues
+import InstallationCounter from '../components/InstallationCounter';
 
 // PWA installation detection
 interface BeforeInstallPromptEvent extends Event {
@@ -390,16 +389,14 @@ export default function LandingPage() {
             </LinearGradient>
           </TouchableOpacity>
           
-          {/* Installation Counter - now below the button, wrapped in Suspense */}
+          {/* Installation Counter - now below the button, without Suspense */}
           <View style={styles.installationCounterWrapper}>
-            <Suspense fallback={<ActivityIndicator size="small" color={colors.primary} />}>
-              <InstallationCounterComponent 
-                textColor={isDarkMode ? '#FFFFFF' : '#333333'}
-                iconColor={colors.primary}
-                backgroundColor={isDarkMode ? 'rgba(75, 107, 254, 0.1)' : 'rgba(75, 107, 254, 0.05)'}
-                centered={true}
-              />
-            </Suspense>
+            <InstallationCounter 
+              textColor={isDarkMode ? '#FFFFFF' : '#333333'}
+              iconColor={colors.primary}
+              backgroundColor={isDarkMode ? 'rgba(75, 107, 254, 0.1)' : 'rgba(75, 107, 254, 0.05)'}
+              centered={true}
+            />
           </View>
         </View>
       </View>
@@ -455,16 +452,14 @@ export default function LandingPage() {
             <Text style={styles.ctaButtonText}>Sign Up Now</Text>
           </TouchableOpacity>
           
-          {/* Installation Counter in CTA section */}
+          {/* Installation Counter in CTA section - without Suspense */}
           <View style={styles.ctaInstallationCounter}>
-            <Suspense fallback={<ActivityIndicator size="small" color="#FFFFFF" />}>
-              <InstallationCounterComponent 
-                textColor="#FFFFFF"
-                iconColor="#FFFFFF"
-                backgroundColor="rgba(255, 255, 255, 0.1)"
-                centered={true}
-              />
-            </Suspense>
+            <InstallationCounter 
+              textColor="#FFFFFF"
+              iconColor="#FFFFFF"
+              backgroundColor="rgba(255, 255, 255, 0.1)"
+              centered={true}
+            />
           </View>
         </LinearGradient>
       </View>
