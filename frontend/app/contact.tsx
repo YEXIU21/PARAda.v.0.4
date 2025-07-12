@@ -90,11 +90,11 @@ export default function Contact() {
         </View>
         <View style={styles.infoItem}>
           <FontAwesome5 name="phone" size={20} color={colors.primary} />
-          <Text style={[styles.infoText, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}> +63 (32) 456-7890</Text>
+          <Text style={[styles.infoText, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}> 0991 314 2960</Text>
         </View>
         <View style={styles.infoItem}>
           <FontAwesome5 name="map-marker-alt" size={20} color={colors.primary} />
-          <Text style={[styles.infoText, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}> 123 Transportation Ave, Cebu City, Philippines</Text>
+          <Text style={[styles.infoText, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}> Toledo, Toledo City, Philippines</Text>
         </View>
       </View>
     </ScrollView>
