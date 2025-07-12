@@ -198,7 +198,13 @@ export default function Contact() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.infoSection}>
+        <View style={[
+          styles.infoSection, 
+          { 
+            backgroundColor: isDarkMode ? '#1E1E1E' : '#F8F8F8',
+            shadowColor: isDarkMode ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.1)'
+          }
+        ]}>
           <ThemedText type="defaultSemiBold" style={styles.infoTitle}>Contact Information</ThemedText>
           
           <View style={styles.infoCard}>
@@ -315,12 +321,13 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'space-between',
     flexWrap: 'wrap',
+    gap: Platform.OS === 'web' ? 40 : 0,
   },
   formSection: {
     flex: Platform.OS === 'web' ? 1 : undefined,
-    marginRight: Platform.OS === 'web' ? 20 : 0,
     width: Platform.OS === 'web' ? undefined : '100%',
     minWidth: Platform.OS === 'web' ? 300 : undefined,
+    maxWidth: Platform.OS === 'web' ? '60%' : '100%',
   },
   formTitle: {
     marginBottom: 20,
@@ -331,7 +338,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
     marginBottom: 15,
-    paddingHorizontal: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 2,
+    height: 50,
   },
   inputIcon: {
     marginRight: 10,
@@ -368,9 +377,16 @@ const styles = StyleSheet.create({
   infoSection: {
     flex: Platform.OS === 'web' ? 1 : undefined,
     width: Platform.OS === 'web' ? undefined : '100%',
-    marginTop: Platform.OS === 'web' ? 0 : 30,
+    marginTop: Platform.OS === 'web' ? 0 : 40,
     minWidth: Platform.OS === 'web' ? 250 : undefined,
     maxWidth: Platform.OS === 'web' ? 350 : undefined,
+    alignSelf: Platform.OS === 'web' ? 'flex-start' : 'center',
+    borderRadius: 12,
+    padding: 25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   infoTitle: {
     marginBottom: 20,
