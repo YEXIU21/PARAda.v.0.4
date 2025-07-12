@@ -64,7 +64,7 @@ export default function AboutUs() {
       <View style={styles.section}>
         <ThemedText type="title" style={styles.sectionTitle}>Our Story</ThemedText>
         <Text style={[styles.description, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>
-          Founded in 2023 in Toledo City, Philippines, PARAda started as a simple tracking app and has grown into a comprehensive 
+          Founded in 2025 in Toledo City, Philippines, PARAda started as a simple tracking app and has grown into a comprehensive 
           transportation platform. Our team of dedicated professionals is committed to improving the way people travel by providing 
           real-time information and innovative solutions to common transportation challenges.
         </Text>
