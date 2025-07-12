@@ -472,15 +472,39 @@ export default function LandingPage() {
             <Text style={[styles.footerColumnTitle, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}>
               Company
             </Text>
-            <Link href="/about">
+            <TouchableOpacity 
+              onPress={() => {
+                if (Platform.OS === 'web') {
+                  window.location.href = '/about';
+                } else {
+                  router.push('/about');
+                }
+              }}
+            >
               <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>About Us</Text>
-            </Link>
-            <Link href="/careers">
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => {
+                if (Platform.OS === 'web') {
+                  window.location.href = '/careers';
+                } else {
+                  router.push('/careers');
+                }
+              }}
+            >
               <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Careers</Text>
-            </Link>
-            <Link href="/contact">
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => {
+                if (Platform.OS === 'web') {
+                  window.location.href = '/contact';
+                } else {
+                  router.push('/contact');
+                }
+              }}
+            >
               <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Contact</Text>
-            </Link>
+            </TouchableOpacity>
           </View>
           
           <View style={styles.footerColumn}>
