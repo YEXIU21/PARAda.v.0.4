@@ -18,6 +18,13 @@ export default function AboutUs() {
     }
   };
 
+  const values = [
+    { icon: 'clock', title: 'Reliability', description: 'Providing consistent and dependable transportation services.' },
+    { icon: 'shield-alt', title: 'Safety', description: 'Ensuring the security and well-being of all passengers.' },
+    { icon: 'leaf', title: 'Sustainability', description: 'Promoting eco-friendly transportation solutions.' },
+    { icon: 'users', title: 'Community', description: 'Building connections and serving local communities.' }
+  ];
+
   return (
     <ScrollView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
       <LinearGradient
@@ -38,31 +45,96 @@ export default function AboutUs() {
         </View>
       </LinearGradient>
 
-      <View style={styles.section}>
-        <ThemedText type="title">Our Mission</ThemedText>
-        <Text style={[styles.description, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>
-          PARAda is dedicated to revolutionizing public transportation with real-time tracking and efficient route management.
+      <View style={styles.heroSection}>
+        <ThemedText type="title" style={styles.heroTitle}>Transforming Transportation</ThemedText>
+        <Text style={[styles.heroDescription, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>
+          PARAda is on a mission to revolutionize public transportation in the Philippines through 
+          innovative technology and a commitment to excellent service.
         </Text>
       </View>
 
       <View style={styles.section}>
-        <ThemedText type="title">Our Story</ThemedText>
+        <ThemedText type="title" style={styles.sectionTitle}>Our Mission</ThemedText>
         <Text style={[styles.description, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>
-          Founded in 2025, PARAda started as a simple tracking app and has grown into a comprehensive transportation platform.
+          PARAda is dedicated to revolutionizing public transportation with real-time tracking and efficient route management. 
+          We strive to make transportation more accessible, reliable, and convenient for everyone in Toledo City and beyond.
         </Text>
       </View>
 
-      <View style={styles.featuresGrid}>
-        <View style={[styles.featureCard, { backgroundColor: isDarkMode ? '#1E1E1E' : '#F8F8F8' }]}>
-          <FontAwesome5 name="users" size={24} color={colors.primary} />
-          <ThemedText type="defaultSemiBold">Team</ThemedText>
-          <Text style={[styles.featureDesc, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Expert developers and transportation specialists.</Text>
+      <View style={styles.section}>
+        <ThemedText type="title" style={styles.sectionTitle}>Our Story</ThemedText>
+        <Text style={[styles.description, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>
+          Founded in 2023 in Toledo City, Philippines, PARAda started as a simple tracking app and has grown into a comprehensive 
+          transportation platform. Our team of dedicated professionals is committed to improving the way people travel by providing 
+          real-time information and innovative solutions to common transportation challenges.
+        </Text>
+      </View>
+
+      <View style={styles.section}>
+        <ThemedText type="title" style={styles.sectionTitle}>Our Values</ThemedText>
+        <View style={styles.valuesGrid}>
+          {values.map((value, index) => (
+            <View 
+              key={index} 
+              style={[
+                styles.valueCard, 
+                { backgroundColor: isDarkMode ? '#1E1E1E' : '#F8F8F8',
+                  shadowColor: isDarkMode ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.1)' }
+              ]}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: colors.primary }]}>
+                <FontAwesome5 name={value.icon} size={20} color="#FFFFFF" />
+              </View>
+              <ThemedText type="defaultSemiBold" style={styles.valueTitle}>{value.title}</ThemedText>
+              <Text style={[styles.valueDesc, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>
+                {value.description}
+              </Text>
+            </View>
+          ))}
         </View>
-        <View style={[styles.featureCard, { backgroundColor: isDarkMode ? '#1E1E1E' : '#F8F8F8' }]}>
-          <FontAwesome5 name="globe" size={24} color={colors.primary} />
-          <ThemedText type="defaultSemiBold">Global Reach</ThemedText>
-          <Text style={[styles.featureDesc, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Serving users in multiple cities worldwide.</Text>
+      </View>
+
+      <View style={styles.teamSection}>
+        <ThemedText type="title" style={styles.sectionTitle}>Our Team</ThemedText>
+        <View style={styles.featuresGrid}>
+          <View style={[styles.featureCard, { 
+            backgroundColor: isDarkMode ? '#1E1E1E' : '#F8F8F8',
+            shadowColor: isDarkMode ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.1)'
+          }]}>
+            <FontAwesome5 name="users" size={24} color={colors.primary} />
+            <ThemedText type="defaultSemiBold">Dedicated Professionals</ThemedText>
+            <Text style={[styles.featureDesc, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>
+              Our team consists of expert developers, transportation specialists, and customer service professionals.
+            </Text>
+          </View>
+          <View style={[styles.featureCard, { 
+            backgroundColor: isDarkMode ? '#1E1E1E' : '#F8F8F8',
+            shadowColor: isDarkMode ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.1)'
+          }]}>
+            <FontAwesome5 name="globe" size={24} color={colors.primary} />
+            <ThemedText type="defaultSemiBold">Local Focus, Global Vision</ThemedText>
+            <Text style={[styles.featureDesc, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>
+              Starting in Toledo City, we aim to expand our services to cities across the Philippines and beyond.
+            </Text>
+          </View>
         </View>
+      </View>
+
+      <View style={styles.ctaSection}>
+        <ThemedText type="defaultSemiBold" style={styles.ctaText}>Want to join our team?</ThemedText>
+        <TouchableOpacity 
+          style={[styles.ctaButton, { backgroundColor: colors.primary }]}
+          onPress={() => {
+            if (Platform.OS === 'web') {
+              window.location.href = '/careers';
+            } else {
+              router.push('/careers');
+            }
+          }}
+        >
+          <Text style={styles.ctaButtonText}>View Careers</Text>
+          <FontAwesome5 name="arrow-right" size={14} color="#FFFFFF" style={styles.ctaIcon} />
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -112,9 +184,118 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 0,
   },
-  section: { padding: 20 },
-  description: { fontSize: 16, marginTop: 10 },
-  featuresGrid: { flexDirection: 'row', justifyContent: 'space-around', padding: 20 },
-  featureCard: { alignItems: 'center', padding: 10, borderRadius: 8, width: '45%' },
-  featureDesc: { textAlign: 'center', marginTop: 5 }
+  heroSection: {
+    padding: 30,
+    alignItems: 'center',
+    maxWidth: 800,
+    alignSelf: 'center',
+  },
+  heroTitle: {
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  heroDescription: {
+    fontSize: 18,
+    textAlign: 'center',
+    lineHeight: 26,
+  },
+  section: { 
+    padding: 20,
+    maxWidth: 800,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  sectionTitle: {
+    marginBottom: 15,
+  },
+  description: { 
+    fontSize: 16, 
+    marginTop: 10,
+    lineHeight: 24,
+  },
+  valuesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  valueCard: {
+    width: '48%',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  valueTitle: {
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  valueDesc: {
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  teamSection: {
+    padding: 20,
+    maxWidth: 800,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  featuresGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    padding: 10,
+  },
+  featureCard: { 
+    alignItems: 'center', 
+    padding: 20, 
+    borderRadius: 10, 
+    width: '48%',
+    marginBottom: 15,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  featureDesc: { 
+    textAlign: 'center', 
+    marginTop: 10,
+    lineHeight: 20,
+  },
+  ctaSection: {
+    padding: 30,
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  ctaText: {
+    fontSize: 18,
+    marginBottom: 15,
+  },
+  ctaButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 25,
+  },
+  ctaButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
+  ctaIcon: {
+    marginTop: 1,
+  }
 }); 
