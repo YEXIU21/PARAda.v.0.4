@@ -84,9 +84,18 @@ export default function Contact() {
 
       <View style={styles.section}>
         <ThemedText type="title">Contact Information</ThemedText>
-        <View style={styles.infoItem}><FontAwesome5 name="envelope" size={20} color={colors.primary} /><Text style={styles.infoText}> support@parada.com</Text></View>
-        <View style={styles.infoItem}><FontAwesome5 name="phone" size={20} color={colors.primary} /><Text style={styles.infoText}> +1 (123) 456-7890</Text></View>
-        <View style={styles.infoItem}><FontAwesome5 name="map-marker-alt" size={20} color={colors.primary} /><Text style={styles.infoText}> 123 Transportation Ave, City, State</Text></View>
+        <View style={styles.infoItem}>
+          <FontAwesome5 name="envelope" size={20} color={colors.primary} />
+          <Text style={[styles.infoText, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}> support@parada.com</Text>
+        </View>
+        <View style={styles.infoItem}>
+          <FontAwesome5 name="phone" size={20} color={colors.primary} />
+          <Text style={[styles.infoText, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}> +63 (32) 456-7890</Text>
+        </View>
+        <View style={styles.infoItem}>
+          <FontAwesome5 name="map-marker-alt" size={20} color={colors.primary} />
+          <Text style={[styles.infoText, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}> 123 Transportation Ave, Cebu City, Philippines</Text>
+        </View>
       </View>
     </ScrollView>
   );
