@@ -314,11 +314,13 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 20,
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
   },
   formSection: {
-    flex: 1,
+    flex: Platform.OS === 'web' ? 1 : undefined,
     marginRight: Platform.OS === 'web' ? 20 : 0,
-    maxWidth: Platform.OS === 'web' ? '60%' : '100%',
+    width: Platform.OS === 'web' ? undefined : '100%',
+    minWidth: Platform.OS === 'web' ? 300 : undefined,
   },
   formTitle: {
     marginBottom: 20,
@@ -364,9 +366,11 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   infoSection: {
-    flex: 1,
-    maxWidth: Platform.OS === 'web' ? '35%' : '100%',
+    flex: Platform.OS === 'web' ? 1 : undefined,
+    width: Platform.OS === 'web' ? undefined : '100%',
     marginTop: Platform.OS === 'web' ? 0 : 30,
+    minWidth: Platform.OS === 'web' ? 250 : undefined,
+    maxWidth: Platform.OS === 'web' ? 350 : undefined,
   },
   infoTitle: {
     marginBottom: 20,
