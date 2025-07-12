@@ -53,7 +53,7 @@ const API_URL = ENV.apiUrl;
 // Helper function to refresh user data
 const refreshUserData = async (token: string): Promise<User | null> => {
   try {
-    const response = await axios.get(`${API_URL}/api/users/profile`, {
+    const response = await axios.get(`${API_URL}/api/auth/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     

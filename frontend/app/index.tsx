@@ -338,7 +338,7 @@ export default function LandingPage() {
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
       {/* iOS Install Prompt - Wrapped in Suspense for SSR compatibility */}
-      <Suspense fallback={null}>
+      <Suspense fallback={<View/>}>
         <IOSInstallPromptComponent />
       </Suspense>
       

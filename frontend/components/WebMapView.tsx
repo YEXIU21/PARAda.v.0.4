@@ -80,55 +80,62 @@ const WebMapView: React.FC<WebMapViewProps> = (props) => {
       console.error('Google Maps API key is missing. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in your environment variables.');
       return;
     }
-    
-    // Define the callback function in the window scope before loading the script
-    if (typeof window !== 'undefined') {
-      // Make sure initGoogleMap is defined only once
-      if (!window.initGoogleMap) {
-        window.initGoogleMap = () => {
-          console.log('Google Maps API loaded');
-          setMapLoaded(true);
-        };
-      }
-      
-      // Add specific error handling for Google Maps API errors
-      if (!window.gm_authFailure) {
-        window.gm_authFailure = () => {
-          setMapError(true);
-          console.error('Google Maps authentication error: The API key may not be valid or billing is not enabled');
-        };
-      }
-    }
-    
-    // Check if the script is already loaded
-    const existingScript = document.getElementById('google-maps-script');
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.id = 'google-maps-script';
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initGoogleMap&loading=async&libraries=marker&v=beta`;
-      script.async = true;
-      script.defer = true;
-      
-      script.onerror = () => {
-        setMapError(true);
-        console.error('Failed to load Google Maps API');
-      };
-      
-      document.head.appendChild(script);
-      
-      return () => {
-        // Cleanup script when component unmounts
-        if (document.getElementById('google-maps-script')) {
-          document.head.removeChild(script);
-        }
-        
-        // Don't remove global functions as they might be used by other instances
-        // Instead, we'll just check if they exist before defining them
-      };
-    } else if (window.google && window.google.maps) {
-      // If script exists and maps is loaded, set loaded state
+
+    if (typeof window === 'undefined') return;
+
+    if (window.google && window.google.maps) {
       setMapLoaded(true);
+      return;
     }
+
+    if (window.isLoadingGoogleMaps) {
+      // Wait for loading to complete
+      const interval = setInterval(() => {
+        if (window.google && window.google.maps) {
+          setMapLoaded(true);
+          clearInterval(interval);
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+
+    window.isLoadingGoogleMaps = true;
+
+    // Define the callback function
+    window.initGoogleMap = () => {
+      console.log('Google Maps API loaded');
+      setMapLoaded(true);
+    };
+
+    // Add specific error handling for Google Maps API errors
+    window.gm_authFailure = () => {
+      setMapError(true);
+      console.error('Google Maps authentication error: The API key may not be valid or billing is not enabled');
+      window.isLoadingGoogleMaps = false;
+    };
+
+    // Create and load the script
+    const script = document.createElement('script');
+    script.id = 'google-maps-script';
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initGoogleMap&loading=async&libraries=marker&v=beta`;
+    script.async = true;
+    script.defer = true;
+
+    script.onerror = () => {
+      setMapError(true);
+      console.error('Failed to load Google Maps API');
+      window.isLoadingGoogleMaps = false;
+    };
+
+    document.head.appendChild(script);
+
+    // Cleanup
+    return () => {
+      // Only remove if this instance added it
+      if (document.getElementById('google-maps-script')) {
+        document.head.removeChild(script);
+      }
+    };
   }, [apiKey]);
   
   // Initialize the map once the API is loaded
@@ -750,6 +757,7 @@ declare global {
     };
     initGoogleMap: (() => void) | undefined;
     gm_authFailure: (() => void) | undefined;
+    isLoadingGoogleMaps: boolean;
   }
 }
 
