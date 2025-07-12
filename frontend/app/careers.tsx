@@ -72,7 +72,7 @@ export default function Careers() {
       </View>
 
       <View style={styles.section}>
-        <ThemedText type="title">Open Positions</ThemedText>
+        <ThemedText type="title" style={styles.sectionTitle}>Open Positions</ThemedText>
         {jobs.map((job, index) => (
           <View key={index} style={[styles.jobCard, { 
             backgroundColor: isDarkMode ? '#1E1E1E' : '#F8F8F8',
@@ -202,6 +202,9 @@ const styles = StyleSheet.create({
     maxWidth: 1000,
     alignSelf: 'center',
     width: '100%',
+  },
+  sectionTitle: {
+    marginBottom: 20,
   },
   description: { fontSize: 16, marginTop: 10 },
   jobCard: { 
