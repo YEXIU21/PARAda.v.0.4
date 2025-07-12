@@ -526,13 +526,37 @@ export default function LandingPage() {
             <Text style={[styles.footerColumnTitle, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}>
               Resources
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => {
+                if (Platform.OS === 'web') {
+                  window.location.href = '/help-center';
+                } else {
+                  router.push('/help-center');
+                }
+              }}
+            >
               <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Help Center</Text>
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => {
+                if (Platform.OS === 'web') {
+                  window.location.href = '/privacy-policy';
+                } else {
+                  router.push('/privacy-policy');
+                }
+              }}
+            >
               <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Privacy Policy</Text>
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => {
+                if (Platform.OS === 'web') {
+                  window.location.href = '/terms-of-service';
+                } else {
+                  router.push('/terms-of-service');
+                }
+              }}
+            >
               <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Terms of Service</Text>
             </TouchableOpacity>
           </View>
