@@ -18,6 +18,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Link } from 'expo-router';
 
 // Use dynamic imports with a more TypeScript-friendly approach
 const IOSInstallPromptComponent = React.lazy(() => {
@@ -471,15 +472,15 @@ export default function LandingPage() {
             <Text style={[styles.footerColumnTitle, { color: isDarkMode ? '#FFFFFF' : '#333333' }]}>
               Company
             </Text>
-            <TouchableOpacity>
+            <Link href="/about">
               <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>About Us</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
+            </Link>
+            <Link href="/careers">
               <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Careers</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
+            </Link>
+            <Link href="/contact">
               <Text style={[styles.footerLink, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>Contact</Text>
-            </TouchableOpacity>
+            </Link>
           </View>
           
           <View style={styles.footerColumn}>
