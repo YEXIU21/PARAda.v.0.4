@@ -39,7 +39,7 @@ export default function RoleBasedNavBar() {
   } else if (user.role === 'support') {
     navItems = [
       { name: 'Dashboard', icon: 'chart-bar', route: '/support' },
-      { name: 'Tickets', icon: 'ticket-alt', route: '/support/open-tickets' },
+      { name: 'Tickets', icon: 'ticket-alt', route: '/support-tickets' },
       { name: 'Knowledge', icon: 'book', route: '/support/knowledge-base' },
       { name: 'Settings', icon: 'cog', route: '/support/settings' },
     ];
