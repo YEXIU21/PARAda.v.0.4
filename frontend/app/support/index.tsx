@@ -1,37 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Platform, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { ThemedText } from '../../components/ThemedText';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
 import SupportNavBar from '../../components/SupportNavBar';
 
-// Define types for dashboard data
-interface TicketStat {
-  label: string;
-  count: number;
-  icon: string;
-  color: string;
+// Define types for dashboard stats
+interface DashboardStats {
+  openTickets: number;
+  inProgressTickets: number;
+  resolvedTickets: number;
+  highPriorityTickets: number;
+  averageResponseTime: string;
+  ticketsSolvedToday: number;
 }
 
+// Define types for recent tickets
 interface RecentTicket {
   id: string;
-  ticketNumber: string;
   subject: string;
-  customerName: string;
+  status: 'open' | 'in-progress' | 'resolved';
+  priority: 'low' | 'medium' | 'high';
   createdAt: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'open' | 'in-progress' | 'pending' | 'resolved' | 'closed';
 }
 
-export default function SupportDashboardPage() {
+export default function SupportDashboard() {
   const { colors, isDarkMode } = useTheme();
   const router = useRouter();
   const { user } = useAuth();
   
-  const [ticketStats, setTicketStats] = useState<TicketStat[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    openTickets: 0,
+    inProgressTickets: 0,
+    resolvedTickets: 0,
+    highPriorityTickets: 0,
+    averageResponseTime: '0h 0m',
+    ticketsSolvedToday: 0
+  });
+  
   const [recentTickets, setRecentTickets] = useState<RecentTicket[]>([]);
   const [urgentTickets, setUrgentTickets] = useState<RecentTicket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,71 +78,40 @@ export default function SupportDashboardPage() {
     loadDashboardData();
   }, []);
 
-  // Load dashboard data
+  // Load dashboard data from API
   const loadDashboardData = async () => {
     try {
       // In a production app, this would use the ticket API
       import('../../services/api/ticket.api').then(async (ticketApi) => {
         try {
-          // Try to fetch statistics from API
-          const statistics = await ticketApi.getTicketStatistics();
-          
-          if (statistics) {
-            // Set ticket stats
-            setTicketStats([
-              {
-                label: 'Open',
-                count: statistics.openCount || 0,
-                icon: 'envelope-open',
-                color: '#dc3545'
-              },
-              {
-                label: 'In Progress',
-                count: statistics.inProgressCount || 0,
-                icon: 'spinner',
-                color: '#007bff'
-              },
-              {
-                label: 'Pending',
-                count: statistics.pendingCount || 0,
-                icon: 'clock',
-                color: '#ffc107'
-              },
-              {
-                label: 'Resolved',
-                count: statistics.resolvedCount || 0,
-                icon: 'check-circle',
-                color: '#28a745'
-              }
-            ]);
-            
-            // Try to fetch recent tickets
-            const recentResult = await ticketApi.getTickets({
-              sortBy: 'createdAt',
-              sortOrder: 'desc',
-              limit: 5
-            });
-            
-            if (recentResult && recentResult.tickets) {
-              setRecentTickets(recentResult.tickets);
-            }
-            
-            // Try to fetch urgent tickets
-            const urgentResult = await ticketApi.getTickets({
-              priority: 'urgent',
-              status: ['open', 'in-progress'].join(','),
-              limit: 5
-            });
-            
-            if (urgentResult && urgentResult.tickets) {
-              setUrgentTickets(urgentResult.tickets);
-            }
+          // Try to fetch stats from API
+          const dashboardStats = await ticketApi.getDashboardStats();
+          if (dashboardStats) {
+            setStats(dashboardStats);
           } else {
             // Fallback to sample data
-            useSampleData();
+            useSampleStats();
+          }
+          
+          // Try to fetch recent tickets from API
+          const recent = await ticketApi.getRecentTickets();
+          if (recent && recent.length > 0) {
+            setRecentTickets(recent);
+          } else {
+            // Fallback to sample data
+            useSampleRecentTickets();
+          }
+          
+          // Try to fetch urgent tickets from API
+          const urgent = await ticketApi.getUrgentTickets();
+          if (urgent && urgent.length > 0) {
+            setUrgentTickets(urgent);
+          } else {
+            // Fallback to sample data
+            useSampleUrgentTickets();
           }
         } catch (error) {
-          console.error('Error fetching dashboard data:', error);
+          console.error('Error fetching dashboard data from API:', error);
           // Fallback to sample data
           useSampleData();
         } finally {
@@ -151,444 +130,355 @@ export default function SupportDashboardPage() {
     }
   };
   
-  // Fallback to sample data
+  // Use all sample data
   const useSampleData = () => {
-    console.log('Using sample dashboard data');
-    
-    // Sample ticket stats
-    setTicketStats([
-      {
-        label: 'Open',
-        count: 12,
-        icon: 'envelope-open',
-        color: '#dc3545'
-      },
-      {
-        label: 'In Progress',
-        count: 8,
-        icon: 'spinner',
-        color: '#007bff'
-      },
-      {
-        label: 'Pending',
-        count: 5,
-        icon: 'clock',
-        color: '#ffc107'
-      },
-      {
-        label: 'Resolved',
-        count: 24,
-        icon: 'check-circle',
-        color: '#28a745'
-      }
-    ]);
-    
-    // Sample recent tickets
-    const sampleRecent: RecentTicket[] = [
+    useSampleStats();
+    useSampleRecentTickets();
+    useSampleUrgentTickets();
+  };
+  
+  // Fallback to sample stats when API is not available
+  const useSampleStats = () => {
+    console.log('Using sample dashboard stats');
+    setStats({
+      openTickets: 12,
+      inProgressTickets: 8,
+      resolvedTickets: 45,
+      highPriorityTickets: 5,
+      averageResponseTime: '2h 15m',
+      ticketsSolvedToday: 7
+    });
+  };
+  
+  // Fallback to sample recent tickets when API is not available
+  const useSampleRecentTickets = () => {
+    console.log('Using sample recent tickets');
+    setRecentTickets([
       {
         id: '1',
-        ticketNumber: 'TKT-23-05-0010',
-        subject: 'Cannot access my account',
-        customerName: 'Maria Rodriguez',
-        createdAt: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
+        subject: 'App crashes on startup',
+        status: 'open',
         priority: 'high',
-        status: 'open'
+        createdAt: new Date(Date.now() - 3600000).toISOString()
       },
       {
         id: '2',
-        ticketNumber: 'TKT-23-05-0009',
-        subject: 'App crashes when selecting a destination',
-        customerName: 'James Wilson',
-        createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+        subject: 'Cannot update profile picture',
+        status: 'in-progress',
         priority: 'medium',
-        status: 'open'
+        createdAt: new Date(Date.now() - 86400000).toISOString()
       },
       {
         id: '3',
-        ticketNumber: 'TKT-23-05-0008',
-        subject: 'Subscription payment failed',
-        customerName: 'Sarah Johnson',
-        createdAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+        subject: 'Payment failed but money deducted',
+        status: 'open',
         priority: 'high',
-        status: 'in-progress'
+        createdAt: new Date(Date.now() - 172800000).toISOString()
       },
       {
         id: '4',
-        ticketNumber: 'TKT-23-05-0007',
-        subject: 'Driver never arrived',
-        customerName: 'Michael Brown',
-        createdAt: new Date(Date.now() - 10800000).toISOString(), // 3 hours ago
-        priority: 'urgent',
-        status: 'in-progress'
+        subject: 'How do I cancel a scheduled ride?',
+        status: 'resolved',
+        priority: 'low',
+        createdAt: new Date(Date.now() - 259200000).toISOString()
+      }
+    ]);
+  };
+  
+  // Fallback to sample urgent tickets when API is not available
+  const useSampleUrgentTickets = () => {
+    console.log('Using sample urgent tickets');
+    setUrgentTickets([
+      {
+        id: '1',
+        subject: 'App crashes on startup',
+        status: 'open',
+        priority: 'high',
+        createdAt: new Date(Date.now() - 3600000).toISOString()
+      },
+      {
+        id: '3',
+        subject: 'Payment failed but money deducted',
+        status: 'open',
+        priority: 'high',
+        createdAt: new Date(Date.now() - 172800000).toISOString()
       },
       {
         id: '5',
-        ticketNumber: 'TKT-23-05-0006',
-        subject: 'Wrong fare calculation',
-        customerName: 'Emily Chen',
-        createdAt: new Date(Date.now() - 14400000).toISOString(), // 4 hours ago
-        priority: 'medium',
-        status: 'pending'
-      }
-    ];
-    
-    setRecentTickets(sampleRecent);
-    
-    // Sample urgent tickets
-    const sampleUrgent: RecentTicket[] = [
-      {
-        id: '4',
-        ticketNumber: 'TKT-23-05-0007',
         subject: 'Driver never arrived',
-        customerName: 'Michael Brown',
-        createdAt: new Date(Date.now() - 10800000).toISOString(),
-        priority: 'urgent',
-        status: 'in-progress'
-      },
-      {
-        id: '6',
-        ticketNumber: 'TKT-23-05-0004',
-        subject: 'Payment double-charged',
-        customerName: 'David Lee',
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        priority: 'urgent',
-        status: 'open'
+        status: 'in-progress',
+        priority: 'high',
+        createdAt: new Date(Date.now() - 432000000).toISOString()
       }
-    ];
-    
-    setUrgentTickets(sampleUrgent);
+    ]);
   };
 
-  // Format date for display
+  // Format date string
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Get color based on priority
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'low':
-        return '#28a745';
-      case 'medium':
-        return '#ffc107';
-      case 'high':
-        return '#fd7e14';
-      case 'urgent':
-        return '#dc3545';
-      default:
-        return '#6c757d';
-    }
-  };
-
-  // Get color based on status
+  // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open':
-        return '#dc3545';
+        return '#FF6B6B';
       case 'in-progress':
-        return '#007bff';
-      case 'pending':
-        return '#ffc107';
+        return '#FFD166';
       case 'resolved':
-        return '#28a745';
-      case 'closed':
-        return '#6c757d';
+        return '#06D6A0';
       default:
-        return '#6c757d';
+        return '#A5A5A5';
     }
   };
 
-  // Handle ticket click
-  const handleTicketClick = (ticketId: string) => {
+  // Get priority color
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return '#FF6B6B';
+      case 'medium':
+        return '#FFD166';
+      case 'low':
+        return '#06D6A0';
+      default:
+        return '#A5A5A5';
+    }
+  };
+
+  // Navigate to ticket details
+  const navigateToTicket = (ticketId: string) => {
     router.push(`/support/ticket/${ticketId}`);
   };
 
+  // Navigate to open tickets
+  const navigateToOpenTickets = () => {
+    router.push('/support/open-tickets');
+  };
+
+  // Navigate to my tickets
+  const navigateToMyTickets = () => {
+    router.push('/support/my-tickets');
+  };
+
+  // Navigate to reports
+  const navigateToReports = () => {
+    router.push('/support/reports');
+  };
+
   return (
-    <View style={[styles.pageContainer, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
-      {/* Support Navigation Bar */}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <SupportNavBar />
       
-      {/* Main Content */}
-      <ScrollView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
-        <LinearGradient
-          colors={colors.gradientColors}
-          style={styles.header}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>Support Dashboard</Text>
-              <Text style={styles.headerSubtitle}>
-                Overview of support tickets and activity
-              </Text>
-            </View>
-            <FontAwesome5 name="tachometer-alt" size={24} color="#FFFFFF" />
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Stats Cards */}
+        <View style={styles.statsContainer}>
+          <View style={[styles.statCard, { backgroundColor: colors.background }]}>
+            <FontAwesome5 name="ticket-alt" size={24} color={colors.primary} />
+            <ThemedText style={styles.statValue}>{stats.openTickets}</ThemedText>
+            <ThemedText style={styles.statLabel}>Open Tickets</ThemedText>
           </View>
-        </LinearGradient>
+          
+          <View style={[styles.statCard, { backgroundColor: colors.background }]}>
+            <FontAwesome5 name="clock" size={24} color={colors.primary} />
+            <ThemedText style={styles.statValue}>{stats.inProgressTickets}</ThemedText>
+            <ThemedText style={styles.statLabel}>In Progress</ThemedText>
+          </View>
+          
+          <View style={[styles.statCard, { backgroundColor: colors.background }]}>
+            <FontAwesome5 name="check-circle" size={24} color={colors.primary} />
+            <ThemedText style={styles.statValue}>{stats.resolvedTickets}</ThemedText>
+            <ThemedText style={styles.statLabel}>Resolved</ThemedText>
+          </View>
+          
+          <View style={[styles.statCard, { backgroundColor: colors.background }]}>
+            <FontAwesome5 name="exclamation-triangle" size={24} color="#FF6B6B" />
+            <ThemedText style={styles.statValue}>{stats.highPriorityTickets}</ThemedText>
+            <ThemedText style={styles.statLabel}>High Priority</ThemedText>
+          </View>
+        </View>
         
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <Text style={{ color: isDarkMode ? '#FFFFFF' : '#000000' }}>Loading dashboard data...</Text>
+        <View style={styles.statsContainer}>
+          <View style={[styles.statCard, { backgroundColor: colors.background }]}>
+            <MaterialIcons name="timer" size={24} color={colors.primary} />
+            <ThemedText style={styles.statValue}>{stats.averageResponseTime}</ThemedText>
+            <ThemedText style={styles.statLabel}>Avg Response Time</ThemedText>
           </View>
-        ) : (
-          <>
-            {/* Ticket Statistics */}
-            <View style={styles.statsContainer}>
-              {ticketStats.map((stat, index) => (
-                <View 
-                  key={index} 
-                  style={[
-                    styles.statCard,
-                    { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }
-                  ]}
-                >
-                  <View style={[styles.statIconContainer, { backgroundColor: stat.color }]}>
-                    <FontAwesome5 name={stat.icon} size={20} color="#FFFFFF" />
-                  </View>
-                  <View style={styles.statContent}>
-                    <Text style={[styles.statCount, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
-                      {stat.count}
-                    </Text>
-                    <Text style={[styles.statLabel, { color: isDarkMode ? '#AAAAAA' : '#666666' }]}>
-                      {stat.label}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
+          
+          <View style={[styles.statCard, { backgroundColor: colors.background }]}>
+            <FontAwesome5 name="calendar-check" size={24} color={colors.primary} />
+            <ThemedText style={styles.statValue}>{stats.ticketsSolvedToday}</ThemedText>
+            <ThemedText style={styles.statLabel}>Solved Today</ThemedText>
+          </View>
+        </View>
+        
+        {/* Quick Actions */}
+        <View style={styles.sectionContainer}>
+          <ThemedText style={styles.sectionTitle}>Quick Actions</ThemedText>
+          <View style={styles.quickActionsContainer}>
+            <TouchableOpacity 
+              style={[styles.quickActionButton, { backgroundColor: colors.primary }]}
+              onPress={navigateToOpenTickets}
+            >
+              <FontAwesome5 name="ticket-alt" size={20} color="#FFFFFF" />
+              <Text style={styles.quickActionText}>Open Tickets</Text>
+            </TouchableOpacity>
             
-            {/* Urgent Tickets Section */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
-                  Urgent Tickets
-                </Text>
-                <TouchableOpacity onPress={() => router.push('/support/open-tickets')}>
-                  <Text style={[styles.seeAllLink, { color: colors.primary }]}>See All</Text>
-                </TouchableOpacity>
-              </View>
-              
-              {urgentTickets.length > 0 ? (
-                <View style={styles.ticketsContainer}>
-                  {urgentTickets.map((ticket) => (
-                    <TouchableOpacity
-                      key={ticket.id}
-                      style={[
-                        styles.ticketCard,
-                        { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }
-                      ]}
-                      onPress={() => handleTicketClick(ticket.id)}
-                    >
-                      <View style={styles.ticketHeader}>
-                        <Text style={[styles.ticketNumber, { color: isDarkMode ? '#AAAAAA' : '#666666' }]}>
-                          {ticket.ticketNumber}
-                        </Text>
-                        <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(ticket.priority) }]}>
-                          <Text style={styles.priorityText}>{ticket.priority}</Text>
-                        </View>
-                      </View>
-                      
-                      <Text style={[styles.ticketSubject, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
-                        {ticket.subject}
-                      </Text>
-                      
-                      <View style={styles.ticketFooter}>
-                        <Text style={[styles.customerName, { color: isDarkMode ? '#AAAAAA' : '#666666' }]}>
-                          {ticket.customerName}
-                        </Text>
-                        
-                        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(ticket.status) }]}>
-                          <Text style={styles.statusText}>
-                            {ticket.status === 'in-progress' ? 'In Progress' : 
-                              ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
-                          </Text>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : (
-                <View style={[
-                  styles.emptyContainer,
-                  { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }
-                ]}>
-                  <Text style={{ color: isDarkMode ? '#AAAAAA' : '#666666' }}>
-                    No urgent tickets at the moment
-                  </Text>
-                </View>
-              )}
-            </View>
+            <TouchableOpacity 
+              style={[styles.quickActionButton, { backgroundColor: colors.primary }]}
+              onPress={navigateToMyTickets}
+            >
+              <FontAwesome5 name="tasks" size={20} color="#FFFFFF" />
+              <Text style={styles.quickActionText}>My Tickets</Text>
+            </TouchableOpacity>
             
-            {/* Recent Tickets Section */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
-                  Recent Tickets
-                </Text>
-                <TouchableOpacity onPress={() => router.push('/support/open-tickets')}>
-                  <Text style={[styles.seeAllLink, { color: colors.primary }]}>See All</Text>
-                </TouchableOpacity>
-              </View>
-              
-              {recentTickets.length > 0 ? (
-                <View style={styles.ticketsContainer}>
-                  {recentTickets.map((ticket) => (
-                    <TouchableOpacity
-                      key={ticket.id}
-                      style={[
-                        styles.ticketCard,
-                        { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }
-                      ]}
-                      onPress={() => handleTicketClick(ticket.id)}
-                    >
-                      <View style={styles.ticketHeader}>
-                        <Text style={[styles.ticketNumber, { color: isDarkMode ? '#AAAAAA' : '#666666' }]}>
-                          {ticket.ticketNumber}
-                        </Text>
-                        <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(ticket.priority) }]}>
-                          <Text style={styles.priorityText}>{ticket.priority}</Text>
-                        </View>
-                      </View>
-                      
-                      <Text style={[styles.ticketSubject, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
-                        {ticket.subject}
-                      </Text>
-                      
-                      <View style={styles.ticketFooter}>
-                        <Text style={[styles.customerName, { color: isDarkMode ? '#AAAAAA' : '#666666' }]}>
-                          {ticket.customerName}
-                        </Text>
-                        
-                        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(ticket.status) }]}>
-                          <Text style={styles.statusText}>
-                            {ticket.status === 'in-progress' ? 'In Progress' : 
-                              ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
-                          </Text>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
+            <TouchableOpacity 
+              style={[styles.quickActionButton, { backgroundColor: colors.primary }]}
+              onPress={navigateToReports}
+            >
+              <FontAwesome5 name="chart-bar" size={20} color="#FFFFFF" />
+              <Text style={styles.quickActionText}>Reports</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        
+        {/* Urgent Tickets */}
+        <View style={styles.sectionContainer}>
+          <ThemedText style={styles.sectionTitle}>Urgent Tickets</ThemedText>
+          {urgentTickets.length > 0 ? (
+            urgentTickets.map((ticket) => (
+              <TouchableOpacity 
+                key={ticket.id}
+                style={[styles.ticketCard, { backgroundColor: colors.background }]}
+                onPress={() => navigateToTicket(ticket.id)}
+              >
+                <View style={styles.ticketHeader}>
+                  <ThemedText style={styles.ticketSubject}>{ticket.subject}</ThemedText>
+                  <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(ticket.priority) }]}>
+                    <Text style={styles.priorityText}>{ticket.priority}</Text>
+                  </View>
                 </View>
-              ) : (
-                <View style={[
-                  styles.emptyContainer,
-                  { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }
-                ]}>
-                  <Text style={{ color: isDarkMode ? '#AAAAAA' : '#666666' }}>
-                    No recent tickets
-                  </Text>
+                <View style={styles.ticketFooter}>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(ticket.status) }]}>
+                    <Text style={styles.statusText}>{ticket.status}</Text>
+                  </View>
+                  <ThemedText style={styles.ticketDate}>{formatDate(ticket.createdAt)}</ThemedText>
                 </View>
-              )}
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={[styles.emptyState, { backgroundColor: colors.background }]}>
+              <ThemedText style={styles.emptyStateText}>No urgent tickets at the moment</ThemedText>
             </View>
-          </>
-        )}
+          )}
+        </View>
+        
+        {/* Recent Tickets */}
+        <View style={styles.sectionContainer}>
+          <ThemedText style={styles.sectionTitle}>Recent Tickets</ThemedText>
+          {recentTickets.length > 0 ? (
+            recentTickets.map((ticket) => (
+              <TouchableOpacity 
+                key={ticket.id}
+                style={[styles.ticketCard, { backgroundColor: colors.background }]}
+                onPress={() => navigateToTicket(ticket.id)}
+              >
+                <View style={styles.ticketHeader}>
+                  <ThemedText style={styles.ticketSubject}>{ticket.subject}</ThemedText>
+                  <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(ticket.priority) }]}>
+                    <Text style={styles.priorityText}>{ticket.priority}</Text>
+                  </View>
+                </View>
+                <View style={styles.ticketFooter}>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(ticket.status) }]}>
+                    <Text style={styles.statusText}>{ticket.status}</Text>
+                  </View>
+                  <ThemedText style={styles.ticketDate}>{formatDate(ticket.createdAt)}</ThemedText>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={[styles.emptyState, { backgroundColor: colors.background }]}>
+              <ThemedText style={styles.emptyStateText}>No recent tickets</ThemedText>
+            </View>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  pageContainer: {
-    flex: 1,
-    flexDirection: 'row',
-  },
   container: {
     flex: 1,
-    padding: 0,
   },
-  header: {
-    padding: 20,
-    borderRadius: 0,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerTextContainer: {
+  content: {
     flex: 1,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 5,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  loadingContainer: {
-    padding: 20,
-    alignItems: 'center',
+    padding: 16,
   },
   statsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    padding: 15,
+    marginBottom: 16,
   },
   statCard: {
     width: '48%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
+    padding: 16,
     borderRadius: 8,
-    marginBottom: 15,
+    marginBottom: 16,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
-  statIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  statContent: {
-    flex: 1,
-  },
-  statCount: {
+  statValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginVertical: 8,
   },
   statLabel: {
     fontSize: 14,
+    opacity: 0.7,
   },
   sectionContainer: {
-    marginBottom: 20,
-    paddingHorizontal: 15,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  quickActionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  quickActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  quickActionText: {
+    color: '#FFFFFF',
     fontWeight: '600',
-  },
-  seeAllLink: {
-    fontSize: 14,
-  },
-  ticketsContainer: {
-    marginBottom: 10,
+    marginLeft: 8,
   },
   ticketCard: {
+    padding: 16,
     borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   ticketHeader: {
     flexDirection: 'row',
@@ -596,8 +486,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  ticketNumber: {
-    fontSize: 12,
+  ticketSubject: {
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
   },
   priorityBadge: {
     paddingHorizontal: 8,
@@ -606,22 +498,13 @@ const styles = StyleSheet.create({
   },
   priorityText: {
     color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '500',
-    textTransform: 'uppercase',
-  },
-  ticketSubject: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
-    marginBottom: 8,
   },
   ticketFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  customerName: {
-    fontSize: 12,
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -630,13 +513,19 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
   },
-  emptyContainer: {
-    padding: 20,
+  ticketDate: {
+    fontSize: 12,
+    opacity: 0.7,
+  },
+  emptyState: {
+    padding: 16,
     borderRadius: 8,
     alignItems: 'center',
-    justifyContent: 'center',
+  },
+  emptyStateText: {
+    opacity: 0.7,
   },
 }); 

@@ -26,8 +26,8 @@ export default function SupportNavBar() {
 
   // Define navigation items for support role
   const navItems: NavItem[] = [
-    { name: 'Dashboard', icon: 'ticket-alt', route: '/support' },
-    { name: 'Open Tickets', icon: 'envelope-open', route: '/support/open-tickets', badge: 5 },
+    { name: 'Dashboard', icon: 'chart-bar', route: '/support' },
+    { name: 'Tickets', icon: 'ticket-alt', route: '/support/open-tickets', badge: 5 },
     { name: 'My Tickets', icon: 'tasks', route: '/support/my-tickets' },
     { name: 'Knowledge Base', icon: 'book', route: '/support/knowledge-base' },
     { name: 'Reports', icon: 'chart-bar', route: '/support/reports' },

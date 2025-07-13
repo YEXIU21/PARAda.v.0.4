@@ -51,6 +51,14 @@ export default function SupportPage() {
             } else {
               router.replace('/');
             }
+          } else {
+            // For support users, check if they're accessing /support directly
+            // If so, redirect them to the dashboard at /support/
+            const pathname = window.location.pathname;
+            if (pathname === '/support' && Platform.OS === 'web') {
+              // Add trailing slash to go to the dashboard
+              window.location.href = '/support/';
+            }
           }
         } else {
           // No user data, redirect to login

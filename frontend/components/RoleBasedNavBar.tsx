@@ -36,6 +36,13 @@ export default function RoleBasedNavBar() {
       { name: 'Messages', icon: 'comments', route: '/messages' },
       { name: 'Profile', icon: 'user', route: '/profile' },
     ];
+  } else if (user.role === 'support') {
+    navItems = [
+      { name: 'Dashboard', icon: 'chart-bar', route: '/support' },
+      { name: 'Tickets', icon: 'ticket-alt', route: '/support/open-tickets' },
+      { name: 'Knowledge', icon: 'book', route: '/support/knowledge-base' },
+      { name: 'Settings', icon: 'cog', route: '/support/settings' },
+    ];
   } else { // passenger
     navItems = [
       { name: 'Home', icon: 'home', route: '/' },
