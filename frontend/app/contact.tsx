@@ -34,11 +34,72 @@ export default function Contact() {
     }
   }, [nameInputRef.current, emailInputRef.current, messageInputRef.current, colors.primary]);
 
-  const handleSubmit = () => {
-    // Handle form submission
-    console.log('Form submitted:', { name, email, message });
-    setName(''); setEmail(''); setMessage('');
-    setFocusedInput(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<{success?: boolean; message?: string} | null>(null);
+
+  const handleSubmit = async () => {
+    // Validate form
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      setSubmitStatus({
+        success: false,
+        message: 'Please fill in all fields'
+      });
+      setTimeout(() => setSubmitStatus(null), 3000);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      // Store contact form data in localStorage for demo purposes
+      // In a real app, this would be sent to a server API
+      const contactData = {
+        name,
+        email,
+        message,
+        timestamp: new Date().toISOString(),
+        status: 'unread'
+      };
+
+      // Get existing contact messages or initialize empty array
+      let contactMessages: Array<typeof contactData> = [];
+      try {
+        const existingMessages = localStorage.getItem('parada_contact_messages');
+        if (existingMessages) {
+          contactMessages = JSON.parse(existingMessages);
+        }
+      } catch (error) {
+        console.error('Error reading contact messages:', error);
+      }
+
+      // Add new message and save back to localStorage
+      contactMessages.push(contactData);
+      localStorage.setItem('parada_contact_messages', JSON.stringify(contactMessages));
+
+      // Show success message
+      setSubmitStatus({
+        success: true,
+        message: 'Your message has been sent successfully! We will get back to you soon.'
+      });
+
+      // Reset form
+      setName('');
+      setEmail('');
+      setMessage('');
+      setFocusedInput(null);
+
+      // Clear success message after 5 seconds
+      setTimeout(() => setSubmitStatus(null), 5000);
+    } catch (error) {
+      console.error('Error submitting contact form:', error);
+      setSubmitStatus({
+        success: false,
+        message: 'There was an error sending your message. Please try again.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const goToLandingPage = () => {
@@ -163,12 +224,13 @@ export default function Contact() {
             ]}
             onPress={() => messageInputRef.current?.focus()}
           >
-            <FontAwesome5
-              name="comment"
-              size={16}
-              color={focusedInput === 'message' ? colors.primary : isDarkMode ? '#BBBBBB' : '#666666'}
-              style={styles.inputIcon}
-            />
+            <View style={styles.textareaIconContainer}>
+              <FontAwesome5
+                name="comment"
+                size={16}
+                color={focusedInput === 'message' ? colors.primary : isDarkMode ? '#BBBBBB' : '#666666'}
+              />
+            </View>
             <TextInput
               ref={messageInputRef}
               style={[
@@ -189,12 +251,40 @@ export default function Contact() {
             />
           </Pressable>
           
+          {submitStatus && (
+            <View style={[
+              styles.statusContainer, 
+              { backgroundColor: submitStatus.success ? '#e7f3e8' : '#f8e7e7' }
+            ]}>
+              <Text style={[
+                styles.statusText, 
+                { color: submitStatus.success ? '#2e7d32' : '#c62828' }
+              ]}>
+                {submitStatus.message}
+              </Text>
+            </View>
+          )}
+          
           <TouchableOpacity 
-            style={[styles.submitButton, { backgroundColor: colors.primary }]} 
+            style={[
+              styles.submitButton, 
+              { 
+                backgroundColor: colors.primary,
+                opacity: isSubmitting ? 0.7 : 1 
+              }
+            ]} 
             onPress={handleSubmit}
+            disabled={isSubmitting}
           >
-            <Text style={styles.submitText}>Send Message</Text>
-            <FontAwesome5 name="paper-plane" size={14} color="#FFFFFF" style={styles.submitIcon} />
+            <Text style={styles.submitText}>
+              {isSubmitting ? 'Sending...' : 'Send Message'}
+            </Text>
+            <FontAwesome5 
+              name={isSubmitting ? 'spinner' : 'paper-plane'} 
+              size={14} 
+              color="#FFFFFF" 
+              style={[styles.submitIcon, isSubmitting && styles.spinnerIcon]} 
+            />
           </TouchableOpacity>
         </View>
 
@@ -354,6 +444,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingTop: 12,
   },
+  textareaIconContainer: {
+    marginTop: 10,
+    marginLeft: 5,
+    marginRight: 10,
+  },
   textarea: {
     height: 120,
     textAlignVertical: 'top',
@@ -426,5 +521,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
+  },
+  statusContainer: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 15,
+    marginTop: 5,
+  },
+  statusText: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  spinnerIcon: {
+    transform: [{ rotate: '0deg' }],
+    // Note: We would add animation here in a real app
   },
 }); 
