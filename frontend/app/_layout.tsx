@@ -162,6 +162,7 @@ export default function RootLayout() {
               <Stack.Screen name="help-center" options={{ headerShown: false }} />
               <Stack.Screen name="privacy-policy" options={{ headerShown: false }} />
               <Stack.Screen name="terms-of-service" options={{ headerShown: false }} />
+              <Stack.Screen name="support" options={{ headerShown: false }} />
             </Stack>
             <ThemedStatusBar />
             {/* Only show PWA install prompt on pages other than landing page */}
