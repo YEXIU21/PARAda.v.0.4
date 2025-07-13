@@ -12,6 +12,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -884,14 +885,18 @@ export default function ProfileScreen() {
         colors={theme.gradientColors}
         style={styles.header}
       >
-        <View style={{ width: '100%', paddingTop: 10 }}>
-          <Text style={styles.headerTitle}>My Profile</Text>
-          <TouchableOpacity 
-            style={styles.notificationButton}
-            onPress={() => setShowNotifications(true)}
-          >
-            <NotificationBadge theme={theme} size={22} />
-          </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../assets/images/PARAda-Logo.png')} 
+              style={styles.logo} 
+              resizeMode="contain"
+            />
+          </View>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>My Profile</Text>
+            <Text style={styles.headerSubtitle}>User Account Settings</Text>
+          </View>
         </View>
       </LinearGradient>
       
@@ -1040,6 +1045,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f9f9f9',
   },
   header: {
     paddingTop: 40,
@@ -1053,14 +1059,40 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 5,
-    position: 'relative',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    width: '100%',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 50,
+    height: 50,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 3,
+  },
+  logo: {
+    width: 44,
+    height: 44,
+  },
+  headerTextContainer: {
+    flexDirection: 'column',
+    marginLeft: 10,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 0,
-    paddingHorizontal: 24,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#fff',
+    opacity: 0.9,
   },
   notificationButton: {
     position: 'absolute',

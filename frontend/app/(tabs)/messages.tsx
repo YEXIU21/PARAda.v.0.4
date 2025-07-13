@@ -15,7 +15,8 @@ import {
   Platform,
   SafeAreaView,
   ScrollView,
-  RefreshControl
+  RefreshControl,
+  Image
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useTheme, getThemeColors } from '../../context/ThemeContext';
@@ -1235,14 +1236,16 @@ export default function MessagesScreen() {
         style={styles.header}
       >
         <View style={styles.headerContent}>
-        <Text style={styles.headerTitle}>Messages</Text>
-          <View>
-            <TouchableOpacity 
-              style={styles.headerActionButton}
-              onPress={handleHeaderMenuToggle}
-            >
-              <FontAwesome5 name="ellipsis-v" size={18} color="#fff" />
-            </TouchableOpacity>
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../assets/images/PARAda-Logo.png')} 
+              style={styles.logo} 
+              resizeMode="contain"
+            />
+          </View>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>Messages</Text>
+            <Text style={styles.headerSubtitle}>Notifications & Updates</Text>
           </View>
         </View>
       </LinearGradient>
@@ -1432,27 +1435,34 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f9f9f9',
   },
   header: {
     paddingTop: 40,
     paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     justifyContent: 'flex-end',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 5,
     elevation: 5,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    width: '100%',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#fff',
+    marginBottom: 0,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#fff',
+    opacity: 0.9,
   },
   headerActionButton: {
     padding: 8,
@@ -1886,5 +1896,23 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'transparent',
     zIndex: 9998,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 50,
+    height: 50,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 3,
+  },
+  logo: {
+    width: 44,
+    height: 44,
+  },
+  headerTextContainer: {
+    flexDirection: 'column',
+    marginLeft: 10,
+    flex: 1,
   },
 }); 
