@@ -65,11 +65,62 @@ export default function SupportPage() {
     };
 
     checkUserRole();
-    loadSampleTickets();
+    loadTickets();
   }, []);
 
-  // Load sample tickets (in a real app, this would fetch from an API)
-  const loadSampleTickets = () => {
+  // Load tickets from API
+  const loadTickets = async () => {
+    try {
+      // In a production app, this would use the ticket API
+      // For now, we'll use sample data until the backend is fully implemented
+      import('../services/api/ticket.api').then(async (ticketApi) => {
+        try {
+          // Try to fetch from API
+          const result = await ticketApi.getTickets();
+          if (result && result.tickets && result.tickets.length > 0) {
+            // Map API response to our ticket format
+            const apiTickets = result.tickets.map((ticket: any) => ({
+              id: ticket._id,
+              userId: ticket.userId,
+              username: ticket.customerName,
+              email: ticket.customerEmail,
+              subject: ticket.subject,
+              message: ticket.description,
+              status: ticket.status,
+              priority: ticket.priority,
+              createdAt: ticket.createdAt,
+              lastUpdated: ticket.updatedAt
+            }));
+            
+            setTickets(apiTickets);
+            setFilteredTickets(apiTickets);
+          } else {
+            // Fallback to sample data if API returns empty
+            useSampleData();
+          }
+        } catch (error) {
+          console.error('Error fetching tickets from API:', error);
+          // Fallback to sample data
+          useSampleData();
+        } finally {
+          setIsLoading(false);
+        }
+      }).catch((error) => {
+        console.error('Error importing ticket API:', error);
+        // Fallback to sample data
+        useSampleData();
+        setIsLoading(false);
+      });
+    } catch (error) {
+      console.error('Error in loadTickets:', error);
+      useSampleData();
+      setIsLoading(false);
+    }
+  };
+  
+  // Fallback to sample data when API is not available
+  const useSampleData = () => {
+    console.log('Using sample ticket data');
     // Sample data
     const sampleTickets: SupportTicket[] = [
       {
@@ -136,7 +187,6 @@ export default function SupportPage() {
 
     setTickets(sampleTickets);
     setFilteredTickets(sampleTickets);
-    setIsLoading(false);
   };
 
   // Filter tickets based on search query and filters
@@ -168,13 +218,49 @@ export default function SupportPage() {
   }, [searchQuery, statusFilter, priorityFilter, tickets]);
 
   // Handle responding to a ticket
-  const handleRespondToTicket = () => {
+  const handleRespondToTicket = async () => {
     if (!selectedTicket || !responseText.trim()) return;
     
-    // In a real app, this would send the response to an API
-    // For now, we'll just update the local state
+    try {
+      // In a production app, this would use the ticket API
+      const ticketApi = await import('../services/api/ticket.api');
+      
+      try {
+        // Add comment to ticket
+        await ticketApi.addComment(selectedTicket.id, responseText);
+        
+        // Update ticket status if needed
+        if (selectedTicket.status === 'open') {
+          await ticketApi.updateTicket(selectedTicket.id, { status: 'in-progress' });
+        }
+        
+        // Refresh tickets
+        loadTickets();
+        
+        // Clear response and selected ticket
+        setResponseText('');
+        setSelectedTicket(null);
+      } catch (error) {
+        console.error('Error responding to ticket via API:', error);
+        
+        // Fallback to local state update if API fails
+        fallbackRespondToTicket();
+      }
+    } catch (error) {
+      console.error('Error importing ticket API:', error);
+      
+      // Fallback to local state update
+      fallbackRespondToTicket();
+    }
+  };
+  
+  // Fallback method when API is not available
+  const fallbackRespondToTicket = () => {
+    console.log('Using fallback response method');
+    
+    // Update the local state
     const updatedTickets = tickets.map(ticket => {
-      if (ticket.id === selectedTicket.id) {
+      if (ticket.id === selectedTicket?.id) {
         return {
           ...ticket,
           status: 'in-progress' as const,
@@ -188,7 +274,7 @@ export default function SupportPage() {
     
     // Update the filtered tickets as well
     const updatedFilteredTickets = filteredTickets.map(ticket => {
-      if (ticket.id === selectedTicket.id) {
+      if (ticket.id === selectedTicket?.id) {
         return {
           ...ticket,
           status: 'in-progress' as const,
@@ -206,8 +292,48 @@ export default function SupportPage() {
   };
 
   // Mark a ticket as resolved
-  const handleResolveTicket = (ticketId: string) => {
-    // In a real app, this would send the update to an API
+  const handleResolveTicket = async (ticketId: string) => {
+    try {
+      // In a production app, this would use the ticket API
+      const ticketApi = await import('../services/api/ticket.api');
+      
+      try {
+        // Update ticket status
+        await ticketApi.updateTicket(ticketId, { status: 'resolved' });
+        
+        // Add a resolution comment
+        await ticketApi.addComment(
+          ticketId, 
+          'This ticket has been marked as resolved.',
+          true // internal note
+        );
+        
+        // Refresh tickets
+        loadTickets();
+        
+        // If this was the selected ticket, clear it
+        if (selectedTicket && selectedTicket.id === ticketId) {
+          setSelectedTicket(null);
+        }
+      } catch (error) {
+        console.error('Error resolving ticket via API:', error);
+        
+        // Fallback to local state update if API fails
+        fallbackResolveTicket(ticketId);
+      }
+    } catch (error) {
+      console.error('Error importing ticket API:', error);
+      
+      // Fallback to local state update
+      fallbackResolveTicket(ticketId);
+    }
+  };
+  
+  // Fallback method when API is not available
+  const fallbackResolveTicket = (ticketId: string) => {
+    console.log('Using fallback resolve method');
+    
+    // Update the local state
     const updatedTickets = tickets.map(ticket => {
       if (ticket.id === ticketId) {
         return {

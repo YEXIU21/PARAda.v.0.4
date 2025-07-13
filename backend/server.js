@@ -33,6 +33,7 @@ const mongodbRoutes = require('./routes/mongodb.routes');
 const destinationRoutes = require('./routes/destination.routes');
 const vehicleRoutes = require('./routes/vehicle.routes');
 const installationRoutes = require('./routes/installation.routes');
+const ticketRoutes = require('./routes/ticket.routes');
 
 // Import socket service
 const socketService = require('./services/socket.service');
@@ -128,6 +129,7 @@ app.use('/api/mongodb', mongodbRoutes);
 app.use('/api/destinations', destinationRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/installations', installationRoutes);
+app.use('/api/tickets', ticketRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
