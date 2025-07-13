@@ -7,6 +7,7 @@ import { ThemedText } from '../components/ThemedText';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
+import SupportNavBar from '../components/SupportNavBar';
 
 // Define types for support tickets
 interface SupportTicket {
@@ -402,27 +403,32 @@ export default function SupportPage() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
-      <LinearGradient
-        colors={colors.gradientColors}
-        style={styles.header}
-      >
-        <View style={styles.headerContent}>
-          <View style={styles.logoContainer}>
-            <Image 
-              source={require('../assets/images/PARAda-Logo.png')} 
-              style={styles.logo} 
-              resizeMode="contain"
-            />
+    <View style={[styles.pageContainer, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
+      {/* Support Navigation Bar */}
+      <SupportNavBar />
+      
+      {/* Main Content */}
+      <ScrollView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
+        <LinearGradient
+          colors={colors.gradientColors}
+          style={styles.header}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.logoContainer}>
+              <Image 
+                source={require('../assets/images/PARAda-Logo.png')} 
+                style={styles.logo} 
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>Support Dashboard</Text>
+              <Text style={styles.headerSubtitle}>
+                {user?.username ? `Welcome, ${user.username}` : 'Support Portal'}
+              </Text>
+            </View>
           </View>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>Support Dashboard</Text>
-            <Text style={styles.headerSubtitle}>
-              {user?.username ? `Welcome, ${user.username}` : 'Support Portal'}
-            </Text>
-          </View>
-        </View>
-      </LinearGradient>
+        </LinearGradient>
 
       <View style={styles.contentContainer}>
         {/* Search and filters */}
@@ -649,10 +655,15 @@ export default function SupportPage() {
         )}
       </View>
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  pageContainer: {
+    flex: 1,
+    flexDirection: 'row'
+  },
   container: { 
     flex: 1 
   },
