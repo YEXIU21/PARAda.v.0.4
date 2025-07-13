@@ -81,7 +81,7 @@ export default function TermsOfService() {
         <View style={styles.introSection}>
           <ThemedText type="title" style={styles.pageTitle}>Terms of Service</ThemedText>
           <Text style={[styles.lastUpdated, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>
-            Last Updated: May 1, 2023
+            Last Updated: May 1, 2025
           </Text>
           <Text style={[styles.introText, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>
             Welcome to PARAda. These Terms of Service govern your use of the PARAda application and services 

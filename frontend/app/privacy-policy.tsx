@@ -77,7 +77,7 @@ export default function PrivacyPolicy() {
         <View style={styles.introSection}>
           <ThemedText type="title" style={styles.pageTitle}>Privacy Policy</ThemedText>
           <Text style={[styles.lastUpdated, { color: isDarkMode ? '#BBBBBB' : '#666666' }]}>
-            Last Updated: May 1, 2023
+            Last Updated: May 1, 2025
           </Text>
           <Text style={[styles.introText, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>
             At PARAda, we are committed to protecting your privacy and ensuring the security of your personal information. 
