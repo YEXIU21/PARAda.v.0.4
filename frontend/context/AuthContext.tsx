@@ -476,13 +476,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Register function
-  const register = async (userData: any): Promise<boolean> => {
+  const register = async (
+    usernameOrData: string | any,
+    email?: string,
+    password?: string,
+    role?: UserRole,
+    accountType?: AccountType,
+    studentId?: string,
+    licensePlate?: string
+  ): Promise<boolean> => {
     setIsLoading(true);
     
     try {
+      let userData;
+      
+      // Check if first parameter is an object (full userData) or a string (username)
+      if (typeof usernameOrData === 'object') {
+        userData = usernameOrData;
+      } else {
+        // Construct userData object from individual parameters
+        userData = {
+          username: usernameOrData,
+          email,
+          password,
+          role: role || 'passenger',
+          accountType: accountType || 'regular'
+        };
+        
+        // Add optional fields if provided
+        if (studentId) {
+          userData.studentId = studentId;
+        }
+        
+        if (licensePlate) {
+          userData.licensePlate = licensePlate;
+        }
+      }
+      
+      console.log(`Registering user at ${API_URL}/api/auth/register`);
+      console.log('Registration data:', { ...userData, password: '[REDACTED]' });
+      
       const response = await axios.post(`${API_URL}/api/auth/register`, userData);
       
-      if (response.data && response.data.success) {
+      if (response.data && response.data.user) {
         // Set a flag to indicate this is a new registration
         await AsyncStorage.setItem('isNewRegistration', 'true');
         
