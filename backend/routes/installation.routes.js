@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const installationController = require('../controllers/installation.controller');
-const { verifyToken } = require('../middleware/auth.middleware');
+const { verifyToken } = require('../middleware/auth');
 
 // Public routes
 router.get('/count', installationController.getInstallationCount);

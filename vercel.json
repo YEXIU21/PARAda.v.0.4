@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "description": "Vercel deployment configuration with updated routes, registration fixes, and subscription fixes",
+  "description": "Vercel deployment configuration with updated routes and subscription fixes",
   "builds": [
     {
       "src": "frontend/package.json",

@@ -2,7 +2,7 @@ services:
   - type: web
     name: parada-backend
     env: node
-    buildCommand: cd backend && npm install && node scripts/fix-vulnerabilities.js && node scripts/fix-middleware-links.js
+    buildCommand: cd backend && npm install
     startCommand: cd backend && npm start
     envVars:
       - key: NODE_ENV
