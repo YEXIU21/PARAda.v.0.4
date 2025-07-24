@@ -1,5 +1,6 @@
 /**
  * Main server entry point for PARAda backend
+ * Trigger Render.com deployment - 2025-07-24
  */
 // Check if we have an environment file path specified (for Render.com)
 if (process.env.ENV_FILE_PATH) {

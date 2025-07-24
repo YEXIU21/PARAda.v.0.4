@@ -1,4 +1,4 @@
-// Trigger Vercel deployment - 2025-07-24
+// Trigger Vercel deployment - 2025-07-24 - Update 2
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { 
   View, 
