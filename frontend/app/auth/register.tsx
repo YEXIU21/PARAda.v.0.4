@@ -214,15 +214,19 @@ export default function RegisterScreen() {
     try {
       console.log('Attempting to register user...');
       
-      const success = await register(
-        username, 
-        email, 
-        password, 
-        selectedRole, 
-        accountType, 
-        isStudent ? studentId : undefined,
-        selectedRole === 'driver' ? licensePlate : undefined
-      );
+      // Create registration data object
+      const registrationData = {
+        username,
+        email,
+        password,
+        role: selectedRole,
+        accountType,
+        ...(isStudent ? { studentId } : {}),
+        ...(selectedRole === 'driver' ? { licensePlate } : {})
+      };
+      
+      // Call register function with the data object
+      const success = await register(registrationData);
       
       console.log('Registration result:', success);
       
@@ -232,7 +236,8 @@ export default function RegisterScreen() {
           // Show discount information for students
           if (Platform.OS === 'web') {
             alert(`Registration Successful! Your account has been created with a ${discountPercent}% student discount on all subscription plans. Enjoy your ride!`);
-            router.replace('/(tabs)');
+            // Navigate after a short delay to ensure the alert is displayed
+            setTimeout(() => router.replace('/(tabs)'), 500);
           } else {
             Alert.alert(
               "Registration Successful!",
@@ -244,7 +249,8 @@ export default function RegisterScreen() {
           // Show success alert for regular users
           if (Platform.OS === 'web') {
             alert("Registration Successful! Your account has been created successfully. Welcome to PARAda!");
-            router.replace('/(tabs)');
+            // Navigate after a short delay to ensure the alert is displayed
+            setTimeout(() => router.replace('/(tabs)'), 500);
           } else {
             Alert.alert(
               "Registration Successful!",

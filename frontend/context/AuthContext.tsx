@@ -533,9 +533,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Make the API call
       const response = await axios.post(`${API_URL}/api/auth/register`, userData);
+      console.log('Registration response:', response);
       
       // Check if registration was successful
-      if (response.status === 201 && response.data.user) {
+      if (response.status === 201) {
         // Set a flag to indicate this is a new registration
         await AsyncStorage.setItem('isNewRegistration', 'true');
         
@@ -545,10 +546,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           try {
             // Call login with the registration credentials
-            const loginSuccess = await login(userEmail, userPassword);
+            const loginResponse = await axios.post(`${API_URL}/api/auth/login`, {
+              email: userEmail,
+              password: userPassword
+            });
             
-            if (!loginSuccess) {
-              console.warn('Auto-login after registration failed');
+            console.log('Auto-login response:', loginResponse);
+            
+            if (loginResponse.data && loginResponse.data.accessToken) {
+              // Save the token
+              await saveTokenToAllLocations(loginResponse.data.accessToken);
+              
+              // Save the user data
+              if (loginResponse.data.user) {
+                setUser(loginResponse.data.user);
+                await AsyncStorage.setItem('user', JSON.stringify(loginResponse.data.user));
+              }
+              
+              console.log('Auto-login successful');
+            } else {
+              console.warn('Auto-login failed: No token in response');
             }
           } catch (loginError) {
             console.error('Error during auto-login after registration:', loginError);
