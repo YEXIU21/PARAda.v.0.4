@@ -43,6 +43,7 @@ interface CustomInputFieldProps {
   onBlur: () => void;
   rightElement?: React.ReactNode;
   theme: ThemeColors;
+  maxLength?: number;
 }
 
 // Custom Input Field Component
@@ -59,6 +60,7 @@ const CustomInputField: React.FC<CustomInputFieldProps> = ({
   onBlur,
   rightElement,
   theme,
+  maxLength,
 }) => {
   const inputRef = useRef<TextInput>(null);
   
@@ -138,6 +140,7 @@ const CustomInputField: React.FC<CustomInputFieldProps> = ({
         underlineColorAndroid="transparent"
         caretHidden={false}
         textAlignVertical="center"
+        maxLength={maxLength}
       />
       
       {rightElement}
@@ -181,6 +184,12 @@ export default function RegisterScreen() {
 
     if (isStudent && !studentId) {
       setError('Please enter your student ID');
+      return;
+    }
+    
+    // Add validation for student ID length
+    if (isStudent && studentId && studentId.length > 10) {
+      setError('Student ID cannot exceed 10 characters');
       return;
     }
     
@@ -489,11 +498,13 @@ export default function RegisterScreen() {
                   placeholder="Student ID"
                   icon="id-card"
                   autoCapitalize="none"
+                  keyboardType="numeric"
                   isFocused={focusedInput === 'studentId'}
                   onFocus={() => setFocusedInput('studentId')}
                   onBlur={() => setFocusedInput(null)}
                   theme={theme}
                   rightElement={null}
+                  maxLength={10}
                 />
               )}
             </>

@@ -47,7 +47,8 @@ const UserSchema = new mongoose.Schema({
   },
   studentId: {
     type: String,
-    default: null
+    default: null,
+    maxlength: 10
   },
   profilePicture: {
     type: String,

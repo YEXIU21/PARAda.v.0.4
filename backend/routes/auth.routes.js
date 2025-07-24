@@ -33,7 +33,11 @@ router.post(
     body('accountType')
       .optional()
       .isIn(['regular', 'student'])
-      .withMessage('Invalid account type')
+      .withMessage('Invalid account type'),
+    body('studentId')
+      .optional()
+      .isLength({ max: 10 })
+      .withMessage('Student ID cannot exceed 10 characters')
   ],
   authController.register
 );
