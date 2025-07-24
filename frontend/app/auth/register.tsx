@@ -212,35 +212,50 @@ export default function RegisterScreen() {
     const accountType: AccountType = isStudent ? 'student' : 'regular';
     
     try {
-    const success = await register(
-      username, 
-      email, 
-      password, 
-      selectedRole, 
-      accountType, 
-      isStudent ? studentId : undefined,
-      selectedRole === 'driver' ? licensePlate : undefined
-    );
-    
-    if (success) {
-      if (isStudent && isDiscountEnabled) {
-        // Show discount information
-        Alert.alert(
-          "Registration Successful!",
-          `Your account has been created with a ${discountPercent}% student discount on all subscription plans. Enjoy your ride!`,
-          [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
-        );
+      console.log('Attempting to register user...');
+      
+      const success = await register(
+        username, 
+        email, 
+        password, 
+        selectedRole, 
+        accountType, 
+        isStudent ? studentId : undefined,
+        selectedRole === 'driver' ? licensePlate : undefined
+      );
+      
+      console.log('Registration result:', success);
+      
+      if (success) {
+        // Show success alert based on account type
+        if (isStudent && isDiscountEnabled) {
+          // Show discount information for students
+          if (Platform.OS === 'web') {
+            alert(`Registration Successful! Your account has been created with a ${discountPercent}% student discount on all subscription plans. Enjoy your ride!`);
+            router.replace('/(tabs)');
+          } else {
+            Alert.alert(
+              "Registration Successful!",
+              `Your account has been created with a ${discountPercent}% student discount on all subscription plans. Enjoy your ride!`,
+              [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
+            );
+          }
+        } else {
+          // Show success alert for regular users
+          if (Platform.OS === 'web') {
+            alert("Registration Successful! Your account has been created successfully. Welcome to PARAda!");
+            router.replace('/(tabs)');
+          } else {
+            Alert.alert(
+              "Registration Successful!",
+              "Your account has been created successfully. Welcome to PARAda!",
+              [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
+            );
+          }
+        }
       } else {
-        // Show success alert for regular users
-        Alert.alert(
-          "Registration Successful!",
-          "Your account has been created successfully. Welcome to PARAda!",
-          [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
-        );
+        setError('Registration failed. Please try again.');
       }
-    } else {
-      setError('Registration failed. Please try again.');
-    }
     } catch (err) {
       console.error('Registration error:', err);
       if (axios.isAxiosError(err)) {
@@ -272,10 +287,10 @@ export default function RegisterScreen() {
         } else {
           // Something happened in setting up the request
           setError('An error occurred. Please try again.');
-      }
-    } else {
+        }
+      } else {
         setError('An unexpected error occurred during registration.');
-    }
+      }
     }
   };
 

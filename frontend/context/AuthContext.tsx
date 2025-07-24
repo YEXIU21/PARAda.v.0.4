@@ -35,7 +35,15 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (userData: any) => Promise<boolean>;
+  register: (
+    usernameOrData: string | any,
+    email?: string,
+    password?: string,
+    role?: UserRole,
+    accountType?: AccountType,
+    studentId?: string,
+    licensePlate?: string
+  ) => Promise<boolean>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<boolean>;
   updateProfile: (userData: Partial<User>) => Promise<boolean>;
@@ -476,15 +484,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Register function
-  const register = async (userData: any): Promise<boolean> => {
+  const register = async (
+    usernameOrData: string | any,
+    email?: string,
+    password?: string,
+    role?: UserRole,
+    accountType?: AccountType,
+    studentId?: string,
+    licensePlate?: string
+  ): Promise<boolean> => {
     setIsLoading(true);
     
     try {
+      let userData;
+      let userEmail;
+      let userPassword;
+      
+      // Check if first parameter is an object (full userData) or a string (username)
+      if (typeof usernameOrData === 'object') {
+        userData = usernameOrData;
+        userEmail = userData.email;
+        userPassword = userData.password;
+      } else {
+        // Construct userData object from individual parameters
+        userData = {
+          username: usernameOrData,
+          email,
+          password,
+          role: role || 'passenger',
+          accountType: accountType || 'regular'
+        };
+        
+        userEmail = email;
+        userPassword = password;
+        
+        // Add optional fields if provided
+        if (studentId) {
+          userData.studentId = studentId;
+        }
+        
+        if (licensePlate) {
+          userData.licensePlate = licensePlate;
+        }
+      }
+      
+      console.log(`Registering user at ${API_URL}/api/auth/register`);
+      console.log('Registration data:', { ...userData, password: '[REDACTED]' });
+      
+      // Make the API call
       const response = await axios.post(`${API_URL}/api/auth/register`, userData);
       
-      if (response.data && response.data.success) {
+      // Check if registration was successful
+      if (response.status === 201 && response.data.user) {
         // Set a flag to indicate this is a new registration
         await AsyncStorage.setItem('isNewRegistration', 'true');
+        
+        // Auto login after successful registration
+        if (userEmail && userPassword) {
+          console.log('Auto-logging in after successful registration');
+          
+          try {
+            // Call login with the registration credentials
+            const loginSuccess = await login(userEmail, userPassword);
+            
+            if (!loginSuccess) {
+              console.warn('Auto-login after registration failed');
+            }
+          } catch (loginError) {
+            console.error('Error during auto-login after registration:', loginError);
+            // Continue with registration success even if auto-login fails
+          }
+        }
         
         setIsLoading(false);
         return true;
@@ -495,6 +565,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Registration error:', error);
+      
+      // Log more detailed error information
+      if (axios.isAxiosError(error) && error.response) {
+        console.error('Status:', error.response.status);
+        console.error('Data:', error.response.data);
+      }
+      
       setIsLoading(false);
       return false;
     }
