@@ -492,20 +492,25 @@ export default function RegisterScreen() {
               </View>
 
               {isStudent && (
-                <CustomInputField
-                  value={studentId}
-                  onChangeText={setStudentId}
-                  placeholder="Student ID"
-                  icon="id-card"
-                  autoCapitalize="none"
-                  keyboardType="numeric"
-                  isFocused={focusedInput === 'studentId'}
-                  onFocus={() => setFocusedInput('studentId')}
-                  onBlur={() => setFocusedInput(null)}
-                  theme={theme}
-                  rightElement={null}
-                  maxLength={10}
-                />
+                <>
+                  <CustomInputField
+                    value={studentId}
+                    onChangeText={setStudentId}
+                    placeholder="Student ID"
+                    icon="id-card"
+                    autoCapitalize="none"
+                    keyboardType="numeric"
+                    isFocused={focusedInput === 'studentId'}
+                    onFocus={() => setFocusedInput('studentId')}
+                    onBlur={() => setFocusedInput(null)}
+                    theme={theme}
+                    rightElement={null}
+                    maxLength={10}
+                  />
+                  <Text style={[styles.helperText, { color: theme.textSecondary }]}>
+                    {studentId.length}/10 characters
+                  </Text>
+                </>
               )}
             </>
           )}
@@ -699,5 +704,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  helperText: {
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'right',
   },
 }); 
