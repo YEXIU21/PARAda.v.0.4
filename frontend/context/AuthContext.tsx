@@ -516,11 +516,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log(`Registering user at ${API_URL}/api/auth/register`);
       console.log('Registration data:', { ...userData, password: '[REDACTED]' });
       
+      // Make the API call
       const response = await axios.post(`${API_URL}/api/auth/register`, userData);
       
-      if (response.data && response.data.user) {
+      if (response.status === 201 || (response.data && response.data.user)) {
         // Set a flag to indicate this is a new registration
         await AsyncStorage.setItem('isNewRegistration', 'true');
+        
+        // If we got a token back, save it
+        if (response.data && response.data.accessToken) {
+          await saveTokenToAllLocations(response.data.accessToken);
+          
+          // If we got user data back, save it
+          if (response.data.user) {
+            setUser(response.data.user);
+            await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+          }
+        }
         
         setIsLoading(false);
         return true;
@@ -531,6 +543,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Registration error:', error);
+      
+      // Log more detailed error information
+      if (axios.isAxiosError(error) && error.response) {
+        console.error('Status:', error.response.status);
+        console.error('Data:', error.response.data);
+      }
+      
       setIsLoading(false);
       return false;
     }

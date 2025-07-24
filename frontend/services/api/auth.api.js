@@ -220,9 +220,9 @@ export const register = async (userData) => {
       userData
     );
     
-    if (response.status === 201 && response.data.user) {
+    if (response.status === 201 || (response.data && response.data.user)) {
       console.log('Registration successful:', response.data);
-      return response.data.user;
+      return response.data.user || response.data;
     }
     
     throw new Error('Registration failed');
@@ -231,12 +231,26 @@ export const register = async (userData) => {
     if (error.response) {
       console.error('Status:', error.response.status);
       console.error('Data:', error.response.data);
+      
+      // If there are validation errors, extract and throw the first one
+      if (error.response.data && error.response.data.errors && Array.isArray(error.response.data.errors)) {
+        const validationErrors = error.response.data.errors;
+        if (validationErrors.length > 0) {
+          throw new Error(validationErrors[0].msg || 'Validation error');
+        }
+      }
+      
+      // If there's a specific error message from the server, use it
+      if (error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      }
     } else if (error.request) {
       console.error('Request was made but no response received');
       console.error('Request details:', error.request);
-    } else {
-      console.error('Error setting up request:', error.message);
+      throw new Error('Server not responding. Please check your internet connection.');
     }
+    
+    // Re-throw the original error if we couldn't extract a better message
     throw error;
   }
 };
