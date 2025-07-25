@@ -15,7 +15,6 @@ import {
   Pressable,
   KeyboardTypeOptions,
   TextStyle,
-  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -46,53 +45,6 @@ interface CustomInputFieldProps {
   theme: ThemeColors;
   maxLength?: number;
 }
-
-// Success Modal Component
-interface SuccessModalProps {
-  visible: boolean;
-  title: string;
-  message: string;
-  onClose: () => void;
-  theme: ThemeColors;
-}
-
-const SuccessModal: React.FC<SuccessModalProps> = ({
-  visible,
-  title,
-  message,
-  onClose,
-  theme
-}) => {
-  return (
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={visible}
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-          <View style={styles.modalHeader}>
-            <FontAwesome5 
-              name="check-circle" 
-              size={50} 
-              color={theme.primary} 
-              style={styles.modalIcon}
-            />
-            <Text style={[styles.modalTitle, { color: theme.text }]}>{title}</Text>
-          </View>
-          <Text style={[styles.modalMessage, { color: theme.text }]}>{message}</Text>
-          <TouchableOpacity
-            style={[styles.modalButton, { backgroundColor: theme.primary }]}
-            onPress={onClose}
-          >
-            <Text style={styles.modalButtonText}>Continue</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-};
 
 // Custom Input Field Component
 const CustomInputField: React.FC<CustomInputFieldProps> = ({
@@ -210,11 +162,6 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   
-  // Success modal state
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalTitle, setModalTitle] = useState('');
-  const [modalMessage, setModalMessage] = useState('');
-  
   const { register, isLoading } = useAuth();
   const { isDarkMode } = useTheme();
   const theme = getThemeColors(isDarkMode);
@@ -293,17 +240,33 @@ export default function RegisterScreen() {
       console.log('Registration result:', success);
       
       if (success) {
-        // Show success modal based on account type
+        // Show success alert based on account type
         if (isStudent && isDiscountEnabled) {
           // Show discount information for students
-          setModalTitle('Registration Successful!');
-          setModalMessage(`Your account has been created with a ${discountPercent}% student discount on all subscription plans. Enjoy your ride!`);
-          setModalVisible(true);
+          if (Platform.OS === 'web') {
+            alert(`Registration Successful! Your account has been created with a ${discountPercent}% student discount on all subscription plans. Enjoy your ride!`);
+            // Navigate after a short delay to ensure the alert is displayed
+            setTimeout(() => router.replace('/(tabs)'), 500);
+          } else {
+            Alert.alert(
+              "Registration Successful!",
+              `Your account has been created with a ${discountPercent}% student discount on all subscription plans. Enjoy your ride!`,
+              [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
+            );
+          }
         } else {
           // Show success alert for regular users
-          setModalTitle('Registration Successful!');
-          setModalMessage('Your account has been created successfully. Welcome to PARAda!');
-          setModalVisible(true);
+          if (Platform.OS === 'web') {
+            alert("Registration Successful! Your account has been created successfully. Welcome to PARAda!");
+            // Navigate after a short delay to ensure the alert is displayed
+            setTimeout(() => router.replace('/(tabs)'), 500);
+          } else {
+            Alert.alert(
+              "Registration Successful!",
+              "Your account has been created successfully. Welcome to PARAda!",
+              [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
+            );
+          }
         }
       } else {
         setError('Registration failed. Please try again.');
@@ -344,12 +307,6 @@ export default function RegisterScreen() {
         setError('An unexpected error occurred during registration.');
       }
     }
-  };
-
-  // Handle modal close and navigation
-  const handleModalClose = () => {
-    setModalVisible(false);
-    router.replace('/(tabs)');
   };
 
   const togglePasswordVisibility = () => {
@@ -579,15 +536,6 @@ export default function RegisterScreen() {
             </Link>
           </View>
         </View>
-
-        {/* Success Modal */}
-        <SuccessModal
-          visible={modalVisible}
-          title={modalTitle}
-          message={modalMessage}
-          onClose={handleModalClose}
-          theme={theme}
-        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -761,51 +709,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     textAlign: 'right',
-  },
-  // New styles for modal
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    width: '80%',
-    padding: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalIcon: {
-    marginRight: 12,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  modalMessage: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  modalButton: {
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  modalButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 }); 
